@@ -33,6 +33,35 @@ Notes:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Reference:
 
 <a1 id="1">[1]</a1> Bernardo, R. (1994), Prediction of Maize Single-Cross Performance Using RFLPs and Information from Related Hybrids. Crop Science, 34: 20-25 cropsci1994.0011183X003400010003x. https://doi.org/10.2135/cropsci1994.0011183X003400010003x
