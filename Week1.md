@@ -29,9 +29,24 @@ Notes:
 >+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
 
 2. Notes from literatures:
-    1.Today, genomic selection (GS), proposed by Bernardo [[1]](#1) and Meuwissen et al. [[2]](#2) has become an established methodology in breeding.
-
-
+    + Today, genomic selection (GS), proposed by Bernardo [[1]](#1) and Meuwissen et al. [[2]](#2) has become an established methodology in breeding.
+    + Comparing to phenotypic selection (PS) :
+    
+        |Species|Condition |Label | GS | PS |
+        |---------|--------|------|----|----|
+        |maize [[3]](#3)|*Drought condition* | Gain (t/ha)  | 0.50 | 0.27 |
+        |     |                    | Genetic Gain | 0.124 | 0.067 |
+        |     |*Optimal condition* | Gain (t/ha)  | 0.55 | 0.34 |
+        |     |                    | Genetic Gain | 0.140 | 0.084 |
+        |maize [[4]](#4)| similar selection gain |
+        |soybean [[5]](#5)| | fatty acid traits | higher | - |
+        |                 | | yield, protein, oil | similar |
+        |barley [[6]](#6) | | similar selection gain |
+        |                 | | breeding cycle | shorter | - |
+        |                 | | costs | lower | - |
+        
+        
+    + 
 
 [111](#test)
 
@@ -50,6 +65,15 @@ Reference:
 
 <a name="2">[2]</a> Meuwissen TH, Hayes BJ, Goddard ME. Prediction of total genetic value using genome-wide dense marker maps. Genetics. 2001 Apr;157(4):1819-29. PMID: 11290733; PMCID: PMC1461589.
 
+<a name="3">[3]</a> Vivek BS, et al. Use of genomic estimated breeding values results in rapid genetic gains for drought tolerance in maize. Plant Genome. 2017;10:1–8.
 
+<a name="4">[4]</a> Môro GV, Santos MF, de Souza Júnior CL. Comparison of genome-wide and phenotypic selection indices in maize. Euphytica. 2019;215:76. https://doi.org/10.1007/s10681-019-2401-x.
 
+<a name="5">[5]</a> Smallwood CJ, Saxton AM, Gillman JD, Bhandari HS, Wadl PA, Fallen BD, Hyten DL, Song Q, Pantalone VR. Context-specific Genomic Selection Strategies Outperform Phenotypic Selection for Soybean Quantitative Traits in the Progeny Row Stage. Crop Sci. 2019;59(1):54–67.
+
+<a name="6">[6]</a> Salam A, Smith KP. Genomic selection performs similarly to phenotypic selection in barley. Crop Sci. 2016;56(6):2871–2881.
+
+<a name="7">[7]</a>
+
+<a name="8">[8]</a>
 <a name="test">this is a test</a>
