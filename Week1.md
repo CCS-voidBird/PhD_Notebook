@@ -38,12 +38,12 @@ Notes:
         |     |                    | Genetic Gain | 0.124 | 0.067 |
         |     |*Optimal condition* | Gain (t/ha)  | 0.55 | 0.34 |
         |     |                    | Genetic Gain | 0.140 | 0.084 |
-        |maize [[4]](#4)| similar selection gain |
-        |soybean [[5]](#5)| | fatty acid traits | higher | - |
-        |                 | | yield, protein, oil | similar |
-        |barley [[6]](#6) | | similar selection gain |
-        |                 | | breeding cycle | shorter | - |
-        |                 | | costs | lower | - |
+        |maize [[4]](#4)| - | selection gain | similar ||
+        |soybean [[5]](#5)| - | fatty acid traits | higher | - |
+        |                 | - | yield, protein, oil | similar |
+        |barley [[6]](#6) | - | selection gain | similar ||
+        |                 | - | breeding cycle | shorter | - |
+        |                 | - | costs | lower | - |
         
         
     + 
