@@ -104,5 +104,5 @@ Notes:
 
 Reference:
 
-<a1 id="1">[1]</a1> Bernardo, R. (1994), Prediction of Maize Single-Cross Performance Using RFLPs and Information from Related Hybrids. Crop Science, 34: 20-25 cropsci1994.0011183X003400010003x. https://doi.org/10.2135/cropsci1994.0011183X003400010003x
+<a1 id=1>[1]</a1> Bernardo, R. (1994), Prediction of Maize Single-Cross Performance Using RFLPs and Information from Related Hybrids. Crop Science, 34: 20-25 cropsci1994.0011183X003400010003x. https://doi.org/10.2135/cropsci1994.0011183X003400010003x
 [^2] Meuwissen TH, Hayes BJ, Goddard ME. Prediction of total genetic value using genome-wide dense marker maps. Genetics. 2001 Apr;157(4):1819-29. PMID: 11290733; PMCID: PMC1461589.
