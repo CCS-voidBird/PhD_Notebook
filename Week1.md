@@ -35,6 +35,46 @@ Notes:
 
 
 
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
+> GA output:
+>+ Creates the file best.chr (I don't know how to interpret most of this file, but we read the GA's final choice from the last row, excluding the first two columns. The numbers in that final row are the 1-based index/row number of the genotypes in segment_effects.txt. The R script I sent you reads the selection results from this file.)
+>+ Creates the file best.fitness (1st column is each generation number when it found a set with a higher fitness score. That fitness score is in column 3.)
+>+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
 
 
 
