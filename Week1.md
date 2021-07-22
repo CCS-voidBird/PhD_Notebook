@@ -29,7 +29,7 @@ Notes:
 >+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
 
 2. Notes from literatures:
-    1.Today, genomic selection (GS), proposed by Bernardo <a href="#1">[1]</a> and Meuwissen et al. <a href="#2">[2]</a> has become an established methodology in breeding.
+    1.Today, genomic selection (GS), proposed by Bernardo [1](#1) and Meuwissen et al. [2](#2) has become an established methodology in breeding.
 
 
 
