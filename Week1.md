@@ -29,7 +29,7 @@ Notes:
 >+ Prints a log, which we save as ga.log (I believe that: column 1 is GA generation number. Column 2 is average score of the sets of genotypes in this generation. Column 3 is score of the best set of genotypes in this generation. Column 4 is the score of the best set of genotypes it has found so far.) All scores in this file are rounded to whole numbers, so best.fitness gives more detail.
 
 2. Notes from literatures:
-    1.Today, genomic selection (GS), proposed by Bernardo <a href="#test">[1]</a> and Meuwissen et al. [^2] has become an established methodology in breeding.
+    1.Today, genomic selection (GS), proposed by Bernardo <a href="#1">[1]</a> and Meuwissen et al. <a href="#2">[2]</a> has become an established methodology in breeding.
 
 
 
@@ -104,5 +104,5 @@ Notes:
 
 Reference:
 
-<a name="test">[1]</a> Bernardo, R. (1994), Prediction of Maize Single-Cross Performance Using RFLPs and Information from Related Hybrids. Crop Science, 34: 20-25 cropsci1994.0011183X003400010003x. https://doi.org/10.2135/cropsci1994.0011183X003400010003x
-[^2] Meuwissen TH, Hayes BJ, Goddard ME. Prediction of total genetic value using genome-wide dense marker maps. Genetics. 2001 Apr;157(4):1819-29. PMID: 11290733; PMCID: PMC1461589.
+<a name="1">[1]</a> Bernardo, R. (1994), Prediction of Maize Single-Cross Performance Using RFLPs and Information from Related Hybrids. Crop Science, 34: 20-25 cropsci1994.0011183X003400010003x. https://doi.org/10.2135/cropsci1994.0011183X003400010003x
+<a name="2">[2]</a> Meuwissen TH, Hayes BJ, Goddard ME. Prediction of total genetic value using genome-wide dense marker maps. Genetics. 2001 Apr;157(4):1819-29. PMID: 11290733; PMCID: PMC1461589.
