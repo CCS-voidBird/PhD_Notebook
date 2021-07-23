@@ -50,7 +50,14 @@ Notes:
     + DL is a type of machine learning (ML) approach that is a subfield of artificial intelligence (AI). The main difference between DL methods and conventional statistical learning methods is that DL methods are nonparametric models providing tremendous flexibility to adapt to complicated associations between data and output [[7]](#7).
     + Pros of DL while vs ML [[8]](#8):
         + Stronger ability of discovering hidden patterns.
-    + Deep neural network feedforward neural network or multi-layer perceptron (MLP)
+    + Deep neural network
+        + Activation function
+            + Non-linear
+            + Continuously differentiable
+            + Fixed Range
+            
+        + Loss function
+          
         + Feedforward networks (or multilayer perceptrons; MLPs)
             + developing step by step (one layer to next level layer);
             + no super links that cross layers;
@@ -69,6 +76,7 @@ Notes:
             ![Foluma image](https://stanford.edu/~shervine/teaching/cs-230/illustrations/architecture-rnn-ltr.png?9ea4417fc145b9346a3e288801dbdfdc)
             + Inside system [[9]](#9)
             ![RNN image](https://stanford.edu/~shervine/teaching/cs-230/illustrations/description-block-rnn-ltr.png?74e25518f882f8758439bcb3637715e5)
+            
             + Common activation functions[[9]](#9): 
             
             |Sigmoid|Tanh|RELU|
@@ -79,6 +87,8 @@ Notes:
             + Multiple developing directions. (forward or backward);
             + ongoing connections leading to all the neurons in the subsequent layer. (current layer connects all 1-previous level layers)
             + recurrent connections that propagate information between neurons of the same layer.
+        + Convolutional neural networks (CNN) [Next]
+
 [111](#test)
 
 
