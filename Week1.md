@@ -1,12 +1,12 @@
-Week1 Notebook
+Week1-2 Notebook
 ====
 
-Date: 19/July/2021 - 25/July/2021
+Date: 19/July/2021 - 3/Aug/2021
 <br> Editor: Chensong Chen
 ----
 
 Current Goals:
-1. Rerunning Kira's SimulationGenome software.
+1. Rerunning Kira's SimulationGenome software. [70%] 
 2. Literature review
     + Montesinos-López OA, Montesinos-López A, Pérez-Rodríguez P, Barrón-López JA, Martini JWR, Fajardo-Flores SB, Gaytan-Lugo LS, Santana-Mancilla PC, Crossa J. A review of deep learning applications for genomic selection. BMC Genomics. 2021 Jan 6;22(1):19. doi: 10.1186/s12864-020-07319-x. 
     + Abdollahi-Arpanahi R, Gianola D, Peñagaricano F. Deep learning versus parametric and ensemble methods for genomic prediction of complex phenotypes. Genet Sel Evol. 2020 Feb 24;52(1):12. doi: 10.1186/s12711-020-00531-z
@@ -44,10 +44,39 @@ Notes:
         |barley [[6]](#6) | - | selection gain | similar ||
         |                 | - | breeding cycle | shorter | - |
         |                 | - | costs | lower | - |
+        ||
         
-        
-    + 
-
+    + genomic best linear unbiased prediction (GBLUP) [[7]](#7).
+    + DL is a type of machine learning (ML) approach that is a subfield of artificial intelligence (AI). The main difference between DL methods and conventional statistical learning methods is that DL methods are nonparametric models providing tremendous flexibility to adapt to complicated associations between data and output [[7]](#7).
+    + Pros of DL while vs ML [[8]](#8):
+        + Stronger ability of discovering hidden patterns.
+    + Deep neural network feedforward neural network or multi-layer perceptron (MLP)
+        + Feedforward networks (or multilayer perceptrons; MLPs)
+            + developing step by step (one layer to next level layer);
+            + no super links that cross layers;
+            + basic and relatively easy to train;
+            + has risks of overfitting. 
+            
+        + Recurrent neural networks (RNN)
+            + a<sup>\<t\></sup> = g<sub>1</sub>(W<sub>aa</sub>a<sup>\<t-1\></sup> + W<sub>ax</sub>X<sup>\<t\></sup>+b<sub>a</sub>)
+            + y<sup>\<t\></sup> = g<sub>2</sub>(W<sub>ya</sub>a<sup>\<t-1\></sup> + b<sub>y</sub>)
+                + W: Weight;
+                + W<sub>aa</sub>: Weight of previous activations.
+                + W<sub>ax</sub>: Weight of activation of current X (input).
+                + b: background (?) [[9]](#9)
+            + Road map [[9]](#9)
+            
+            ![Foluma image](https://stanford.edu/~shervine/teaching/cs-230/illustrations/architecture-rnn-ltr.png?9ea4417fc145b9346a3e288801dbdfdc)
+            + Inside system [[9]](#9)
+            ![RNN image](https://stanford.edu/~shervine/teaching/cs-230/illustrations/description-block-rnn-ltr.png?74e25518f882f8758439bcb3637715e5)
+            + Common activation functions[[9]](#9): 
+            
+            |Sigmoid|Tanh|RELU|
+            |--|---|---|
+            ![Activation functions](https://stanford.edu/~shervine/teaching/cs-229/illustrations/tanh.png?22ac27f27c510c6414e8a3bb4aca2d80)
+            + Multiple developing directions. (forward or backward);
+            + ongoing connections leading to all the neurons in the subsequent layer. (current layer connects all 1-previous level layers)
+            + recurrent connections that propagate information between neurons of the same layer.
 [111](#test)
 
 
@@ -73,7 +102,19 @@ Reference:
 
 <a name="6">[6]</a> Salam A, Smith KP. Genomic selection performs similarly to phenotypic selection in barley. Crop Sci. 2016;56(6):2871–2881.
 
-<a name="7">[7]</a>
+<a name="7">[7]</a> Montesinos-López OA, Montesinos-López A, Pérez-Rodríguez P, Barrón-López JA, Martini JWR, Fajardo-Flores SB, Gaytan-Lugo LS, Santana-Mancilla PC, Crossa J. A review of deep learning applications for genomic selection. BMC Genomics. 2021 Jan 6;22(1):19. doi: 10.1186/s12864-020-07319-x. 
+
+<a name="8">[8]</a> Kononenko I, Kukar M. Machine Learning and Data Mining: Introduction to Principles and Algorithms. London: Horwood Publishing; 2007.
+
+<a name="9">[9]</a> https://stanford.edu/~shervine/teaching/cs-230/cheatsheet-recurrent-neural-networks
+
+<a name="8">[8]</a>
+
+<a name="8">[8]</a>
+
+<a name="8">[8]</a>
+
+<a name="8">[8]</a>
 
 <a name="8">[8]</a>
 <a name="test">this is a test</a>
