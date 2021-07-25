@@ -16,6 +16,7 @@ Current Goals:
     + Dias, R., Torkamani, A. Artificial intelligence in clinical and genomic diagnostics. Genome Med 11, 70 (2019). https://doi.org/10.1186/s13073-019-0689-8
 
     
+
 Notes:
 1. Descriptions from Kira's message:
 > GA inputs:  
@@ -87,7 +88,10 @@ Notes:
             + Multiple developing directions. (forward or backward);
             + ongoing connections leading to all the neurons in the subsequent layer. (current layer connects all 1-previous level layers)
             + recurrent connections that propagate information between neurons of the same layer.
+            
         + Convolutional neural networks (CNN) [Next]
+        
+            + Convolutional layers
 
 [111](#test)
 
