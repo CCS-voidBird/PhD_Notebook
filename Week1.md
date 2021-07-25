@@ -32,7 +32,7 @@ Notes:
 2. Notes from literatures:
     + Today, genomic selection (GS), proposed by Bernardo [[1]](#1) and Meuwissen et al. [[2]](#2) has become an established methodology in breeding.
     + Comparing to phenotypic selection (PS) :
-    
+
         |Species|Condition |Label | GS | PS |
         |---------|--------|------|----|----|
         |maize [[3]](#3)|*Drought condition* | Gain (t/ha)  | 0.50 | 0.27 |
@@ -92,6 +92,15 @@ Notes:
         + Convolutional neural networks (CNN) [Next]
         
             + Convolutional layers
+              + Input: tensor with shape.
+              + A convolutional filters (kernels)
+              + input/output channels (should be equal)(?)
+              + hyper-parameters -- padding; stride and dilation (?)
+            + Pooling layers
+              + Functions: merge/split/reformat data of convolutional layers into other format/subtypes
+            + Main solutions
+              + Convolution, nonlinear transformation and pooling
+
 
 [111](#test)
 
