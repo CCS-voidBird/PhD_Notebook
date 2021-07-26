@@ -59,7 +59,7 @@ Notes:
             
         + Loss function
           
-        + Feedforward networks (or multilayer perceptrons; MLPs)
+        + Feedforward networks (or multilayer perceptrons; MLPs) (MLP)
             + developing step by step (one layer to next level layer);
             + no super links that cross layers;
             + basic and relatively easy to train;
@@ -106,10 +106,50 @@ Notes:
 
 
 
++ Deep learning nerual network tools: PyTorch [[10]](#10) Chainer [[11]](#11)
++ Note [[7]](#7): 
 
+> Pérez-Rodríguez et al. [[12]](#12) compares the predictive ability of Radial Basis Function Neural Networks and Bayesian Regularized Neural Networks against several linear models [BL, BayesA, BayesB, BRR and semi-parametric models based on Kernels (Reproducing Kernel Hilbert Spaces)]. 
 
+In prediction accuracy: Non-linear models performed better than the linear regression specification.
 
+Some expermental records showed accuracy similarities in DL&linear models (e.g. GBLUP)  comparisons. 
 
++ Probabilistic neural network (PNN) has a relatively higher performance than MLP [[13]](#13)
+
+Bayesian A/B testing [?]
+
++ CNN phenotype prediction case study [[14]](#14)
+
+multi-trait deep learning (MTDL) vs Bayesian multi-trait and multi-environment (BMTME), accuracy comparison
+
+Specific condition: genotype × environment interaction
+
+| Species       | Model | imported | non-imported |
+| ------------- | ----- | -------- | ------------ |
+| maize         | BMTME | 0.456    | 0.317        |
+|               | MTDL  | 0.407    | 0.435        |
+| wheat         | BMTME | 0.812    | 0.765        |
+|               | MTDL  | 0.759    | 0.876        |
+| Iranian wheat | BMTME | 0.999    | 0.54         |
+|               | MTDL  | 0.836    | 0.669        |
+
++ Univariate DL vs Support vector machine (SVM) vs TGBLUP* [[15]](#15)
+  + *Conventional Bayesian threshold best linear unbiased prediction [?]
+
+1. No siginificant differences in total.
+
+2. Specifically (human case):
+
+   Interaction imported: TGBLUP > DL > SVM;
+
+   interaction excluded: no significant differences.
+
++ univariate DL (UDL) vs multi-trait deep learning (MTDL) vs GBLUP [[16]](#16)
+
+1. Accuracy: GBLUP ≈ MTDL > UDL
+
+**IDEA: Generative Adversarial Network for genomic selection (selecting parent pairs)**
 
 
 
@@ -133,13 +173,31 @@ Reference:
 
 <a name="9">[9]</a> https://stanford.edu/~shervine/teaching/cs-230/cheatsheet-recurrent-neural-networks
 
-<a name="8">[8]</a>
+<a name="10">[10]</a> Team, P.C. (2017). Pytorch: tensors and dynamic neural networks in Python with strong GPU acceleration. GitHub pub online: March 22, 2017. https://github.com/pytorch/pytorch.
 
-<a name="8">[8]</a>
+<a name="11">[11]</a> Tokui, Seiya, et al. "Chainer: a next-generation open source framework for deep learning." *Proceedings of workshop on machine learning systems (LearningSys) in the twenty-ninth annual conference on neural information processing systems (NIPS)*. Vol. 5. 2015.
 
-<a name="8">[8]</a>
+<a name="12">[12]</a> Pérez-Rodríguez P, Gianola D, González-Camacho JM, Crossa J, Manès Y, Dreisigacker S. Comparison between linear and non-parametric regression models for genome-enabled prediction in wheat. G3 (Bethesda). 2012;2(12):1595–605. https://doi.org/10.1534/g3.112.003665.
 
-<a name="8">[8]</a>
+<a name="13">[13]</a> González-Camacho JM, Crossa J, Pérez-Rodríguez P, et al. Genome-enabled prediction using probabilistic neural network classifiers. BMC Genomics. 2016;17:1–16. https://doi.org/10.1186/s12864-016-2553-1.
 
-<a name="8">[8]</a>
+<a name="14">[14]</a> Ma W, Qiu Z, Song J, Li J, Cheng Q, Zhai J, et al. A deep convolutional neural network approach for predicting phenotypes from genotypes. Planta. 2018;248:1307–18. https://doi.org/10.1007/s00425-018-2976-9.
+
+<a name="15">[15]</a> Montesinos-López OA, Vallejo M, Crossa J, Gianola D, Hernández-Suárez CM, Montesinos-López A, Juliana P, Singh R. A benchmarking between deep learning, support vector machine and Bayesian threshold best linear unbiased prediction for predicting ordinal traits in plant breeding. G3: Genes Genomes Genetics. 2019a;9(2):601–18.
+
+<a name="16">[16]</a> Montesinos-López OA, Montesinos-López A, Tuberosa R, Maccaferri M, Sciara G, Ammar K, Crossa J. Multi-trait, multi-environment genomic prediction of durum wheat with genomic best linear unbiased predictor and deep learning methods. Front Plant Sci. 2019;11(10):1–12.
+
 <a name="test">this is a test</a>
+
+<ins>222</ins>
+
+<u>222</u>
+
+<del>222</del>
+
+&rarr;
+
+&ensp;
+
+
+
