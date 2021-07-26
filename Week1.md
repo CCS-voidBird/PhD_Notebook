@@ -149,6 +149,22 @@ Specific condition: genotype × environment interaction
 
 1. Accuracy: GBLUP ≈ MTDL > UDL
 
+
+
+Pros of DL [[7]](#7):
+
++ Naturally capture - free for definating additional relations sepcifically.
++ Efficiency and pre-processing free.
++ workflow flexible
++ outstanding for prediction based on a large dateset
+
+Cons:
+
++ generated parameters with less biological meanings (in Bioscience)
++ Need a large amount of traing time.  
+
+
+
 **IDEA: Generative Adversarial Network for genomic selection (selecting parent pairs)**
 
 
