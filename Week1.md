@@ -161,7 +161,12 @@ Pros of DL [[7]](#7):
 Cons:
 
 + generated parameters with less biological meanings (in Bioscience)
-+ Need a large amount of traing time.  
++ Need a large amount of traing time. 
++ challenging in selecting hyper-parameters.
+
+
+
+> For this reason, CNNs are being very successfully applied to complex tasks in plant science for: (a) root and shoot feature identification [[94](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-020-07319-x#ref-CR94)], (b) leaf counting [[95](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-020-07319-x#ref-CR95), [96](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-020-07319-x#ref-CR96)], (c) classification of biotic and abiotic stress [[97](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-020-07319-x#ref-CR97)], (d) counting seeds per pot [[98](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-020-07319-x#ref-CR98)], (e) detecting wheat spikes [[99](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-020-07319-x#ref-CR99)], and (f) estimating plant morphology and developmental stages [[100](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-020-07319-x#ref-CR100)], etc. 
 
 
 
