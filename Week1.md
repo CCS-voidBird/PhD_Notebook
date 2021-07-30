@@ -9,7 +9,7 @@ Current Goals:
 1. Rerunning Kira's SimulationGenome software. [70%] 
 2. Literature review
     + [DONE] Montesinos-López OA, Montesinos-López A, Pérez-Rodríguez P, Barrón-López JA, Martini JWR, Fajardo-Flores SB, Gaytan-Lugo LS, Santana-Mancilla PC, Crossa J. A review of deep learning applications for genomic selection. BMC Genomics. 2021 Jan 6;22(1):19. doi: 10.1186/s12864-020-07319-x. 
-    + Abdollahi-Arpanahi R, Gianola D, Peñagaricano F. Deep learning versus parametric and ensemble methods for genomic prediction of complex phenotypes. Genet Sel Evol. 2020 Feb 24;52(1):12. doi: 10.1186/s12711-020-00531-z
+    + [DONE] Abdollahi-Arpanahi R, Gianola D, Peñagaricano F. Deep learning versus parametric and ensemble methods for genomic prediction of complex phenotypes. Genet Sel Evol. 2020 Feb 24;52(1):12. doi: 10.1186/s12711-020-00531-z
     + Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strategies for complex traits using high-density genetic markers. J Dairy Sci. 2012 Aug;95(8):4646-56. doi: 10.3168/jds.2011-5289. 
     + Bijma, P., Wientjes, Y.C.J., Calus, M.P.L.  Breeding top genotypes and accelerating response to recurrent selection by selecting parents with greater gametic variance (2020) Genetics, 214 (1), pp. 91-107. DOI: 10.1534/genetics.119.302643
     + Hickey, L.T., N. Hafeez, A., Robinson, H., Jackson, S.A., Leal-Bertioli, S.C.M., Tester, M., Gao, C., Godwin, I.D., Hayes, B.J., Wulff, B.B.H. Breeding crops to feed 10 billion (2019) Nature Biotechnology, 37 (7), pp. 744-754. Cited 133 times. DOI: 10.1038/s41587-019-0152-9
@@ -229,6 +229,28 @@ Convolutional nerual network (CNN) case study in GS field [[17]](#17).
 4. Environment：DeepGS [[18]](#18) (R language/environment, version 3.6.1)
 
 > We compared learning machines using two different types of predictor variables: (i) genotypes at causal loci, and (ii) genotypes at SNPs. In the former case, statistical methods were fitted using the genotypes at causal variants as predictors. In the latter case, to mimic the real SNP data, QTN were excluded from the genotypic matrix and genomic prediction was performed using only the genotypes at SNPs.
+
+
+
+
+
+Discussion:
+
+
+
+> Whole-genome prediction differs in a very important way from image or speech recognition tasks [[33](https://gsejournal.biomedcentral.com/articles/10.1186/s12711-020-00531-z#ref-CR33)]. Complex traits are multifactorial, where environmental factors may differ from individual to individual, and epigenetic marks can affect performance, so that the genotype of an individual may not provide sufficient information to predict phenotypes accurately [[48](https://gsejournal.biomedcentral.com/articles/10.1186/s12711-020-00531-z#ref-CR48)]. However, there are some similarities between genomics and other domains, for instance genotype–phenotype associations can be viewed as a landscape. This landscape may have extremely steep valleys, where small perturbations in genotype give rise to vastly different phenotypes [[49](https://gsejournal.biomedcentral.com/articles/10.1186/s12711-020-00531-z#ref-CR49)]. It may also have large plateaus, where seemingly unrelated genotypes yield an equivalent phenotype.
+
+[Link location]
+
+[33] Goodfellow I, Bengio Y, Courville A. Deep learning. Cambridge: The MIT press; 2016.
+
+[48] Leung MKK, Delong A, Alipanahi B, Frey BJ. Machine learning in genomic medicine: a review of computational problems and data sets. Proc IEEE. 2016;104:176–97.
+
+[59] Hart JR, Zhang Y, Liao L, Ueno L, Du L, Jonkers M, et al. The butterfly effect in cancer: a single base mutation can remodel the cell. Proc Natl Acad Sci USA. 2015;112:1131–6.
+
+
+
+
 
 **IDEA: Generative Adversarial Network for genomic selection (selecting parent pairs)**
 
