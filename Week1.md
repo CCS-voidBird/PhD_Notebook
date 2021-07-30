@@ -8,14 +8,23 @@ Date: 19/July/2021 - 3/Aug/2021
 Current Goals:
 1. Rerunning Kira's SimulationGenome software. [70%] 
 2. Literature review
-    + Montesinos-López OA, Montesinos-López A, Pérez-Rodríguez P, Barrón-López JA, Martini JWR, Fajardo-Flores SB, Gaytan-Lugo LS, Santana-Mancilla PC, Crossa J. A review of deep learning applications for genomic selection. BMC Genomics. 2021 Jan 6;22(1):19. doi: 10.1186/s12864-020-07319-x. 
+    + [DONE] Montesinos-López OA, Montesinos-López A, Pérez-Rodríguez P, Barrón-López JA, Martini JWR, Fajardo-Flores SB, Gaytan-Lugo LS, Santana-Mancilla PC, Crossa J. A review of deep learning applications for genomic selection. BMC Genomics. 2021 Jan 6;22(1):19. doi: 10.1186/s12864-020-07319-x. 
     + Abdollahi-Arpanahi R, Gianola D, Peñagaricano F. Deep learning versus parametric and ensemble methods for genomic prediction of complex phenotypes. Genet Sel Evol. 2020 Feb 24;52(1):12. doi: 10.1186/s12711-020-00531-z
     + Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strategies for complex traits using high-density genetic markers. J Dairy Sci. 2012 Aug;95(8):4646-56. doi: 10.3168/jds.2011-5289. 
     + Bijma, P., Wientjes, Y.C.J., Calus, M.P.L.  Breeding top genotypes and accelerating response to recurrent selection by selecting parents with greater gametic variance (2020) Genetics, 214 (1), pp. 91-107. DOI: 10.1534/genetics.119.302643
     + Hickey, L.T., N. Hafeez, A., Robinson, H., Jackson, S.A., Leal-Bertioli, S.C.M., Tester, M., Gao, C., Godwin, I.D., Hayes, B.J., Wulff, B.B.H. Breeding crops to feed 10 billion (2019) Nature Biotechnology, 37 (7), pp. 744-754. Cited 133 times. DOI: 10.1038/s41587-019-0152-9
     + Dias, R., Torkamani, A. Artificial intelligence in clinical and genomic diagnostics. Genome Med 11, 70 (2019). https://doi.org/10.1186/s13073-019-0689-8
 
-    
+
+
+
+Three statistical methods for predicting phenotypes from dense SNP markers.
+
++ BLUP/GBLUP/GS-BLUP
++ BayesA
++ BayesB
+
+
 
 Notes:
 1. Descriptions from Kira's message:
@@ -170,7 +179,62 @@ Cons:
 
 
 
+**A study of comparing predictive performances of MLP and CNN** [[17]](#17)
+
+> Moreover, interaction between loci is prevalent and recombination hotspots are not uniformly distributed across the genome. Some advanced machine-learning algorithms such as ensemble methods and deep learning (DL) algorithms might help in genome-enabled prediction.
+
+For algorithm usage proposal 
+
+> Boosting and RF are model specification free and may account for non-additive effects.Moreover, they are fast algorithms, even when handling a large number of covariates and interactions and can be used in both classification and regression problems.
+
+
+
+Defination:
+
++ purely/combination additive &rarr; performed as a sum of all gonotype alleles.
+
++ non-additive gene action &rarr; only have one certain phenotype and have no additive action  (two-locus model)
+
+  
+
+A brife solution of Random forest
+
+1. For sample data which contains N samples, select & return single sample for N times &rarr; a sub N sample data for a new decision tree.
+2. For each sample that has M features, select m features (m << M) as the sub-feature in certain decision tree.
+3. merge /weight decisions from the forest, got results.
+
+
+
+Convolutional nerual network (CNN) case study in GS field [[17]](#17).
+
++ Input: genotype matrix of 80000 animals
+
+1. Structure:
+   + 1 input layer;
+   + 1 convolutional layer (16 filters; 1x5 window size; 1x3 stride size) 
+   + 1 max-pooling layer (1x2 window size; 1x2 stride size)
+   + 2 full-connect layers (MLP) (32, 1 unit)
+   + 2 dropout layers (0.3 dropping rate)
+   + 1 output layer
+2. Hyperparameters
+   + Epochs: 200
+   + Batch size: 64
+   + Learning rate: 0.01
+   + Momentum: 0.5 [?]
+   + Weight decay: 0.00001
+3. Activation Function
+   + ReLu for convolutional layer;
+   + Softrelu for 1st fill-connect layer;
+   + linear activation function for the output layer;
+4. Environment：DeepGS [[18]](#18) (R language/environment, version 3.6.1)
+
+> We compared learning machines using two different types of predictor variables: (i) genotypes at causal loci, and (ii) genotypes at SNPs. In the former case, statistical methods were fitted using the genotypes at causal variants as predictors. In the latter case, to mimic the real SNP data, QTN were excluded from the genotypic matrix and genomic prediction was performed using only the genotypes at SNPs.
+
 **IDEA: Generative Adversarial Network for genomic selection (selecting parent pairs)**
+
+
+
+**Question** for DNN: How to select/optimize b (bias)
 
 
 
@@ -208,7 +272,9 @@ Reference:
 
 <a name="16">[16]</a> Montesinos-López OA, Montesinos-López A, Tuberosa R, Maccaferri M, Sciara G, Ammar K, Crossa J. Multi-trait, multi-environment genomic prediction of durum wheat with genomic best linear unbiased predictor and deep learning methods. Front Plant Sci. 2019;11(10):1–12.
 
-<a name="test">this is a test</a>
+<a name="17">[17]</a> Abdollahi-Arpanahi R, Gianola D, Peñagaricano F. Deep learning versus parametric and ensemble methods for genomic prediction of complex phenotypes. Genet Sel Evol. 2020 Feb 24;52(1):12. doi: 10.1186/s12711-020-00531-z
+
+<a name="18">[18]</a> Ma W, Qiu Z, Song J, Li J, Cheng Q, Zhai J, et al. A deep convolutional neural network approach for predicting phenotypes from genotypes. Planta. 2018;248:1307–18.
 
 <ins>222</ins>
 
