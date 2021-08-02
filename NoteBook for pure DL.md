@@ -19,3 +19,12 @@ $Derivative:$	$\frac{d(y)}{d(x)}=f(x)(1-f(x))$
 
 ![Activation Functions and their Derivatives](https://editor.analyticsvidhya.com/uploads/94131Screenshot%20(43).png)
 
+
+
+Multilayer perceptron study; current problems:
+
++ Backward propagation
++ loss function
++ core theory in math
++ more hyper-parameters
++ run code with numpy module 

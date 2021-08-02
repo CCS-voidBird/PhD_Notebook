@@ -92,8 +92,8 @@ Notes:
             |Sigmoid|Tanh|RELU|
             |---|---|---|
             |![for1](https://latex.codecogs.com/gif.latex?g%28z%29%3D%5Cfrac%7B1%7D%7B1&plus;e%5E%7B-z%7D%7D)|![for2](https://latex.codecogs.com/gif.latex?g%28z%29%3D%5Cfrac%7Be%5E%7Bz%7D-e%5E%7B-z%7D%7D%7Be%5E%7Bz%7D&plus;e%5E%7B-z%7D%7D)|![for3](https://latex.codecogs.com/gif.latex?g%28z%29%3D%5Cmax%280%2Cz%29)|
-            |![Activation functions](https://stanford.edu/~shervine/teaching/cs-229/illustrations/tanh.png?22ac27f27c510c6414e8a3bb4aca2d80)|![pic2](https://stanford.edu/~shervine/teaching/cs-229/illustrations/tanh.png?22ac27f27c510c6414e8a3bb4aca2d80)|![pic3](https://stanford.edu/~shervine/teaching/cs-229/illustrations/relu.png?6c1d78551355db5c6e4f6f8b5282cfa8)|
-            ||
+            |![Activation functions](https://stanford.edu/~shervine/teaching/cs-229/illustrations/sigmoid.png?c91b6e5a7d4e78e95880bcf4e39889df)|![pic2](https://stanford.edu/~shervine/teaching/cs-229/illustrations/tanh.png?22ac27f27c510c6414e8a3bb4aca2d80)|![pic3](https://stanford.edu/~shervine/teaching/cs-229/illustrations/relu.png?6c1d78551355db5c6e4f6f8b5282cfa8)|
+            ||||
             + Multiple developing directions. (forward or backward);
             + ongoing connections leading to all the neurons in the subsequent layer. (current layer connects all 1-previous level layers)
             + recurrent connections that propagate information between neurons of the same layer.
