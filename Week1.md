@@ -15,6 +15,15 @@ Current Goals:
     + Hickey, L.T., N. Hafeez, A., Robinson, H., Jackson, S.A., Leal-Bertioli, S.C.M., Tester, M., Gao, C., Godwin, I.D., Hayes, B.J., Wulff, B.B.H. Breeding crops to feed 10 billion (2019) Nature Biotechnology, 37 (7), pp. 744-754. Cited 133 times. DOI: 10.1038/s41587-019-0152-9
     + Dias, R., Torkamani, A. Artificial intelligence in clinical and genomic diagnostics. Genome Med 11, 70 (2019). https://doi.org/10.1186/s13073-019-0689-8
 
+3. Current achieved
+    + Going to test ability of several ML & DL models
+      + MLP &rarr; Multilayer perceptron
+      + RM &rarr; Random forest
+      + CNN &rarr; Convolutional nerual network
+      + Boosting
+    + Strategy of basic DL &rarr; Need to develop a example model for verifying.
+    + Going to reproduce comparison in previous studies.
+
 
 
 
@@ -109,9 +118,6 @@ Notes:
               + Functions: merge/split/reformat data of convolutional layers into other format/subtypes
             + Main solutions
               + Convolution, nonlinear transformation and pooling
-
-
-[111](#test)
 
 
 
