@@ -28,3 +28,18 @@ Multilayer perceptron study; current problems:
 + core theory in math
 + more hyper-parameters
 + run code with numpy module 
+
+
+
+
+
+**Partial derivative**
+
++ $f^{'}_x = \frac{\partial{f}}{\part{x}}$
++ $\delta$
+
+
+
+
+
+##Multi-Depth neural network## 

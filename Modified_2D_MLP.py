@@ -28,7 +28,7 @@ def single_backward_propagation(dA_curr,w_curr,b_curr,z_curr,a_prev,active = "Si
 
     activeF = ACTIVEFUNCTIONS[active]
 
-    
+
 
 def sigMoid(Z):
     return 1/(1+np.exp(-Z))
@@ -45,9 +45,26 @@ def relu_backward(dA, Z):
     dZ[Z <= 0] = 0;
     return dZ;
 
-def loss_function(y,yt):
-    print(np.sum(np.square(y-yt)) / 2)
-    return np.sum(np.square(y-yt)) / 2
+def loss_function(y,yt,deriv=False):
+    print(y.shape)
+    print("y")
+    m = y.shape[1]
+    loss = 0
+    if deriv == False:
+        loss = -(1/m)*np.sum(np.abs(y-yt))
+    elif deriv == True:
+        loss = -(2/m)*(np.sum(np.abs(y-yt)))
+    return loss
+
+def weight_update(err,z_curr,z_prev,activef = "sigmoid", learnRate=0.1):
+
+    af = ACTIVEFUNCTIONS[activef]
+    e_d = loss_function(err,deriv=True)
+    a_d = af(z_curr,deriv=True)
+    z_d = z_prev
+
+    w_d = learnRate * a_d * e_d * z_d
+    return w_d
 
 def switch(x):
     x[x>=0.5] = 1
@@ -72,6 +89,7 @@ class MLP:
         self.weights = None
         self.input = None
         self.output = None
+        self.layers = None
         self.outputWeight = None
         self.hiddenLayers = None
         self.outputLayer = None
@@ -99,24 +117,31 @@ class MLP:
 
         number_of_inputUnit = X.ndim
         number_of_outputUnit = Y.ndim
-        self.weights = [np.random.randn(layerUnits,number_of_inputUnit)]  # np.random.randn(number_of_inputUnit,layerUnits)
-        self.bias = [np.random.randn(1,layerUnits)]
-        for layer in range(hidden_layers):
-            self.weights.append(np.random.randn(layerUnits,layerUnits))
-            self.bias.append(np.random.randn(1,layerUnits))
+        number_of_layerUnit = [X.ndim] + [layerUnits for unit in range(hidden_layers)] + [Y.ndim]
+        self.weights = []  # np.random.randn(layerUnits,number_of_inputUnit)
+        self.bias = [] ## np.random.randn(1,layerUnits)
+        for idx in range(len(number_of_layerUnit)-1):
+            col = number_of_layerUnit[idx]
+            row = number_of_layerUnit[idx+1]
+            self.weights.append(np.random.randn(row,col))
+            self.bias.append(np.random.randn(row,1))
+        print("length: ",len(self.weights),len(self.bias))
         #self.outputWeight = np.random.randn(number_of_outputUnit,layerUnits)
-        self.weights.append(np.random.randn(number_of_outputUnit,layerUnits))
-        self.bias.append(np.random.randn(1,Y.ndim))
+        #self.weights.append(np.random.randn(number_of_outputUnit,layerUnits))
+        #self.bias.append(np.random.randn(1,Y.ndim))
         self.activeFunction = ACTIVEFUNCTIONS[active]
         self.outputFunction = sigmoid
         #self.outBias = np.random.randn(1)
         self.input = [X,Y]
         self.hiddenLayers = [0 for x in range(len(self.weights)+1)]
+        self.layers = [0 for x in range(len(self.weights)+2)]
+        print("Total layers:",len(self.layers))
+        print("Total bias: ",len(self.bias))
 
     def training(self,redo = 1):
 
         l0,y = self.input
-        self.hiddenLayers[0] = l0
+        self.layers[0] = l0
         print(len(self.weights))
         #print(self.weights)
         for rep in range(redo):
@@ -124,57 +149,35 @@ class MLP:
             print(self.bias)
             #self.hiddenLayers[0] = self.activeFunction(self.weights[0].dot(l0), False)
             print("start forward")
-            for layer in range(1,len(self.weights)):
-                self.hiddenLayers[layer] = self.activeFunction(self.bias[layer].T + self.weights[layer-1].dot(self.hiddenLayers[layer-1]),False)
+            for layer in range(1,len(self.layers)-1): ## The input Layer is the 1st layer;
+                self.layers[layer] = self.activeFunction(self.bias[layer-1].T + self.weights[layer-1].dot(self.layers[layer-1]),False)
                 print(layer)
-                print(self.hiddenLayers[layer])
-
-            self.outputLayer = self.outputFunction(
-                self.bias[-1].T + self.weights[-1].dot(self.hiddenLayers[-2]), False)
-
-            l_error = self.outputLayer-y
+            print(self.layers[-2])
+            self.outputLayer = self.outputFunction(self.bias[-1], + self.weights[-1].dot(self.layers[-2]),False)
+            self.layers[-1] = self.outputLayer
+            print("SDFGHJKL")
+            print(self.outputLayer)
+            l_error = loss_function(y,self.outputLayer)
             print(l_error)
             l_delta = l_error*self.outputFunction(self.outputLayer, True) ## considering np.dot
             print(l_delta)
-            #if rep == 0:
-                #print("while 0")
-                #print(y)
-                #print("out:", self.outputLayer)
-                #print(l_error)
-                #print("delta")
-                #print(l_delta)
-                #print(np.dot(l_delta,self.hiddenLayers[-1].T).T)
-                #print(l_error*self.outputFunction(self.outputLayer, True))
-                #print(self.hiddenLayers[-1])
 
-                #print("as: ",switch(self.outputLayer))
-            #print(l_error.shape)
-            #print("update")
-            #print(np.dot(l_delta,self.hiddenLayers[-1].T).reshape(2,1))
-            #print(self.learnRate*np.dot(l_delta,self.hiddenLayers[-1].T).reshape(2,1))
-            #print(self.outputWeight)
-            #print(self.outputWeight + self.learnRate*np.dot(l_delta,self.hiddenLayers[-1].T).T)
-            #self.outputWeight += self.learnRate*(np.dot(l_delta,self.hiddenLayers[-1].T)+self.outputWeight)
-            #self.outBias += self.learnRate*(np.mean(l_delta))
 
             ### bachward_propagate processing
             print(len(self.weights))
             for back_lay in range(len(self.weights)):
                 print("reverse: {}".format(back_lay))
                 reverse = -1-back_lay
-                print("wwwwwwwwwwwwwwww")
-                print(self.outputLayer)
-                print(self.outputFunction(self.outputLayer, True))
                 if reverse == -1:
                     l_delta = l_error*self.outputFunction(self.outputLayer, True)
-                    print(l_delta.shape)
-                    print("33333333333333333")
-                    continue
+                    self.weights[-1] -= weight_update(l_error,self.outputLayer,self.hiddenLayers[-1])
+
                 else:
                     print("1213231231231")
                     print(l_delta.shape)
                     print((self.weights[reverse+1].T*l_delta).shape)
                     print(self.activeFunction(self.hiddenLayers[reverse], True).shape)
+                    l_error = self.activeFunction(l_error)
                     l_delta = self.activeFunction(self.hiddenLayers[reverse], True)*(self.weights[reverse+1].T*l_delta)
 
                     # l_delta * self.weights[reverse+1].dot(self.activeFunction(self.hiddenLayers[reverse], True))
