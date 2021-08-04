@@ -24,6 +24,27 @@ def taNh(x,deriv=False):
     else:
         return 1-x**2
 
+def single_backward_propagation(dA_curr,w_curr,b_curr,z_curr,a_prev,active = "Sigmoid"):
+
+    activeF = ACTIVEFUNCTIONS[active]
+
+    
+
+def sigMoid(Z):
+    return 1/(1+np.exp(-Z))
+
+def relu(Z):
+    return np.maximum(0,Z)
+
+def sigmoid_backward(dA, Z):
+    sig = sigmoid(Z)
+    return dA * sig * (1 - sig)
+
+def relu_backward(dA, Z):
+    dZ = np.array(dA, copy = True)
+    dZ[Z <= 0] = 0;
+    return dZ;
+
 def loss_function(y,yt):
     print(np.sum(np.square(y-yt)) / 2)
     return np.sum(np.square(y-yt)) / 2
