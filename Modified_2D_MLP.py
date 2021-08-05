@@ -45,10 +45,11 @@ def relu_backward(dA, Z):
     dZ[Z <= 0] = 0;
     return dZ;
 
+
 def loss_function(y,yt,deriv=False):
-    print(y.shape)
-    print("y")
-    m = y.shape[1]
+    #print(y)
+    #print("y")
+    m = y.shape[0]
     loss = 0
     if deriv == False:
         loss = -(1/m)*np.sum(np.abs(y-yt))
@@ -56,20 +57,58 @@ def loss_function(y,yt,deriv=False):
         loss = -(2/m)*(np.sum(np.abs(y-yt)))
     return loss
 
-def weight_update(err,z_curr,z_prev,activef = "sigmoid", learnRate=0.1):
+def weight_update(number_of_layers, layerUnits, y, layer_output,weights,bias):
+    total_err = y-layer_output[-1]
+    print(weights)
+    for level in range(number_of_layers-1):
+        layer = -level-1
+        print("current weight")
+        print(weights[-level-1] )
+        if level == 0:
+            err_del = total_err * sigmoid(layer_output[layer],True)
+            print("shape is ",err_del.shape)
+        else:
+            err_del = np.dot(weights[layer+1].T,err_del)*sigmoid(layer_output[level])
+        #print("ols: ",weights[layer])
+        #print("new: ",layer_weight_update(err_del,layer_output[layer],weights[layer]))
+        weights[layer] += layer_weight_update(err_del,layer_output[layer-1])
+        #bias[layer] += layer_bias_update(err_del)
+        print()
+    return weights,bias
 
-    af = ACTIVEFUNCTIONS[activef]
-    e_d = loss_function(err,deriv=True)
-    a_d = af(z_curr,deriv=True)
-    z_d = z_prev
+def layer_weight_update(err_del,z_prev, learnRate=0.1):
 
-    w_d = learnRate * a_d * e_d * z_d
+    e_d = err_del
+    z_r = z_prev.T
+    return np.dot(e_d,z_r) * learnRate
+
+def layer_bias_update(err_del,learnRate=0.1):
+
+    e_d = err_del
+    w_d = learnRate * e_d
+
     return w_d
 
 def switch(x):
     x[x>=0.5] = 1
     x[x<0.5] = 0
     return x
+
+
+def plot_decision_boundary(model, axis):
+    x0, x1 = np.meshgrid(
+        np.linspace(axis[0], axis[1], int((axis[1] - axis[0]) * 100)).reshape(1, -1),
+        np.linspace(axis[2], axis[3], int((axis[3] - axis[2]) * 100)).reshape(-1, 1)
+    )
+    X_new = np.c_[x0.ravel(), x1.ravel()]
+
+    y_predic = model.predict(X_new)
+    zz = y_predic.reshape(x0.shape)
+
+    from matplotlib.colors import ListedColormap
+    custom_cmap = ListedColormap(['#EF9A9A', '#FFF590', '#90CAF9'])
+
+    plt.contourf(x0, x1, zz, linewidth=5, cmap=custom_cmap)
 
 ACTIVEFUNCTIONS={
     "Sigmoid": sigmoid,
@@ -97,6 +136,7 @@ class MLP:
         self.learnRate = 0.1
         self.bias=None
         self.outBias = None
+        self.number_of_units = None
 
     def readData(self,data):
 
@@ -116,13 +156,13 @@ class MLP:
         plt.show()
 
         number_of_inputUnit = X.ndim
-        number_of_outputUnit = Y.ndim
-        number_of_layerUnit = [X.ndim] + [layerUnits for unit in range(hidden_layers)] + [Y.ndim]
+        number_of_outputUnit = 2 #Y.ndim
+        self.number_of_units = [X.ndim] + [layerUnits for unit in range(hidden_layers)] + [number_of_outputUnit]
         self.weights = []  # np.random.randn(layerUnits,number_of_inputUnit)
         self.bias = [] ## np.random.randn(1,layerUnits)
-        for idx in range(len(number_of_layerUnit)-1):
-            col = number_of_layerUnit[idx]
-            row = number_of_layerUnit[idx+1]
+        for idx in range(len(self.number_of_units)-1):
+            col = self.number_of_units[idx]
+            row = self.number_of_units[idx+1]
             self.weights.append(np.random.randn(row,col))
             self.bias.append(np.random.randn(row,1))
         print("length: ",len(self.weights),len(self.bias))
@@ -134,35 +174,30 @@ class MLP:
         #self.outBias = np.random.randn(1)
         self.input = [X,Y]
         self.hiddenLayers = [0 for x in range(len(self.weights)+1)]
-        self.layers = [0 for x in range(len(self.weights)+2)]
+        self.layers = [0 for x in range(len(self.weights)+1)]
         print("Total layers:",len(self.layers))
         print("Total bias: ",len(self.bias))
 
-    def training(self,redo = 1):
+    def training(self,redo = 300):
 
         l0,y = self.input
         self.layers[0] = l0
         print(len(self.weights))
         #print(self.weights)
         for rep in range(redo):
-            print(self.weights)
-            print(self.bias)
+            #print(self.weights)
+            #print(self.bias)
             #self.hiddenLayers[0] = self.activeFunction(self.weights[0].dot(l0), False)
             print("start forward")
-            for layer in range(1,len(self.layers)-1): ## The input Layer is the 1st layer;
-                self.layers[layer] = self.activeFunction(self.bias[layer-1].T + self.weights[layer-1].dot(self.layers[layer-1]),False)
+            for layer in range(1,len(self.layers)): ## The input Layer is the 1st layer;
+                self.layers[layer] = self.activeFunction(self.bias[layer-1] + self.weights[layer-1].dot(self.layers[layer-1]),False)
                 print(layer)
-            print(self.layers[-2])
-            self.outputLayer = self.outputFunction(self.bias[-1], + self.weights[-1].dot(self.layers[-2]),False)
-            self.layers[-1] = self.outputLayer
-            print("SDFGHJKL")
-            print(self.outputLayer)
-            l_error = loss_function(y,self.outputLayer)
-            print(l_error)
-            l_delta = l_error*self.outputFunction(self.outputLayer, True) ## considering np.dot
-            print(l_delta)
+            #print(self.layers[-2])
+            self.outputLayer = self.layers[-1]
+            #self.layers[-1] = self.outputLayer
 
-
+            self.weights,self.bias = weight_update(len(self.layers),self.number_of_units,y,self.layers,self.weights,self.bias)
+            """
             ### bachward_propagate processing
             print(len(self.weights))
             for back_lay in range(len(self.weights)):
@@ -193,11 +228,11 @@ class MLP:
                 #print("############")
                 #print()
                 self.bias[reverse] -= self.learnRate * (np.mean(l_delta))
+            """
             if rep ==0:
                 print(self.weights)
                 print(self.bias)
             if rep % 100 == 0 or rep == redo-1:
-                print(np.mean(np.abs(l_error)))
                 print("updata:")
                 print(self.weights)
                 #print(self.weights)
