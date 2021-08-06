@@ -23,12 +23,18 @@ def taNh(x,deriv=False):
     else:
         return 1-x**2
 
-def loss_function(distance,deriv=False):
+def loss_function(distance,deriv=False):  ## use Cross-Entropy function as loss function
 
     m = distance.shape[1]
     loss = 0
     if deriv == False:
         loss = (1/m)*np.sum(1/2 * np.square(distance))
+    return loss
+
+def loss_function2(y_hat,y):
+
+    m = y_hat.shape[1]
+    loss = -(1/m)*np.sum(y*np.log(y_hat)+(1-y)*np.log(1-y_hat))
     return loss
 
 def loss_function_deriv(distance):

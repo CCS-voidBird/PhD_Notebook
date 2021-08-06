@@ -40,6 +40,17 @@ Multilayer perceptron study; current problems:
 
 
 
+Cross-Entropy Function:
+
+![image-20210806213722473](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20210806213722473.png)
+
+
+
 
 
 ##Multi-Depth neural network## 
+
+
+
+
+
