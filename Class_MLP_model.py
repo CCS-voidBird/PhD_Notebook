@@ -43,6 +43,13 @@ def loss_function_deriv(distance):
     loss_dev = -(2/m)*np.sum(distance)
     return loss_dev
 
+def loss_function2_deriv(x,y_hat,y):
+
+    m = y_hat.shape[1]
+    loss_dev = (1/m) *np.dot(x.T,(np.sum(y_hat-y)))
+
+    return loss_dev
+
 ACTIVEFUNCTIONS={
     "Sigmoid": sigmoid,
     "ReLu":reLu,
@@ -151,8 +158,8 @@ class MLP:
             if layer == self.layers[-1]:
                 layer.error = self._trainDataY - y_hat
                 print("loss")
-                print(loss_function(distance))
-                layer.delta = np.dot(loss_function_deriv(-layer.error), layer.get_derivative())
+                print(loss_function2(y_hat,self._trainDataY))
+                layer.delta = np.dot(loss_function2_deriv(layer.insideData,y_hat,self._trainDataY), layer.get_derivative())
                 #print("detla:",layer.delta.shape)
                 #print("dev: ",loss_function_deriv(distance))
                 #print(layer.get_derivative().shape)
