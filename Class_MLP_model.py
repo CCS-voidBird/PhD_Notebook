@@ -11,7 +11,7 @@ def reLu(x,deriv=False):
         return 1*(x>0)
 
 def sigmoid(x,deriv=False):
-    s = 1/(1+np.exp(-x))
+    s = 1/(1+np.exp(x))
     ds = x*(1-x)
     if deriv==True:
         return ds
@@ -40,14 +40,19 @@ def loss_function2(y_hat,y):
 def loss_function_deriv(distance):
 
     m = distance.shape[1]
-    loss_dev = -(2/m)*np.sum(distance)
+    loss_dev = (2/m)*np.sum(distance)
+    print("dev loss: ")
+    print(loss_dev)
     return loss_dev
 
-def loss_function2_deriv(x,y_hat,y):
+def loss_function2_deriv(y_hat,y):
 
     m = y_hat.shape[1]
-    loss_dev = (1/m) *np.dot(x.T,(np.sum(y_hat-y)))
-
+    loss_dev = (1/m) * np.sum(y_hat-y)
+    #print(np.sum(y_hat-y).shape)
+    #print("loss dev: ",y_hat)
+    print("new dev")
+    #print(loss_dev)
     return loss_dev
 
 ACTIVEFUNCTIONS={
@@ -78,7 +83,7 @@ class Layer:
     def initialization(self,number_of_cells,input_panels,act):
 
         self.cells  = number_of_cells
-        self.weights = np.random.randn(self.cells,input_panels)
+        self.weights = np.random.randn(self.cells,input_panels)/10
         self.bias = np.ones((number_of_cells,1))
         self.activeFunction = ACTIVEFUNCTIONS[act]
 
@@ -92,7 +97,7 @@ class Layer:
 
     def get_derivative(self):
 
-        deriv = self.activeFunction(self.insideData,True)
+        deriv = self.activeFunction(self.outputs,True)
 
         return deriv
 
@@ -132,10 +137,16 @@ class MLP:
 
     def forward(self):
         X = self._trainDataX
+        ii=1
         for layer in self.layers:
-
+            print(ii)
+            ii+=1
+            print(layer.weights)
             X = layer.activate(X)
-
+            if layer == self.layers[-1]:
+                pass
+                #print("get output")
+                #print(X)
         self.final = X
 
     def test_forward(self):
@@ -145,27 +156,34 @@ class MLP:
             X = layer.activate(X)
 
         self.final = X
+
         return self.final
 
 
     def backward_propagation(self):
 
         y_hat = self.final
-        distance = self._trainDataY - y_hat
+        distance = loss_function2(y_hat,self._trainDataY)
+        print(distance)
 
         for idx in reversed(range(len(self.layers))):
             layer = self.layers[idx]
             if layer == self.layers[-1]:
                 layer.error = self._trainDataY - y_hat
                 print("loss")
-                print(loss_function2(y_hat,self._trainDataY))
-                layer.delta = np.dot(loss_function2_deriv(layer.insideData,y_hat,self._trainDataY), layer.get_derivative())
+                #print(loss_function2(y_hat,self._trainDataY))
+                layer.delta = loss_function2_deriv(y_hat,self._trainDataY)*layer.get_derivative()
+                print(layer.delta.shape)
+                print("get del weight")
                 #print("detla:",layer.delta.shape)
                 #print("dev: ",loss_function_deriv(distance))
                 #print(layer.get_derivative().shape)
                 #print(layer.weights.shape)
+                print(layer.weights)
                 layer.weights += self.learnRate * np.dot(layer.delta,self.layers[idx-1].outputs.T)
-                layer.bias += self.learnRate * np.dot(layer.delta, np.ones((layer.delta.shape[1], 1)))
+
+                print(self.learnRate * np.dot(layer.delta,self.layers[idx-1].outputs.T))
+                #layer.bias += self.learnRate * np.dot(layer.delta, np.ones((layer.delta.shape[1], 1)))
                 #print("get update weight")
 
 
@@ -175,13 +193,15 @@ class MLP:
                 #print((next_layer.weights.T *next_layer.delta).shape)
                 #print(layer.get_derivative().shape)
                 #layer.delta =  (next_layer.weights.T*next_layer.delta).dot(layer.get_derivative())
-                layer.delta = np.dot(next_layer.weights.T,next_layer.delta) * layer.get_derivative()
-                layer.weights += self.learnRate * np.dot(layer.delta, self.layers[idx - 1].outputs.T)
-                layer.bias += self.learnRate * np.dot(layer.delta, np.ones((layer.delta.shape[1],1)))
+                layer.delta = next_layer.weights.T*next_layer.delta * layer.get_derivative()
+
+                layer.weights += self.learnRate * np.dot(layer.delta, self.layers[idx-1].outputs.T)
+                print(layer.weights)
+                #layer.bias += self.learnRate * np.dot(layer.delta, np.ones((layer.delta.shape[1],1)))
 
 
 
-    def train(self,reps=10):
+    def train(self,reps=100):
         mses = []
         for rep in range(reps):
             self.forward()
@@ -195,9 +215,13 @@ class MLP:
 
     def predict(self):
         y_predict = self.test_forward()  # 此时的 y_predict 形状是 [600 * 2]，第二个维度表示两个输出的概率
-        y_predict = np.argmax(y_predict, axis=1)
+
+
+        #y_predict = np.argmax(y_predict, axis=1)
+
         print("DONE")
         print(np.sum(y_predict == self._testDataY) / len(self._testDataY))
+        print(y_predict)
         return y_predict
 
 def main():
@@ -209,8 +233,10 @@ def main():
     mlp.init_layer(3,"Sigmoid")
     mlp.init_layer(1,"Sigmoid")
     mlp.train()
-    mlp.predict()
-    print(y_test.T)
+    print("DONE train")
+    y_predict=mlp.predict()
+
+    print((y_test.T))
     for layer in mlp.layers:
         print(layer.weights)
 
