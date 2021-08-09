@@ -1,0 +1,98 @@
+Week3-4 Notebook
+====
+
+Date: 02/Aug/2021 - 16/Aug/2021
+
+<br> Editor: Chensong Chen
+----
+
+Current Goals:
+
++ Optimize MLP model;
+
++ read papers for combining genetic data and DL model;
++ Start generate CNN demo;
+
+
+
+Multilayer perceptron
+
+Training sample array (N x M) and binary labels Y (1 x M)
+
+Input Layer
+
+Hidden Layers ($l_n$)
+
+output Layer (O)
+
+Hidden_activation function (af)
+
+Output activation function (afo)
+
+loss function (Loss)
+
+Weights in each hidden layers ($W_n$ x $W_{n-1}$​​)
+
+Bias in each layers (1 x $B_{n-1}$​​)​
+
+
+
+M: number of samples
+
+N: number of features
+
+W: number of weight
+
+B: number of Bias 
+
+
+
+**START**
+
+Input Layer get &rarr; samples (N x M) 
+
+Transfer to Hidden layer $I$​​​ with weights ($N_l$,$N_{l-1}):$
+
+​	While weights in this layer is an {i x j} array:
+
+​	 $Z^I_{ij}$​​ = $w_{ij}x_m + b_n$​​
+
+
+
+​	The output of this array:
+
+​	$A^I_{ij} = af(Z^I_{ij})$​  And the output should be a ($N_l$ x M) array
+
+
+
+The output array:
+
+​	$A^O = af_o(w^O_{ij}A_{O-1} + b^O_n) $​​
+
+
+
+Loss function (Cross-Entropy Function):
+
+​	$f_{LOSS}(A^O,Y) = $​ $\sum −(ylog(p)+(1−y)log(1−p))$​   # a float
+
+​	$\frac{\partial{f_{loss}}}{\partial{A^O}} = -\frac{y}{A^O} + \frac{1-y}{1-A^O}$​​  ​​# a float
+
+
+
+For Softmax derivative:
+
+​	$\frac{\partial{f_{loss}}}{\partial{A^O}} = A^O(1-A^O)$​ ​
+
+
+
+Back forward propagation:
+
+
+
+For Weights of output layer:
+
+​	$\delta \frac{\partial{f_{loss}}}{\partial{Z^O}} = $​$\frac{\partial{f_{loss}}}{\partial{A^O}}\frac{\partial{afo}}{\partial{Z^O}}$​​ = $\delta$​ # an ($N_y$ x M) array
+
+ 	$\frac{\partial{afo}}{\partial{Z^O}}$ = ${af}^{'}(Z^O)$ # an ($N_y$ x M) array 
+
+ $w_O'$ = $\frac{\partial{f_{loss}}}{\partial{W^O}}$ = $\delta \frac{\partial{afo}}{\partial{Z^O}} \frac{\partial{Z^O}}{\partial{w^O}}$ = $f'_{loss}(A^O).af'(Z^O).A_{L-1}^T$  # ($N_y$ x M) $\dot{}$ (M x $N_{l-1}$) = ($N_y$ x $N_{l-1}$)
