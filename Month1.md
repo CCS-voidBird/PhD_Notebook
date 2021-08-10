@@ -1,4 +1,4 @@
-Week1-2 Notebook
+Month 1 Notebook
 ====
 
 Date: 19/July/2021 - 3/Aug/2021

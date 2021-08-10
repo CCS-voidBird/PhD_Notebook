@@ -1,7 +1,7 @@
-Week3-4 Notebook
+Month 2 Notebook
 ====
 
-Date: 02/Aug/2021 - 16/Aug/2021
+Date: 02/Aug/2021 - 31/Aug/2021
 
 <br> Editor: Chensong Chen
 ----
@@ -91,7 +91,7 @@ Back forward propagation:
 
 For Weights of output layer:
 
-​	$\delta \frac{\partial{f_{loss}}}{\partial{Z^O}} = $​$\frac{\partial{f_{loss}}}{\partial{A^O}}\frac{\partial{afo}}{\partial{Z^O}}$​​ = $\delta$​ # an ($N_y$ x M) array
+​	$\delta \frac{\partial{f_{loss}}}{\partial{Z^O}} = $$\frac{\partial{f_{loss}}}{\partial{A^O}}\frac{\partial{afo}}{\partial{Z^O}}$​​ = $\delta$​ # an ($N_y$ x M) array
 
  	$\frac{\partial{afo}}{\partial{Z^O}}$ = ${af}^{'}(Z^O)$ # an ($N_y$ x M) array 
 
