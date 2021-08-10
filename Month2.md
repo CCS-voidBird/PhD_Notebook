@@ -9,13 +9,18 @@ Date: 02/Aug/2021 - 31/Aug/2021
 Current Goals:
 
 + Optimize MLP model;
-
 + read papers for combining genetic data and DL model;
 + Start generate CNN demo;
 
+Read list:
+
++ Pooling Methods in Deep Neural Networks, a Review, Hossein Gholamalinezhad1, Hossein Khosravi
 
 
-Multilayer perceptron
+
+
+
+1. Multilayer perceptron summary
 
 Training sample array (N x M) and binary labels Y (1 x M)
 
@@ -93,6 +98,35 @@ For Weights of output layer:
 
 ​	$\delta \frac{\partial{f_{loss}}}{\partial{Z^O}} = $$\frac{\partial{f_{loss}}}{\partial{A^O}}\frac{\partial{afo}}{\partial{Z^O}}$​​ = $\delta$​ # an ($N_y$ x M) array
 
- 	$\frac{\partial{afo}}{\partial{Z^O}}$ = ${af}^{'}(Z^O)$ # an ($N_y$ x M) array 
+  $\frac{\partial{afo}}{\partial{Z^O}}$ = ${af}^{'}(Z^O)$  # an ($N_y$ x M) array 
 
- $w_O'$ = $\frac{\partial{f_{loss}}}{\partial{W^O}}$ = $\delta \frac{\partial{afo}}{\partial{Z^O}} \frac{\partial{Z^O}}{\partial{w^O}}$ = $f'_{loss}(A^O).af'(Z^O).A_{L-1}^T$  # ($N_y$ x M) $\dot{}$ (M x $N_{l-1}$) = ($N_y$ x $N_{l-1}$)
+ $w_O'$ = $\frac{\partial{f_{loss}}}{\partial{W^O}}$ = $\delta \frac{\partial{afo}}{\partial{Z^O}} \frac{\partial{Z^O}}{\partial{w^O}}$ = $f'_{loss}(A^O).af'(Z^O).A_{L-1}^T$  # ($N_y$ x M) $\dot{}$ (M x $N_{l-1}$) = ($N_y$ x $N_{l-1}$) fit the size of w
+
+
+
+2. Start CNN (convolutional neural network) learning 
+
+
+
+Basic strategy:
+
++  Input Layer
++ Convolutional layer
+  + 
++ Pooling Layer
+  + Layer types:
+    + Max-Pooling
+    + AVG-Pooling
+    + Mixed-Pooling
+    + $L_p$ Pooling
+    + Stochastic Pooling
+    + Spatial Pyramid Pooling
+    + Region of Interest Pooling
+  + Layer selection methods:
+    + Multi-scale order-less Pooling
+    + Super-pixel Pooling
+    + PCA network
+    + Compact Bilinear Pooling
++ fully connected layer
++ Receptive layer  
+
