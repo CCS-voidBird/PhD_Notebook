@@ -116,11 +116,21 @@ Basic strategy:
 + Pooling Layer
   + Layer types:
     + Max-Pooling
+      + for each sub pool $M_i$(n x n), output a avg matrix $(\frac{M}{n} \times \frac{M}{n})$, the value should be $\max(M_i)$​
     + AVG-Pooling
+      + for each sub pool $M_i$(n x n), output a avg matrix $(\frac{M}{n} \times \frac{M}{n})$, the value should be $\frac{\sum M_i}{n^2}$
     + Mixed-Pooling
-    + $L_p$ Pooling
+      + A mixture of Max-Pooling and AVG-pooling, $\lambda$​ is a modified parameter
+      + $s_j = \lambda \max(M_i) + (1-\lambda)AVG(M_i) $​
+    + $L_p$​ Pooling
+      + $s_j = (\frac{1}{\abs{M_i}}\sum M_j)^{\frac{1}{p}}$
+      + $p$​ is a modified parameter, while p =1, the pooling performs as the AVG pooling; while $p = \infty$, it performs as the MAX pooling. 
     + Stochastic Pooling
+      + A pooling method based on activation weight and random selection
+      + $p_i$ = $\frac{a_i}{\sum{W_i}}$
+      + $Selection = random(M_{pi}) $
     + Spatial Pyramid Pooling
+      + A stack layer which resotres each level of convolutional layers (from basic to above)
     + Region of Interest Pooling
   + Layer selection methods:
     + Multi-scale order-less Pooling
