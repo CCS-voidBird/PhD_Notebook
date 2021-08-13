@@ -14,7 +14,15 @@ Current Goals:
 
 Read list:
 
-+ Pooling Methods in Deep Neural Networks, a Review, Hossein Gholamalinezhad1, Hossein Khosravi
++ [DONE] Pooling Methods in Deep Neural Networks, a Review, Hossein Gholamalinezhad1, Hossein Khosravi
+
++ Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strategies for complex traits using high-density genetic markers. J Dairy Sci. 2012 Aug;95(8):4646-56. doi: 10.3168/jds.2011-5289. 
+
++ Meuwissen TH. Maximizing the response of selection with a predefined rate of inbreeding. J Anim Sci. 1997 Apr;75(4):934-40. doi: 10.2527/1997.754934x. PMID: 9110204.
+
++ Goddard, M. Genomic selection: prediction of accuracy and maximisation of long term response. *Genetica* **136,** 245–257 (2009). https://doi.org/10.1007/s10709-008-9308-0
+
+  
 
 
 
@@ -113,7 +121,7 @@ Basic strategy:
 +  Input Layer
 + Convolutional layer
   + 
-+ Pooling Layer
++  Pooling Layer
   + Layer types:
     + Max-Pooling
       + for each sub pool $M_i$(n x n), output a avg matrix $(\frac{M}{n} \times \frac{M}{n})$, the value should be $\max(M_i)$​
@@ -135,8 +143,31 @@ Basic strategy:
   + Layer selection methods:
     + Multi-scale order-less Pooling
     + Super-pixel Pooling
-    + PCA network
-    + Compact Bilinear Pooling
-+ fully connected layer
++  fully connected layer
 + Receptive layer  
+
+
+
+
+
+Genome breeding related:
+
++ Barriers in animal breeding:
+
+  + Complex genetic architecture -- Thinking: CNN 2D(3D?) prediction
+
+    + highly polygenic phenotypes
+    + high requirements for markers
+
+  + Low breeding speed (reproductive and recombination rates)
+
+  + Limitations of high inbreeding necessity 
+
+  + > However, in dairy cattle, this level of co-ancestry is probably undesirably high.
+
++ Selection algorithms used in the breeding programs.
+
+  + Genotype-building strategy aiming to minimize the distance to the target genotype (ARCSIN)
+
+![image-20210813174045438](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20210813174045438.png)
 
