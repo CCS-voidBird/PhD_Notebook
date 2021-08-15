@@ -17,7 +17,7 @@ Read list:
 
 + [DONE] Pooling Methods in Deep Neural Networks, a Review, Hossein Gholamalinezhad1, Hossein Khosravi
 
-+ Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strategies for complex traits using high-density genetic markers. J Dairy Sci. 2012 Aug;95(8):4646-56. doi: 10.3168/jds.2011-5289. 
++ [DONE] Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strategies for complex traits using high-density genetic markers. J Dairy Sci. 2012 Aug;95(8):4646-56. doi: 10.3168/jds.2011-5289. 
 
 + Meuwissen TH. Maximizing the response of selection with a predefined rate of inbreeding. J Anim Sci. 1997 Apr;75(4):934-40. doi: 10.2527/1997.754934x. PMID: 9110204.
 
