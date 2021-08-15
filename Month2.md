@@ -11,6 +11,7 @@ Current Goals:
 + Optimize MLP model;
 + read papers for combining genetic data and DL model;
 + Start generate CNN demo;
++ sugarcane concept
 
 Read list:
 
@@ -102,17 +103,31 @@ Back forward propagation:
 
 
 
-For Weights of output layer:
++ For Weights of output layer:
 
-​	$\delta \frac{\partial{f_{loss}}}{\partial{Z^O}} = $$\frac{\partial{f_{loss}}}{\partial{A^O}}\frac{\partial{afo}}{\partial{Z^O}}$​​ = $\delta$​ # an ($N_y$ x M) array
+​	$\delta \frac{\partial{f_{loss}}}{\partial{Z^O}} = $$\frac{\partial{f_{loss}}}{\partial{A^O}}\frac{\partial{afo}}{\partial{Z^O}}$​​ = $\delta$​ # an ($N_y$​ x M) array
 
-  $\frac{\partial{afo}}{\partial{Z^O}}$ = ${af}^{'}(Z^O)$  # an ($N_y$ x M) array 
+
+
+  $\frac{\partial{afo}}{\partial{Z^O}}$ = ${af}^{'}(Z^O)$  # an ($N_y$​ x M) array 
+
+
 
  $w_O'$ = $\frac{\partial{f_{loss}}}{\partial{W^O}}$ = $\delta \frac{\partial{afo}}{\partial{Z^O}} \frac{\partial{Z^O}}{\partial{w^O}}$ = $f'_{loss}(A^O).af'(Z^O).A_{L-1}^T$  # ($N_y$ x M) $\dot{}$ (M x $N_{l-1}$) = ($N_y$ x $N_{l-1}$) fit the size of w
 
 
 
-2. Start CNN (convolutional neural network) learning 
++ For weights of hidden Layer:
+
+$\delta \frac{\partial f_{loss}}{\partial{z_l}} = \frac{\partial{f_{loss}}}{\partial{z_{l+1}}} \frac{\partial{z_{l+1}}}{\partial{z_l}}$​​ 
+
+$\frac{\partial{z_{l+1}}}{\partial{z_l}} = \frac{\partial{z_{l+1}}}{\partial{a_l}} \frac{\partial{a_{l}}}{\partial{z_l}} = w^{T}_{l+1} \cdot af'(z_l) $ 
+
+$\frac{\partial f_{loss}}{\partial{z_l}} = \frac{\partial{f_{loss}}} {\partial{z_{l+1}}}\frac{\partial{z_{l+1}}}{\partial{a_l}} \frac{\partial{a_{l}}}{\partial{z_l}} = w^{T}_{l+1} \cdot \delta \cdot  af'(z_l)$​​​​ # an ($N_{l} \times M$ ) array
+
+$w'_l = \frac{ \partial f_{loss}}{\partial{z_l}} \frac{\partial z_l}{\partial w_{l}} = w^{T}_{l+1} \cdot \delta \cdot af'(z_l) \cdot A_{l-1}^T $​  # ($N_{l} \times M$​ ) $\cdot $​ ( $M \times N_{l-1}$​​ ) = $(N_l \times N_{l-1})$ array
+
+2. CNN (convolutional neural network) learning 
 
 
 
@@ -171,3 +186,6 @@ Genome breeding related:
 
 ![image-20210813174045438](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20210813174045438.png)
 
+
+
+3. Sugarcane genome overview 
