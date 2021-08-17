@@ -204,7 +204,7 @@ Genome breeding related:
 
   + Genotype-building strategy aiming to minimize the distance to the target genotype (ARCSIN)
 
-![image-20210813174045438](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20210813174045438.png)
+![steps.png](https://github.com/CCS-voidBird/hivebox/blob/master/steps.png?raw=true)
 
 
 
