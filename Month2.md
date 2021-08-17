@@ -23,13 +23,17 @@ Read list:
 
 + Goddard, M. Genomic selection: prediction of accuracy and maximisation of long term response. *Genetica* **136,** 245–257 (2009). https://doi.org/10.1007/s10709-008-9308-0
 
++ Yadav, S., Wei, X., Joyce, P. *et al.* Improved genomic prediction of clonal performance in sugarcane by exploiting non-additive genetic effects. *Theor Appl Genet* **134,** 2235–2252 (2021). https://doi.org/10.1007/s00122-021-03822-1
+
++ Pisaroglo De Carvalho M, Gezan SA, Peternelli LA, Pereira Barbosa MH (2014) Estimation of additive and nonadditive genetic components of sugarcane families using multitrait analysis. Agron J 106:800–808. https://doi.org/10.2134/agronj2013.0247
+
   
 
 
 
 
 
-1. Multilayer perceptron summary
+1. ***Multilayer perceptron summary***
 
 Training sample array (N x M) and binary labels Y (1 x M)
 
@@ -61,7 +65,7 @@ B: number of Bias
 
 
 
-**START**
+**Forward Propagation **
 
 Input Layer get &rarr; samples (N x M) 
 
@@ -87,7 +91,11 @@ The output array:
 
 Loss function (Cross-Entropy Function):
 
-​	$f_{LOSS}(A^O,Y) = $​ $\sum −(ylog(p)+(1−y)log(1−p))$​   # a float
+
+
+​	$f_{LOSS}(A^O,Y) = $​​ $\sum −(ylog(p)+(1−y)log(1−p))$​​   # a float
+
+
 
 ​	$\frac{\partial{f_{loss}}}{\partial{A^O}} = -\frac{y}{A^O} + \frac{1-y}{1-A^O}$​​  ​​# a float
 
@@ -99,7 +107,7 @@ For Softmax derivative:
 
 
 
-Back forward propagation:
+**Backward Propagation **
 
 
 
@@ -125,9 +133,21 @@ $\frac{\partial{z_{l+1}}}{\partial{z_l}} = \frac{\partial{z_{l+1}}}{\partial{a_l
 
 $\frac{\partial f_{loss}}{\partial{z_l}} = \frac{\partial{f_{loss}}} {\partial{z_{l+1}}}\frac{\partial{z_{l+1}}}{\partial{a_l}} \frac{\partial{a_{l}}}{\partial{z_l}} = w^{T}_{l+1} \cdot \delta \cdot  af'(z_l)$​​​​ # an ($N_{l} \times M$ ) array
 
-$w'_l = \frac{ \partial f_{loss}}{\partial{z_l}} \frac{\partial z_l}{\partial w_{l}} = w^{T}_{l+1} \cdot \delta \cdot af'(z_l) \cdot A_{l-1}^T $​  # ($N_{l} \times M$​ ) $\cdot $​ ( $M \times N_{l-1}$​​ ) = $(N_l \times N_{l-1})$ array
+$w'_l = \frac{ \partial f_{loss}}{\partial{z_l}} \frac{\partial z_l}{\partial w_{l}} = w^{T}_{l+1} \cdot \delta _{l+1} \cdot af'(z_l) \cdot A_{l-1}^T $​​  # ($N_{l} \times M$​​ ) $\cdot $​​ ( $M \times N_{l-1}$​​​ ) = $(N_l \times N_{l-1})$​ array
 
-2. CNN (convolutional neural network) learning 
+
+
++ For Linear models: (Use MSE loss function)
+  + loss = $\frac{1}{2}||y-a^L||^2$
+  + $\delta ^L = \frac{\partial loss}{\partial z^L} = (y-a^L)*af'(z^L)$​​​ 
+  + $w'_L = \frac{\partial loss}{\partial z^L} = (y-a^L)*af'(z^L) \cdot A_{L-1}$​
+  + $w'_l = w^{T}_{l+1} \cdot \delta _{l+1} \cdot  af'(z_l) \cdot A^T_{l-1}$​​   
+
+
+
+
+
+2. ***CNN (convolutional neural network) learning***
 
 
 
@@ -189,3 +209,25 @@ Genome breeding related:
 
 
 3. Sugarcane genome overview 
+
++ High heterozygous - interspecific origin & high polyploidy [[1]](#1) [[2]](#2); 
+
+
+
+
+
+**Note**
+
+Semi-parametric reproducing kernel Hilbert space (RKHS) regression models have also been advocated as a potential alternative to capture non-additive effects in genomic selection. [[3]](#3) [[4]](#4); 
+
+
+
+[Reference]
+
+<a name="1">[1]</a>Garsmeur O, Droc G, Antonise R et al (2018) A mosaic monoploid reference sequence for the highly complex genome of sugarcane. Nat Commun. https://doi.org/10.1038/s41467-018-05051-5
+
+<a name="2">[2]</a>Piperidis G, Piperidis N, D’Hont A (2010) Molecular cytogenetic investigation of chromosome composition and transmission in sugarcane. Mol Genet Genom 284:65–73. https://doi.org/10.1007/s00438-010-0546-3
+
+<a name="3">[3]</a>Daniel Gianola, Rohan L Fernando, Alessandra Stella, Genomic-Assisted Prediction of Genetic Value With Semiparametric Procedures, *Genetics*, Volume 173, Issue 3, 1 July 2006, Pages 1761–1776, https://doi.org/10.1534/genetics.105.049510
+
+<a name="4">[4]</a> Daniel Gianola, Johannes B C H M van Kaam, Reproducing Kernel Hilbert Spaces Regression Methods for Genomic Assisted Prediction of Quantitative Traits, *Genetics*, Volume 178, Issue 4, 1 April 2008, Pages 2289–2303, https://doi.org/10.1534/genetics.107.084285
