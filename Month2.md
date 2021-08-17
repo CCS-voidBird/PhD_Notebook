@@ -13,7 +13,7 @@ Current Goals:
 + Start generate CNN demo;
 + sugarcane concept
 
-Read list:
+Add to Read list:
 
 + [DONE] Pooling Methods in Deep Neural Networks, a Review, Hossein Gholamalinezhad1, Hossein Khosravi
 
@@ -208,13 +208,35 @@ Genome breeding related:
 
 
 
-3. Sugarcane genome overview 
+3. Sugarcane genome overview [Saccharum spp. hybrids]
 
 + High heterozygous - interspecific origin & high polyploidy [[1]](#1) [[2]](#2); 
 
++ polyploid nuclear genome and organellar genomes [[5]](#5)
 
++ ![img](https://www.frontiersin.org/files/Articles/357194/fpls-09-00616-HTML-r2/image_m/fpls-09-00616-g001.jpg)
 
+  [source] Thirugnanasambandam PP, Hoang NV, Henry RJ. The Challenge of Analyzing the Sugarcane Genome. Front Plant Sci. 2018 May 14;9:616. doi: 10.3389/fpls.2018.00616. PMID: 29868072; PMCID: PMC5961476.
 
++ sub-genome $I$: *S. spontaneum*
+
+  + wild male thin-stalked, low-sugar
+  + 8 basic chromosome
+  + basic genome size - 750-843MB
+  + multiple ploidy level from 40~128 chromosome
+
++ sub-genome $II$: *S. officinarum* 
+
+  + a female thick-stalked, high-sugar
+  + 8x genome; octoploid species
+  + basic chromosome - 10; 
+  + basic monoploid genome size - ~1GB
+  + overall genome size - ~7.88GB
+
++ heterozygous sugarcane [[5]](#5)
+
+  + 10 basic chromosome
+  + mixture of aneuploid and homo(eo)logous chromosomes
 
 **Note**
 
@@ -231,3 +253,6 @@ Semi-parametric reproducing kernel Hilbert space (RKHS) regression models have a
 <a name="3">[3]</a>Daniel Gianola, Rohan L Fernando, Alessandra Stella, Genomic-Assisted Prediction of Genetic Value With Semiparametric Procedures, *Genetics*, Volume 173, Issue 3, 1 July 2006, Pages 1761–1776, https://doi.org/10.1534/genetics.105.049510
 
 <a name="4">[4]</a> Daniel Gianola, Johannes B C H M van Kaam, Reproducing Kernel Hilbert Spaces Regression Methods for Genomic Assisted Prediction of Quantitative Traits, *Genetics*, Volume 178, Issue 4, 1 April 2008, Pages 2289–2303, https://doi.org/10.1534/genetics.107.084285
+
+<a name="5">[5]</a> Thirugnanasambandam PP, Hoang NV, Henry RJ. The Challenge of Analyzing the Sugarcane Genome. Front Plant Sci. 2018 May 14;9:616. doi: 10.3389/fpls.2018.00616. PMID: 29868072; PMCID: PMC5961476.
+
