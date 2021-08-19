@@ -179,7 +179,22 @@ Basic strategy:
     + Multi-scale order-less Pooling
     + Super-pixel Pooling
 +  fully connected layer
-+ Receptive layer  
++  Receptive layer [receptive field]
+   + focus on particular partial field from previous nerous.
+
+
+
+**HINT** Weight regularization 
+
++ L1 - 	
+
+
+
+**example hyperparameter** [[6]](#6) (for blue berry and strawberry)
+
+>  This rule evolves a list of CNN models for each phenotypic trait. We optimized the following hyperparameters (values considered within parentheses): activation function (relu, tanh, linear), number of filters (16, 32, 64, 128), regularization (i.e., weight decay in DL terminology, 0, 0.1, 0.01, 0.001), learning rate (0.1, 0.01, 0.001, 0.0025), number of neurons in fully connected layer (4, 8, 12, 16), number of hidden layers (1,5,10), and dropout (0, 0.01, 0.1, 0.2).
+
+
 
 
 
@@ -255,4 +270,6 @@ Semi-parametric reproducing kernel Hilbert space (RKHS) regression models have a
 <a name="4">[4]</a> Daniel Gianola, Johannes B C H M van Kaam, Reproducing Kernel Hilbert Spaces Regression Methods for Genomic Assisted Prediction of Quantitative Traits, *Genetics*, Volume 178, Issue 4, 1 April 2008, Pages 2289–2303, https://doi.org/10.1534/genetics.107.084285
 
 <a name="5">[5]</a> Thirugnanasambandam PP, Hoang NV, Henry RJ. The Challenge of Analyzing the Sugarcane Genome. Front Plant Sci. 2018 May 14;9:616. doi: 10.3389/fpls.2018.00616. PMID: 29868072; PMCID: PMC5961476.
+
+<a name="6">[6]</a>Zingaretti LM, Gezan SA, Ferrão LFV, Osorio LF, Monfort A, Muñoz PR, Whitaker VM, Pérez-Enciso M. Exploring Deep Learning for Complex Trait Genomic Prediction in Polyploid Outcrossing Species. Front Plant Sci. 2020 Feb 6;11:25. doi: 10.3389/fpls.2020.00025. PMID: 32117371; PMCID: PMC7015897.
 
