@@ -117,8 +117,8 @@ def test(dataloader, model, loss_fn):
     with torch.no_grad():
         for i, (images, labels) in enumerate(dataloader): # enumerate
 
-            #         images=Variable(images)
-            #         labels=Variable(labels)
+            images=Variable(images)
+            labels=Variable(labels)
             # Forward pass
             #outputs = model(images)
             #loss = criterion(outputs, labels)
@@ -128,6 +128,8 @@ def test(dataloader, model, loss_fn):
             test_loss += loss_fn(pred, y).item()
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
             size += len(labels)
+            print(correct)
+            print(size)
         correct /= size
         test_loss /= num_batches
 
@@ -150,8 +152,8 @@ total_step = len(train_loader)
 for epoch in range(10):
     for i, (images, labels) in enumerate(train_loader):
 
-        #         images=Variable(images)
-        #         labels=Variable(labels)
+        images=Variable(images)
+        labels=Variable(labels)
         # Forward pass
         outputs = model(images)
         loss = criterion(outputs, labels)
