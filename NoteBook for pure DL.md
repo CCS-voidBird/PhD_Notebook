@@ -48,7 +48,11 @@ Cross-Entropy Function:
 
 
 
-##Multi-Depth neural network## 
+CNN
+
++ sub-sampling: (inputSize - kernelSize)/step + 1
++ padding: add 1(mostly) to edges of previous layers for keep the size of convolutional output 
++ Dropout: randomly/temporally delete hidden layers for avoid over-fitting 
 
 
 

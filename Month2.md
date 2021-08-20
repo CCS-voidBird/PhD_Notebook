@@ -196,7 +196,7 @@ Basic strategy:
 
 
 
-
+AlexNet example: https://zhuanlan.zhihu.com/p/29786939
 
 
 
