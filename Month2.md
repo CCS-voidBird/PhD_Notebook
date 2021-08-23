@@ -251,11 +251,31 @@ Genome breeding related:
 + heterozygous sugarcane [[5]](#5)
 
   + 10 basic chromosome
-  + mixture of aneuploid and homo(eo)logous chromosomes
+  + mixture of aneuploid and homologous chromosomes
+
+
+
+Environment: for windows 10
+
+​	Python 3.7
+
+​	Pytorch 1.9.0
+
+​	cuda 10.0
+
+​	cudnn 10.2
+
+
+
+
 
 **Note**
 
 Semi-parametric reproducing kernel Hilbert space (RKHS) regression models have also been advocated as a potential alternative to capture non-additive effects in genomic selection. [[3]](#3) [[4]](#4); 
+
+
+
+
 
 
 
