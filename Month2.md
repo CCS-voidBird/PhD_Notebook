@@ -16,20 +16,13 @@ Current Goals:
 Add to Read list:
 
 + [DONE] Pooling Methods in Deep Neural Networks, a Review, Hossein Gholamalinezhad1, Hossein Khosravi
-
 + [DONE] Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strategies for complex traits using high-density genetic markers. J Dairy Sci. 2012 Aug;95(8):4646-56. doi: 10.3168/jds.2011-5289. 
-
-+ Meuwissen TH. Maximizing the response of selection with a predefined rate of inbreeding. J Anim Sci. 1997 Apr;75(4):934-40. doi: 10.2527/1997.754934x. PMID: 9110204.
-
-+ Goddard, M. Genomic selection: prediction of accuracy and maximisation of long term response. *Genetica* **136,** 245–257 (2009). https://doi.org/10.1007/s10709-008-9308-0
-
-+ Yadav, S., Wei, X., Joyce, P. *et al.* Improved genomic prediction of clonal performance in sugarcane by exploiting non-additive genetic effects. *Theor Appl Genet* **134,** 2235–2252 (2021). https://doi.org/10.1007/s00122-021-03822-1
-
++ [DONE]Meuwissen TH. Maximizing the response of selection with a predefined rate of inbreeding. J Anim Sci. 1997 Apr;75(4):934-40. doi: 10.2527/1997.754934x. PMID: 9110204.
++ [Working]Goddard, M. Genomic selection: prediction of accuracy and maximisation of long term response. *Genetica* **136,** 245–257 (2009). https://doi.org/10.1007/s10709-008-9308-0
++ [DONE]Yadav, S., Wei, X., Joyce, P. *et al.* Improved genomic prediction of clonal performance in sugarcane by exploiting non-additive genetic effects. *Theor Appl Genet* **134,** 2235–2252 (2021). https://doi.org/10.1007/s00122-021-03822-1
 + Pisaroglo De Carvalho M, Gezan SA, Peternelli LA, Pereira Barbosa MH (2014) Estimation of additive and nonadditive genetic components of sugarcane families using multitrait analysis. Agron J 106:800–808. https://doi.org/10.2134/agronj2013.0247
-
-  
-
-
++ Castro, W.; Marcato Junior, J.; Polidoro, C.; Osco, L.P.; Gonçalves, W.; Rodrigues, L.; Santos, M.; Jank, L.; Barrios, S.; Valle, C.; Simeão, R.; Carromeu, C.; Silveira, E.; Jorge, L.A.d.C.; Matsubara, E. Deep Learning Applied to Phenotyping of Biomass in Forages with UAV-Based RGB Imagery. *Sensors* **2020**, *20*, 4802. https://doi.org/10.3390/s20174802
++ Meuwissen THE, Hayes BJ, Goddard ME (2001) Prediction of total genetic value using genome wide dense marker maps. Genetics 157:1819–1829
 
 
 
@@ -223,6 +216,12 @@ Genome breeding related:
 
 
 
++ GEBV note
+
+  > In this case the expected effect of a marker is a non-linear function of the data such that apparently small effects are regressed back almost to zero and consequently these markers can be deleted from the model. The accuracy in this case is considerably higher than when marker effects are normally distributed [[7]](#7). 
+
+
+
 3. Sugarcane genome overview [Saccharum spp. hybrids]
 
 + High heterozygous - interspecific origin & high polyploidy [[1]](#1) [[2]](#2); 
@@ -253,7 +252,10 @@ Genome breeding related:
   + 10 basic chromosome
   + mixture of aneuploid and homologous chromosomes
 
-
++ Main qualitative traits
+  + cane per hectare (TCH)
+  + commercial cane sugar (CCS)
+  + Fibre content
 
 Environment: for windows 10
 
@@ -267,13 +269,20 @@ Environment: for windows 10
 
 
 
+Framework: 
+
++ AlexNet (DONE model, waiting for genetic data)
++ ResNet （Deep residual network）
+  + https://zhuanlan.zhihu.com/p/31852747 （Chinese version)
++ VGGNet
+
 
 
 **Note**
 
 Semi-parametric reproducing kernel Hilbert space (RKHS) regression models have also been advocated as a potential alternative to capture non-additive effects in genomic selection. [[3]](#3) [[4]](#4); 
 
-
+Degradation problem for DL model
 
 
 
@@ -292,4 +301,6 @@ Semi-parametric reproducing kernel Hilbert space (RKHS) regression models have a
 <a name="5">[5]</a> Thirugnanasambandam PP, Hoang NV, Henry RJ. The Challenge of Analyzing the Sugarcane Genome. Front Plant Sci. 2018 May 14;9:616. doi: 10.3389/fpls.2018.00616. PMID: 29868072; PMCID: PMC5961476.
 
 <a name="6">[6]</a>Zingaretti LM, Gezan SA, Ferrão LFV, Osorio LF, Monfort A, Muñoz PR, Whitaker VM, Pérez-Enciso M. Exploring Deep Learning for Complex Trait Genomic Prediction in Polyploid Outcrossing Species. Front Plant Sci. 2020 Feb 6;11:25. doi: 10.3389/fpls.2020.00025. PMID: 32117371; PMCID: PMC7015897.
+
+<a name="7">[7]</a> Goddard, M. Genomic selection: prediction of accuracy and maximisation of long term response. *Genetica* **136,** 245–257 (2009). https://doi.org/10.1007/s10709-008-9308-0
 
