@@ -179,7 +179,9 @@ Basic strategy:
 
 **HINT** Weight regularization 
 
-+ L1 - 	
++ L1: Sum of the absolute weights.
++ L2: Sum of the squared weights.
++ L1L2: Sum of the absolute and the squared weights.
 
 
 
@@ -190,6 +192,8 @@ Basic strategy:
 
 
 AlexNet example: https://zhuanlan.zhihu.com/p/29786939
+
+https://github.com/sloth2012/AlexNet
 
 
 
@@ -284,7 +288,7 @@ Semi-parametric reproducing kernel Hilbert space (RKHS) regression models have a
 
 Degradation problem for DL model
 
-
+**Long short-term memory** (**LSTM**)
 
 
 
