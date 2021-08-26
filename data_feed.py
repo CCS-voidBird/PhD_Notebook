@@ -12,3 +12,4 @@ print(phenotypes.shape)
 merged_data = phenotypes
 samples = phenotypes["Clone"]
 print(samples)
+
