@@ -43,7 +43,7 @@ class AlexNet(nn.Module):
 
             nn.Dropout(0.5),
 
-            nn.Linear(3000, 3),
+            nn.Linear(3000, 1),
 
         )
         if init_weights:
@@ -82,7 +82,7 @@ class AlexNet(nn.Module):
 def test(dataloader, model, loss_fn, device):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
-
+    y,pred = 0,0
     test_loss, correct = 0, 0
     with torch.no_grad():
         for i, (images, labels) in enumerate(dataloader): # enumerate
@@ -98,10 +98,7 @@ def test(dataloader, model, loss_fn, device):
             pred = model(X)
             #predict = torch.max(pred ,dim=1)[1]
             # print("##################")
-            print(pred)
-            print(y)
-            print(criterion(pred, y))
-            test_loss += nn.L1Loss(pred, y)
+            test_loss += loss_fn(pred, y)
             #print("The predict ",pred)
             #correct += (pred == y).sum().item()
             # correct += (pred == y).type(torch.max).sum().item()
@@ -110,17 +107,9 @@ def test(dataloader, model, loss_fn, device):
         test_loss /= num_batches
 
     print(f"Test Error: \n  Avg loss: {test_loss:>8f} \n")
+    return y, pred
 
-print("Loading data from directory")
-trYs = torch.clone(torch.load("../TrainData_traits.pt"))#, dtype=torch.float32)
-trYs = trYs.reshape(trYs.shape[0], 3).type(torch.float32)
 
-trXgenos = torch.clone(torch.load("../TrainData_genos.pt"))#, dtype=torch.float32)
-trXgenos = trXgenos.reshape(trXgenos.shape[0], trXgenos.shape[1]).type(torch.float32)
-print(trYs.shape)
-print(trXgenos.shape)
-
-print("Finish loading")
 class Mydataset(Dataset):
 
     def __init__(self, trYs, trXgenos, transform=None):
@@ -146,59 +135,95 @@ class Mydataset(Dataset):
         return len(self.trXgenos)
 
 
-print("Start allocating dataset.")
-trainData = Mydataset(trYs, trXgenos)
-testData = Mydataset(trYs, trXgenos)
 
-batch_size = 32
+def train(dataset,batch_size,epochs,device):
 
+    trainLoader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+    testLoader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
 
-trainLoader = DataLoader(dataset=trainData,batch_size=batch_size,shuffle=True)
-testLoader = DataLoader(dataset=trainData,batch_size=batch_size,shuffle=False)
-
-print("Done data contribution... move to GPU process")
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print("Using {} device".format(device))
-
-print("start modelling")
-model = AlexNet().to(device)
-
-# summary.summary(model, input_size=(3, 32, 32), batch_size=128, device="cpu")
-
-criterion = nn.L1Loss()
-
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0002)
-
-total_step = len(trainLoader)
-epochs = 30
-for epoch in range(epochs):
-    model.train()
-    i = 0
-    for i, (images, labels) in enumerate(trainLoader):
-        optimizer.zero_grad()
-        images = Variable(images).to(device)
-        labels = Variable(labels).to(device)
-        # Forward pass
-        outputs = model(images)
-        #print(labels)
-        loss = criterion(outputs, labels)
-        #print("loss")
-        #print(loss)
-        # Backward and optimize
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        if (i + 1) % 10 == 0:
-            print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
-                  .format(epoch + 1, epochs, i + 1, total_step, loss.item()))
-        i += 1
-    # print("temp train results: ")
-    # print(torch.max(outputs, dim=1)[1])
-    # print(labels)
-    model.eval()
-    print("test")
-    test(testLoader, model, criterion,device)
+    print("Done data contribution... move to GPU process")
 
 
+
+    print("start modelling")
+    model = AlexNet().to(device)
+
+    # summary.summary(model, input_size=(3, 32, 32), batch_size=128, device="cpu")
+
+    criterion = nn.L1Loss()
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0002)
+
+    total_step = len(trainLoader)
+
+    for epoch in range(epochs):
+        model.train()
+        i = 0
+        for i, (images, labels) in enumerate(trainLoader):
+            optimizer.zero_grad()
+            images = Variable(images).to(device)
+            labels = Variable(labels).to(device)
+            # Forward pass
+            outputs = model(images)
+            # print(labels)
+            loss = criterion(outputs, labels)
+            # print("loss")
+            # print(loss)
+            # Backward and optimize
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if (i + 1) % 10 == 0:
+                print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
+                      .format(epoch + 1, epochs, i + 1, total_step, loss.item()))
+            i += 1
+        # print("temp train results: ")
+        # print(torch.max(outputs, dim=1)[1])
+        # print(labels)
+        model.eval()
+        print("test")
+        test(testLoader, model, criterion, device)
+    return model
+
+
+def main():
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Using {} device".format(device))
+    print("Loading data from directory")
+    trYs = torch.clone(torch.load("../complete_TrainData_traits.pt"))  # , dtype=torch.float32)
+    traits = [trYs[:, x].reshape(trYs.shape[0], 1) for x in range(3)]
+    # trYs = trYs.reshape(trYs.shape[0], 3).type(torch.float32)
+    loss = nn.L1Loss()
+    trXgenos = torch.clone(torch.load("../complete_TrainData_genos.pt"))  # , dtype=torch.float32)
+    trXgenos = trXgenos.reshape(trXgenos.shape[0], trXgenos.shape[1]).type(torch.float32)
+    print(trYs.shape)
+    print(trXgenos.shape)
+
+    print("Finish loading")
+
+    print("Start allocating dataset.")
+    trainDatas = [Mydataset(trait, trXgenos) for trait in traits]
+
+    # testDatas = trainDatas # [Mydataset(trait, trXgenos) for trait in traits]
+
+    batch_size = 32
+    epochs = 30
+    train_models = []
+
+    for idx in range(len(traits)):
+        BtestLoader = DataLoader(dataset=trainDatas[idx], batch_size=batch_size, shuffle=False)
+        m = train(trainDatas[idx],batch_size,epochs,device)
+        train_models.append(m)
+
+        test_results = test(BtestLoader,m,loss,device)
+        print(test_results)
+    for i in range(len(train_models)):
+        name = ["CCSBlup","TCHBlup","FibreBlup"][i]
+        mm = train_models[i]
+        torch.save(mm,"../models/{}_model.pth".format(name))
+    print("DONE")
+
+
+if __name__ == "__main__":
+    main()
