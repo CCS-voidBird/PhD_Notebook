@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from torch import nn
 from torch.autograd import Variable
 import pandas as pd
+import matplotlib.pyplot as plt
 pd.options.display.float_format = '{:.2f}'.format
 
 
@@ -61,25 +62,22 @@ class AlexNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        #print("got x shape:")
-        #print(x.shape)
+
         x = x.unsqueeze(1)
 
         out = self.features(x)
-        #print("features shape:")
-        #print(out.shape)
+
         out = torch.flatten(out ,start_dim=1)
 
         # out = out.reshape(-1, 256 * 2 * 2)
 
         out = self.classifier(out)
-        #print(out)
-        if True in torch.isnan(out):
-            #print(x)
-            print(x==0.01).nonzero()
+
         return out
 
+
 def test(dataloader, model, loss_fn, device):
+
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     y,pred = 0,0
@@ -96,10 +94,9 @@ def test(dataloader, model, loss_fn, device):
 
             X, y = images.to(device), labels.to(device)
             pred = model(X)
-            #predict = torch.max(pred ,dim=1)[1]
-            # print("##################")
+
             test_loss += loss_fn(pred, y)
-            #print("The predict ",pred)
+
             #correct += (pred == y).sum().item()
             # correct += (pred == y).type(torch.max).sum().item()
             size += len(labels)
@@ -136,39 +133,36 @@ class Mydataset(Dataset):
 
 
 
-def train(dataset,batch_size,epochs,device):
+def train(dataset,batch_size,epochs,device,name):
 
     trainLoader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
     testLoader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
 
     print("Done data contribution... move to GPU process")
 
-
+    all_loss = []
 
     print("start modelling")
     model = AlexNet().to(device)
 
-    # summary.summary(model, input_size=(3, 32, 32), batch_size=128, device="cpu")
-
     criterion = nn.L1Loss()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0002)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
     total_step = len(trainLoader)
-
+    epoch_i = 0
     for epoch in range(epochs):
         model.train()
-        i = 0
+        ii = 0
+        temp_ls = 0
         for i, (images, labels) in enumerate(trainLoader):
             optimizer.zero_grad()
             images = Variable(images).to(device)
             labels = Variable(labels).to(device)
             # Forward pass
             outputs = model(images)
-            # print(labels)
             loss = criterion(outputs, labels)
-            # print("loss")
-            # print(loss)
+
             # Backward and optimize
             optimizer.zero_grad()
             loss.backward()
@@ -177,13 +171,17 @@ def train(dataset,batch_size,epochs,device):
             if (i + 1) % 10 == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
                       .format(epoch + 1, epochs, i + 1, total_step, loss.item()))
-            i += 1
-        # print("temp train results: ")
-        # print(torch.max(outputs, dim=1)[1])
-        # print(labels)
+                temp_ls = loss.item()
+        all_loss.append(temp_ls)
         model.eval()
+        epoch_i += ii
         print("test")
         test(testLoader, model, criterion, device)
+    plt.plot(range(len(all_loss)),all_loss)
+    plt.xlabel("Round")
+    plt.ylabel("Overall Loss")
+    plt.title(name)
+    plt.show()
     return model
 
 
@@ -207,13 +205,14 @@ def main():
 
     # testDatas = trainDatas # [Mydataset(trait, trXgenos) for trait in traits]
 
-    batch_size = 32
-    epochs = 30
+    batch_size = 64
+    epochs = 50
     train_models = []
-
+    names = ["CCSBlup","TCHBlup","FibreBlup"]
     for idx in range(len(traits)):
         BtestLoader = DataLoader(dataset=trainDatas[idx], batch_size=batch_size, shuffle=False)
-        m = train(trainDatas[idx],batch_size,epochs,device)
+        n = names[idx]
+        m = train(trainDatas[idx],batch_size,epochs,device,n)
         train_models.append(m)
 
         test_results = test(BtestLoader,m,loss,device)

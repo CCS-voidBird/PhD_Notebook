@@ -300,6 +300,10 @@ Layers
 + Convolutional layer 1D, 3 kernel size, 1 stride;
 + Relu
 + Maxpool
++ Convolutional layer 1D, 3 kernel size, 1 padding 1 stride
++ Linear 6519 -> 3000
++ Dropout(0.5)
++ Linear 3000 -> 1
 
 
 
