@@ -83,3 +83,6 @@ def main():
 
     torch.save(trYs, "{}/{}_TrainData_traits.pt".format(locat,args.sample))
     torch.save(tsXgenes, "{}/{}_TrainData_genos.pt".format(locat,args.sample))
+
+if __name__ == "__main__":
+    main()
