@@ -17,10 +17,10 @@ def main():
     req_grp.add_argument('-g', '--geno', type=str, help="Input genotype file.", required=True)
     req_grp.add_argument('-t', '--trait', type=str, help="Input phenotype file.", required=True)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
-    req_grp.add_argument('filter', '--filter-blank', type=bool, help="filter NA values", default=True)
+    req_grp.add_argument('-f', '--filter-blank', type=bool, help="filter NA values", default=True)
     req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
     args = parser.parse_args()
-    mode = args.filter
+    #mode = args.filter
     if args.output[0] == "/":
         locat = '/' + args.output.strip('/') + '/'
     else:
