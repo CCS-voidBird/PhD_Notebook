@@ -275,10 +275,31 @@ Environment: for windows 10
 
 Framework: 
 
-+ AlexNet (DONE model, waiting for genetic data)
++ AlexNet (DONE model) 
 + ResNet （Deep residual network）
   + https://zhuanlan.zhihu.com/p/31852747 （Chinese version)
 + VGGNet
+
+
+
+**AlexNet Model**
+
+data - Sugarcane
+
++  genetic array - AA =2, AT = 1, TT=0, --(UNKNOW) set 0.01 as pseudo
++ Series, Region, Trial, Crop information - Temporally excluded
++ 2000 samples randomly selected from origin file
++ feed into the model by trait (CCS, TCH, Fibre)
+
+Layers
+
++ Convolutional layer 1D, 3 kernel size, 1 stride;
++ RELU layer
++ Normlization layer
++ Maxpool layer
++ Convolutional layer 1D, 3 kernel size, 1 stride;
++ Relu
++ Maxpool
 
 
 
