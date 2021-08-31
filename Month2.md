@@ -23,6 +23,7 @@ Add to Read list:
 + Pisaroglo De Carvalho M, Gezan SA, Peternelli LA, Pereira Barbosa MH (2014) Estimation of additive and nonadditive genetic components of sugarcane families using multitrait analysis. Agron J 106:800–808. https://doi.org/10.2134/agronj2013.0247
 + Castro, W.; Marcato Junior, J.; Polidoro, C.; Osco, L.P.; Gonçalves, W.; Rodrigues, L.; Santos, M.; Jank, L.; Barrios, S.; Valle, C.; Simeão, R.; Carromeu, C.; Silveira, E.; Jorge, L.A.d.C.; Matsubara, E. Deep Learning Applied to Phenotyping of Biomass in Forages with UAV-Based RGB Imagery. *Sensors* **2020**, *20*, 4802. https://doi.org/10.3390/s20174802
 + Meuwissen THE, Hayes BJ, Goddard ME (2001) Prediction of total genetic value using genome wide dense marker maps. Genetics 157:1819–1829
++ Bijma P, Wientjes YCJ, Calus MPL. Breeding Top Genotypes and Accelerating Response to Recurrent Selection by Selecting Parents with Greater Gametic Variance. *Genetics*. 2020;214(1):91-107. doi:10.1534/genetics.119.302643
 
 
 
@@ -282,6 +283,7 @@ Framework:
 
 
 
+<<<<<<< Updated upstream
 **AlexNet Model**
 
 data - Sugarcane
@@ -304,6 +306,9 @@ Layers
 + Linear 6519 -> 3000
 + Dropout(0.5)
 + Linear 3000 -> 1
+=======
+* Need to define costom layer 
+>>>>>>> Stashed changes
 
 
 
@@ -314,6 +319,18 @@ Semi-parametric reproducing kernel Hilbert space (RKHS) regression models have a
 Degradation problem for DL model
 
 **Long short-term memory** (**LSTM**)
+
+
+
+Offspring selection:
+
+> After selection in the offspring generation, offspring of parents with greater Mendelian sampling variance will show a greater within-family selection differential. This suggests that variation in the Mendelian sampling variance among potential parents can be used to accelerate response to recurrent selection, or to increase the probability of breeding a top-ranking individual or commercial variety [[8]](#8) [[9]](#9)
+
+Simulation genome selection
+
+> With simulation, for example, one can create a virtual sample of the gametes of a selection candidate and estimate the variance in the genomic EBVs (GEBV) of these gametes. Thus, for breeding schemes with an existing genomic reference population, a known linkage map, and the availability of phased genotypes, it only requires computing time to obtain the SD of the gametic GEBV for all selection candidates. [[10]](#10)
+
+
 
 
 
@@ -333,3 +350,8 @@ Degradation problem for DL model
 
 <a name="7">[7]</a> Goddard, M. Genomic selection: prediction of accuracy and maximisation of long term response. *Genetica* **136,** 245–257 (2009). https://doi.org/10.1007/s10709-008-9308-0
 
+<a name="8">[8]</a> Bernardo R. Genomewide selection of parental inbreds: classes of loci and virtual biparental populations[J]. Crop Science, 2014, 54(6): 2586-2595.
+
+<a name="9">[9] </a>Segelke D, Reinhardt F, Liu Z, Thaller G. Prediction of expected genetic variation within groups of offspring for innovative mating schemes. Genet Sel Evol. 2014 Jul 2;46(1):42. doi: 10.1186/1297-9686-46-42. PMID: 24990472; PMCID: PMC4118311.
+
+<a name="10">[10]</a> Bijma P, Wientjes YCJ, Calus MPL. Breeding Top Genotypes and Accelerating Response to Recurrent Selection by Selecting Parents with Greater Gametic Variance. *Genetics*. 2020;214(1):91-107. doi:10.1534/genetics.119.302643
