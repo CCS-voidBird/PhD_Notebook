@@ -306,9 +306,7 @@ Layers
 + Linear 6519 -> 3000
 + Dropout(0.5)
 + Linear 3000 -> 1
-=======
-* Need to define costom layer 
->>>>>>> Stashed changes
+* Need to define costom layer.
 
 
 
