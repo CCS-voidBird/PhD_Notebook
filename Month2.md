@@ -279,7 +279,7 @@ Framework:
 + AlexNet (DONE model) 
 + ResNet （Deep residual network）
   + https://zhuanlan.zhihu.com/p/31852747 （Chinese version)
-+ VGGNet
++ VGGNet 
 
 
 
