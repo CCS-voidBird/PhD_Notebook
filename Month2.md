@@ -310,6 +310,28 @@ Layers
 
 
 
+​	Loss function in current AlexNet: L1 loss :
+
+​	$\sum^{n}_{i=1}\abs{y - pred}$
+
+​	Considering smooth L1 loss: costomized beta;
+
+$$f(x) = \left\{\begin{aligned} 0.5(x_n-y_n)^2/beta&&if\abs{x_n-y_n}<beta \\ \abs{x_n-y_n} - 0.5*beta &&otherwise \end{aligned}\right.$$
+
+
+
+Results:
+
+​	tend to convergence at CCS and Fibre; unstable at TCH
+
+DIscuss
+
++ genotype matrix? genotype vector?
++ determine accuracy
++ momentum and weight decay
+
+
+
 **Note**
 
 Semi-parametric reproducing kernel Hilbert space (RKHS) regression models have also been advocated as a potential alternative to capture non-additive effects in genomic selection. [[3]](#3) [[4]](#4); 
