@@ -10,13 +10,21 @@ Date: 01/Sept/2021 - 31/Sept/2021
 
 Current Goals:
 
-+ Create seperated train dataset and test dataset (For both GBLUP and DL)
-+ Setting up a validation method for performance comparison
-+ Optimize AlexNet model
-+ Add interaction features to AlexNet
-+ Test performance per EnvSet (Series, Region, Crop)
-+ Try to build ResNet (Residual Network)
 + Write some draft (introduction, theory work)
+
++ Setting up a validation method for performance comparison
+
++ Optimize AlexNet model
+
++ Add interaction features to AlexNet
+
++ Test performance per EnvSet (Series, Region, Crop)
+
++ Try to build ResNet (Residual Network)
+
++ Create seperated train dataset and test dataset (For both GBLUP and DL)
+
+  
 
 Read list:
 
