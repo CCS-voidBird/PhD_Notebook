@@ -24,7 +24,8 @@ Current Goals:
 
 + Create separated train dataset and test dataset (For both GBLUP and DL)
 
-  
+
+
 
 Read list:
 
@@ -33,3 +34,13 @@ Read list:
 + Meuwissen THE, Hayes BJ, Goddard ME (2001) Prediction of total genetic value using genome wide dense marker maps. Genetics 157:1819–1829
 + Bijma P, Wientjes YCJ, Calus MPL. Breeding Top Genotypes and Accelerating Response to Recurrent Selection by Selecting Parents with Greater Gametic Variance. *Genetics*. 2020;214(1):91-107. doi:10.1534/genetics.119.302643
 
+
+
+Deep Learning Draft
+
+1. Machine Learning concept
+2. Neural network
+3. Deep learning
+4. CNN
+5. MLP/CNN in genetic research
+6. 
