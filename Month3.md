@@ -41,6 +41,13 @@ Deep Learning Draft
 1. Machine Learning concept
 2. Neural network
 3. Deep learning
+   + Deep learning methodology is a sub-type of artificial neural network which is also classified into machine learning algorithm [[1]](#1) . 
 4. CNN
 5. MLP/CNN in genetic research
 6. 
+
+
+
+Reference 
+
+<a name="1">[1]</a> Deng, Li, and Dong Yu. "Deep learning: methods and applications." *Foundations and trends in signal processing* 7.3–4 (2014): 197-387.
