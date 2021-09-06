@@ -57,6 +57,12 @@ Deep Learning Draft
 
 
 
+[Draft of 3MT]
+
+Emerging biological and genetic discoveries provide more chances to find out new advanced breeding technologies. However, it could be a large challenge for scientists to combine genotype and traits in vary levels. For example, determining breeding value for a certain SNP with given traits from a joint marker array could be quite difficult if the breeder need to consider mixed factors such as polyploid or non-additive effects. Meanwhile, the non-genetic factors such as environmental factors might contain hidden effects to certain SNPs. Previous studies have built many elegant statistical algorithms such as Bayes-A/B, GBLUP for solving breeding requirements based on complex genome constructions but this world still need more novel approaches to speed up the "Artificial evolution". This research would introduce multiple kinds of artificial intelligence strategies for helping to optimize current breeding system. Many of them are already playing important roles in imaging classification, audio prediction field, while the above tasks are full of discovered or hidden patterns which would be very similar with genetic prediction. The study is expected to build up a meta-system which would combine convolutional neural network models and other machine learning approaches, and try to predict traits of many agriculture species including sugarcane and cattle. By importing these digital brains with current statistical predicting methods, the system might have capacity to merge genetic features in different levels efficiently, finally increase the accuracy and speed in both genome prediction and selection. 
+
+
+
 > There are two main benefits to taking only a small random subset of the training set at each optimization step rather than the full training set. First, the algorithm requires a constant amount of memory regardless of the data set size, which allows models to be trained on data sets much larger than the available memory. Second, the random fluctuations between batches were demonstrated to improve the model performance by [regularization](https://www.nature.com/articles/s41576-019-0122-6#Glos45) [[2]](#2)
 
 
