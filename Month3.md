@@ -22,7 +22,7 @@ Current Goals:
 
 + Try to build ResNet (Residual Network)
 
-+ Create separated train dataset and test dataset (For both GBLUP and DL)
++ Create separated train dataset and test dataset (For both GBLUP and DL) by region and years.
 
 
 
