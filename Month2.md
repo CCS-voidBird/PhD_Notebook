@@ -8,10 +8,12 @@ Date: 02/Aug/2021 - 31/Aug/2021
 
 Current Goals:
 
-+ Optimize MLP model;
-+ read papers for combining genetic data and DL model;
-+ Start generate CNN demo;
-+ sugarcane concept
++ Optimize MLP model; [DONE]
++ read papers for combining genetic data and DL model;[DONE]
++ Start generate CNN demo; [DONE]
++ sugarcane concept [DONE]
++ build a AlexNet model for sugarcane data [DONE]
++ import GPU acceleration model [DONE]
 
 Add to Read list:
 
