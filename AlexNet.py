@@ -5,6 +5,7 @@ from torch import nn
 from torch.autograd import Variable
 import pandas as pd
 import matplotlib.pyplot as plt
+from data_feed import *
 pd.options.display.float_format = '{:.2f}'.format
 
 
@@ -185,16 +186,52 @@ def train(dataset,batch_size,epochs,device,name):
     return model
 
 
+
 def main():
+    parser = argparse.ArgumentParser(description=INTRO)
+    req_grp = parser.add_argument_group(title='Required')
+    req_grp.add_argument('-1', '--train', type=str, help="Input train set.", required=True)
+    req_grp.add_argument('-2', '--test', type=str, help="Input test set.", required=True)
+    req_grp.add_argument('-t', '--trait', type=str, help="Input trait.", required=True)
+    req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
+    #req_grp.add_argument('-f', '--filter-blank', type=bool, help="filter NA values", default=True)
+    #req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
+    args = parser.parse_args()
+    if args.output[0] == "/":
+        locat = '/' + args.output.strip('/') + '/'
+    else:
+        locat = args.output.strip('/') + '/'
+
+    train_filepath = "E:/learning resource/PhD/sugarcane/" + args.train + "_" + args.trait + ".csv"
+    test_filepath = "E:/learning resource/PhD/sugarcane/" + args.test + "_" + args.trait + ".csv"
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using {} device".format(device))
     print("Loading data from directory")
-    trYs = torch.clone(torch.load("../complete_TrainData_traits.pt"))  # , dtype=torch.float32)
-    traits = [trYs[:, x].reshape(trYs.shape[0], 1) for x in range(3)]
+    #trYs = torch.clone(torch.load("../complete_TrainData_traits.pt"))  # , dtype=torch.float32)
+    train_data = pd.read_csv(train_filepath,sep="\t")
+    print("Finish train data loading")
+    test_data = pd.read_csv(test_filepath,sep="\t")
+    print("Finidsh test data loading")
+
+    trYs = torch.tensor(np.array(train_data[[args.trait]]).astype(float))
+    print(trYs.shape)
+    traits = [trYs[:, x].reshape(trYs.shape[0], 1) for x in range(1)]
+
+    testYs = torch.tensor(np.array(test_data[[args.trait]]).astype(float))
+    test_traits = [testYs[:, x].reshape(testYs.shape[0], 1) for x in range(1)]
+
     # trYs = trYs.reshape(trYs.shape[0], 3).type(torch.float32)
     loss = nn.L1Loss()
-    trXgenos = torch.clone(torch.load("../complete_TrainData_genos.pt"))  # , dtype=torch.float32)
+
+    print(train_data.shape)
+    trXgenos = torch.tensor(np.array(train_data.drop([args.trait],axis=1)).astype(float))  # , dtype=torch.float32)
+    print(trXgenos.shape)
     trXgenos = trXgenos.reshape(trXgenos.shape[0], trXgenos.shape[1]).type(torch.float32)
+
+    testXgenos = torch.tensor(np.array(test_data.drop([args.trait],axis=1)).astype(float))
+    testXgenos = testXgenos.reshape(testXgenos.shape[0], testXgenos.shape[1]).type(torch.float32)
+
+
     print(trYs.shape)
     print(trXgenos.shape)
 
@@ -203,22 +240,22 @@ def main():
     print("Start allocating dataset.")
     trainDatas = [Mydataset(trait, trXgenos) for trait in traits]
 
-    # testDatas = trainDatas # [Mydataset(trait, trXgenos) for trait in traits]
+    testDatas = [Mydataset(trait, testXgenos) for trait in test_traits] # [Mydataset(trait, trXgenos) for trait in traits]
 
     batch_size = 64
     epochs = 50
     train_models = []
-    names = ["CCSBlup","TCHBlup","FibreBlup"]
+    #names = ["CCSBlup","TCHBlup","FibreBlup"]
     for idx in range(len(traits)):
-        BtestLoader = DataLoader(dataset=trainDatas[idx], batch_size=batch_size, shuffle=False)
-        n = names[idx]
-        m = train(trainDatas[idx],batch_size,epochs,device,n)
+        BtestLoader = DataLoader(dataset=testDatas[idx], batch_size=batch_size, shuffle=False)
+        #n = names[idx]
+        m = train(trainDatas[idx],batch_size,epochs,device,args.trait)
         train_models.append(m)
 
         test_results = test(BtestLoader,m,loss,device)
         print(test_results)
     for i in range(len(train_models)):
-        name = ["CCSBlup","TCHBlup","FibreBlup"][i]
+        name = args.trait
         mm = train_models[i]
         torch.save(mm,"../models/{}_model.pth".format(name))
     print("DONE")
@@ -226,3 +263,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#python AlexNet.py -1 2015 -2 2016 -t CCSBlup -o ../new_model/

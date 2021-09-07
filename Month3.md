@@ -67,6 +67,13 @@ Emerging biological and genetic discoveries provide more chances to find out new
 
 
 
+
+
+data shape
+
+(2912, 26087)
+(7691, 26089)
+
 Reference 
 
 <a name="1">[1]</a> Deng, Li, and Dong Yu. "Deep learning: methods and applications." *Foundations and trends in signal processing* 7.3–4 (2014): 197-387.
