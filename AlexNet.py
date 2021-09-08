@@ -254,9 +254,11 @@ def main():
 
         test_results = test(BtestLoader,m,loss,device)
         print(test_results)
+        print(np.corrcoef(test_results[0],test_results[1]))
     for i in range(len(train_models)):
         name = args.trait
         mm = train_models[i]
+        print("saving")
         torch.save(mm,"../models/{}_model.pth".format(name))
     print("DONE")
 
