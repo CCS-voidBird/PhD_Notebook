@@ -43,23 +43,53 @@ Deep Learning Draft
 1. Machine Learning concept
    + Supervised model
    + Unsupervised model
+   
 2. Neural network
    + A typical neural network is an organic integrity of artificial neurons, connection layers and methmatic/transmission functions for simulating biological brains and achieving predictions. As the basic unit of neural network, an artificial neurons contains a input portal, a weight $w$ for measuring neuron input, a bias $b$, an inner-procession algorithm $z$ (e.g. $z = wx +b$), a tempory memory for restore processed signal and an output portal. 
+
    + **[Add a pragraph to explain neurons]** The role of neurons is process the data by its build-in function and weight, a single neuron probably won't have exact meaning in reality.
-   + A certain number $N$ of artificial neuron (as far as channels) can contribute into a layer (can be defined as hidden layer or output layer), each layer contain a weight&bias matrix ($N_{output} \times N_{input}$). By default, the input data will be reformatted as a ($N_ {input}\times M$) matrix; the input layer won't perform any calculations (as long as transformation) to the data, then the first hidden layer receives the data, it feed the data into a activate function $Af$ such as sigmoid, softmax and linear, the process can be described as $A = Af(wx +b)$, and the dimension of the output will be a ($N_{output} \times M$) matrix until the output layer which has a $(N \times N_y)$ weight matrix exports the predicted $\hat{y}$. The above process is also be named as feed-forward propagation.
+
+   + A certain number $N$ of artificial neuron (as far as channels) can contribute into a layer (can be defined as hidden layer or output layer), each layer contain a weight&bias matrix ($N_{output} \times N_{input}$). By default, the input data will be reformatted as a ($N_ {input}\times M$) matrix; the input layer won't perform any calculations (as long as transformation) to the data, then the first hidden layer receives the data, it feed the data into a activate function $af$ such as sigmoid, softmax and linear, the process can be described as $A = af(wx +b)$, and the dimension of the output will be a ($N_{output} \times M$) matrix until the output layer which has a $(N \times N_y)$ weight matrix exports the predicted $\hat{y}$. The above process is also be named as feed-forward propagation.
+
    + As in the real cases with big data, the predict of the feed-forward propagation of a typical neural network (such as MLP), will be a $(1\times M)$ vector (for single label) or $(N \times M)$ matrix for $N$ labels, there will be a loss function ($L$) such as MSE (Mean Squared Error) and  Cross Entropy to measure distances between prediction and observation. The overall error will be $Error = L(\hat{y},y)$
+
    + After getting total error, there are several options for update weight/bias matrix. The [backpropagation](https://en.wikipedia.org/wiki/Backpropagation) method has been a widely used approach for reduce error rate in many kinds of models. The core theory of  backpropagation method is the gradient descent [[3]](#3). The backpropagation calculates the gradient of the loss function, and upgrade weight matrix by the chain rule.
+
+     + For given distance from prediction and obversation $Error$, the gradient of output layer $L$ weights will be:
+
+       + $w'_L = \frac{ \partial L}{\partial{w_L}}  $   
+       + $\frac{ \partial L}{\partial{w_L}} = \frac{\part L}{\part a_L} \times \frac{\part a_L}{\part z_L} \times \frac{\part z_L}{\part w_L}$
+       + $w^{'}_L = L^{'} \times af' \times a_{L-1}^T$
+
+       $L$ loss function; $af$ activate function; $w_L$ Weight matrix of output Layer
+
+     + For other hidden layers $l$:
+
+       + $w'_l = \frac{ \partial f_{loss}}{\partial{z_l}} \frac{\partial z_l}{\partial w_{l}} = w^{T}_{l+1} \cdot \delta _{l+1} \cdot af'(z_l) \cdot A_{l-1}^T $
+
+       while $\delta _{l+1}$ is the gradient of the next layer ($l+1$)
+
 3. Deep learning
    + Deep learning methodology is a sub-type of artificial neural network which is also classified into machine learning algorithm [[1]](#1). The main difference between deep learning and conventional neural network is the neural network would basically transmit data though layers, while the deep learning models tend to associate signal selection and transformation.
+   
 4. CNN
-5. MLP/CNN in genetic research
-6. 
+
+   + The CNN is designed for solving qustions which contains a large population of fearures. For example, in graphical classification task, an image would contain millions of pixel and each pixel has 3 channels (RGB) while shifting into numeric values. 
+
+   + The main feature of convolutional neural network is its convolutional layer and pooling layers; The combination of convolutional layer and pooling layer is inspired by animal visual cortex [[4]](#4). For each convolutional layer, it only collects features that belong to its own receptive field (e.g a 3x3 area). By moving based on a "step" parameter (e.g. 1 per move), certain convolutional layer would regenerates a feature map. As all the feature units collected by one convolutaional layer share the same weight, the calculation burden of weights updating could be rapidly decreased. 
+   + The pooling layers are used to reduce the dimensions of data. a pooling layer has a pooling method, such as max pooling layer, which output the highest value in certain feature map.
+
+5. Hyper-petermeters
+
+6. MLP/CNN in genetic research
+
+7. 
 
 
 
-[Draft of 3MT]
+[Draft of 3MT] Abstract
 
-Emerging biological and genetic discoveries provide more chances to find out new advanced breeding technologies. However, it could be a large challenge for scientists to combine genotype and traits in vary levels. For example, determining breeding value for a certain SNP with given traits from a joint marker array could be quite difficult if the breeder need to consider mixed factors such as polyploid or non-additive effects. Meanwhile, the non-genetic factors such as environmental factors might contain hidden effects to certain SNPs. Previous studies have built many elegant statistical algorithms such as Bayes-A/B, GBLUP for solving breeding requirements based on complex genome constructions but this world still need more novel approaches to speed up the "Artificial evolution". This research would introduce multiple kinds of artificial intelligence strategies for helping to optimize current breeding system. Many of them are already playing important roles in imaging classification, audio prediction field, while the above tasks are full of discovered or hidden patterns which would be very similar with genetic prediction. The study is expected to build up a meta-system which would combine convolutional neural network models and other machine learning approaches, and try to predict traits of many agriculture species including sugarcane and cattle. By importing these digital brains with current statistical predicting methods, the system might have capacity to merge genetic features in different levels efficiently, finally increase the accuracy and speed in both genome prediction and selection. 
+Emerging biological and genetic discoveries provide more chances to find out new advanced breeding technologies. However, it could be a large challenge for scientists to combine genotype and traits in vary levels. For example, determining breeding value for a certain SNP with given traits from a joint marker array could be quite difficult if the breeder need to consider mixed factors such as polyploid or non-additive effects. Meanwhile, the non-genetic factors such as environmental factors might contain hidden effects to certain SNPs. Previous studies have built many elegant statistical algorithms such as Bayes-A/B, GBLUP for solving breeding requirements based on complex genome constructions but this world still need more novel approaches to speed up the "Artificial evolution". This research would introduce multiple kinds of artificial intelligence strategies including convoluntional neural network for optimizing current breeding system. Many of them are already playing important roles in imaging classification, audio prediction field, while the above tasks are full of discovered or hidden patterns which would be very similar with genetic prediction. The study is expected to build up a combination of conventional statistial models and machine learning approaches, and try to predict traits of many agriculture species including sugarcane and cattle. By importing these digital brains with current statistical predicting methods, the system might have capacity to merge genetic features in different levels efficiently, finally increase the accuracy and speed in both genome prediction and selection. 
 
 
 
@@ -82,3 +112,6 @@ Reference
 
 <a name="3">[3]</a> Lemaréchal, Claude. "Cauchy and the gradient method." *Doc Math Extra* 251.254 (2012): 10.
 
+<a name="4">[4]</a> Fukushima, Kunihiko, and Sei Miyake. "Neocognitron: A self-organizing neural network model for a mechanism of visual pattern recognition." *Competition and cooperation in neural nets*. Springer, Berlin, Heidelberg, 1982. 267-285.
+
+<a name="5">[5]</a>Collobert, Ronan, and Jason Weston. "A unified architecture for natural language processing: Deep neural networks with multitask learning." *Proceedings of the 25th international conference on Machine learning*. 2008.
