@@ -210,7 +210,7 @@ def main():
     #trYs = torch.clone(torch.load("../complete_TrainData_traits.pt"))  # , dtype=torch.float32)
     train_data = pd.read_csv(train_filepath,sep="\t")
     print("Finish train data loading")
-    test_data = pd.read_csv(test_filepath,sep="\t")
+    test_data = pd.read_csv(test_filepath,sep="\t").sample(400)
     print("Finidsh test data loading")
 
     trYs = torch.tensor(np.array(train_data[[args.trait]]).astype(float))
@@ -242,7 +242,7 @@ def main():
 
     testDatas = [Mydataset(trait, testXgenos) for trait in test_traits] # [Mydataset(trait, trXgenos) for trait in traits]
 
-    batch_size = 64
+    batch_size = 256
     epochs = 50
     train_models = []
     #names = ["CCSBlup","TCHBlup","FibreBlup"]
@@ -254,7 +254,11 @@ def main():
 
         test_results = test(BtestLoader,m,loss,device)
         print(test_results)
-        print(np.corrcoef(test_results[0],test_results[1]))
+        obv = test_results[0]
+        pred = test_results[1]
+        obv = obv.cpu().reshape(1,obv.shape[0])
+        pred = pred.cpu().reshape(1,pred.shape[0])
+        print(np.corrcoef(pred,obv))
     for i in range(len(train_models)):
         name = args.trait
         mm = train_models[i]
