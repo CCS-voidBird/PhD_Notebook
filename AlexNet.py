@@ -7,6 +7,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from data_feed import *
 pd.options.display.float_format = '{:.2f}'.format
+import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 
 
 
@@ -26,10 +28,10 @@ class AlexNet(nn.Module):
             nn.Conv1d(1 ,1, kernel_size=3, stride=1), # output channel: pic size;
             nn.ReLU(inplace=True),
             # nn.BatchNorm1d(96), # normalization
-            nn.BatchNorm1d(1),
+            #nn.BatchNorm1d(16),
             nn.MaxPool1d(kernel_size=3, stride=2),  # kernel 3x3; step 2x2 -> (30-3)/2 + 1 = 14x14
 
-            nn.Conv1d(1, 1, kernel_size=3, stride=1), # (14-3)/1 + 1 = 12 x 12
+            nn.Conv1d(1,1, kernel_size=3, stride=1), # (14-3)/1 + 1 = 12 x 12
             nn.ReLU(inplace=True),
             # nn.BatchNorm1d(256),
 
@@ -43,7 +45,7 @@ class AlexNet(nn.Module):
 
             nn.Linear(6519, 3000),
 
-            nn.Dropout(0.5),
+            nn.Dropout(0.3),
 
             nn.Linear(3000, 1),
 
