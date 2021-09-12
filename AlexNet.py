@@ -150,7 +150,7 @@ def train(dataset,batch_size,epochs,device,name):
 
     criterion = nn.L1Loss()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001,weight_decay=0.000001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001,weight_decay=0.00001)
 
     total_step = len(trainLoader)
     epoch_i = 0
@@ -222,9 +222,17 @@ def main():
         for region in pd.unique(train_data["Region"]):
             sub_train = train_data[train_data["Region"] == region]
             sub_test = test_data[test_data["Region"] == region]
+            sub_test.drop(["Region"],inplace=True)
+            sub_train.drop(["Region"],inplace=True)
             by_region[region] = (sub_train,sub_test)
     else:
         by_region["whole"] = (train_data,test_data)
+        try:
+            for data in by_region["whole"]:
+                data.drop(["Region"],inplace=True)
+        except:
+            print("The data have no regions.")
+
 
     for region in by_region.keys():
         print("Now process {} data.".format(region))
@@ -240,11 +248,11 @@ def main():
         loss = nn.L1Loss()
 
         print(train_data.shape)
-        trXgenos = torch.tensor(np.array(subset[0].drop([args.trait], axis=1)).astype(float))  # , dtype=torch.float32)
+        trXgenos = torch.tensor(np.array(subset[0].drop(["Region",args.trait], axis=1)).astype(float))  # dtype=torch.float32)
         print(trXgenos.shape)
         trXgenos = trXgenos.reshape(trXgenos.shape[0], trXgenos.shape[1]).type(torch.float32)
 
-        testXgenos = torch.tensor(np.array(subset[1].drop([args.trait], axis=1)).astype(float))
+        testXgenos = torch.tensor(np.array(subset[1].drop(["Region",args.trait], axis=1)).astype(float))
         testXgenos = testXgenos.reshape(testXgenos.shape[0], testXgenos.shape[1]).type(torch.float32)
 
         print("Finish loading")
@@ -256,7 +264,7 @@ def main():
                      test_traits]  # [Mydataset(trait, trXgenos) for trait in traits]
 
         batch_size = 64
-        epochs = 50
+        epochs = 100
         train_models = []
         # names = ["CCSBlup","TCHBlup","FibreBlup"]
         for idx in range(len(traits)):
