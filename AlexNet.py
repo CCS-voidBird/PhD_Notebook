@@ -150,7 +150,7 @@ def train(dataset,batch_size,epochs,device,name):
 
     criterion = nn.L1Loss()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001,weight_decay=0.000001)
 
     total_step = len(trainLoader)
     epoch_i = 0
@@ -196,6 +196,8 @@ def main():
     req_grp.add_argument('-2', '--test', type=str, help="Input test set.", required=True)
     req_grp.add_argument('-t', '--trait', type=str, help="Input trait.", required=True)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
+    req_grp.add_argument('-s', '--sampleSize', type=str, help="input sample size", default=all)
+    req_grp.add_argument('-r', '--region', type=bool, help="train by region?", default=False)
     #req_grp.add_argument('-f', '--filter-blank', type=bool, help="filter NA values", default=True)
     #req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
     args = parser.parse_args()
@@ -203,9 +205,9 @@ def main():
         locat = '/' + args.output.strip('/') + '/'
     else:
         locat = args.output.strip('/') + '/'
-
-    train_filepath = "E:/learning resource/PhD/sugarcane/" + args.train + "_" + args.trait + ".csv"
-    test_filepath = "E:/learning resource/PhD/sugarcane/" + args.test + "_" + args.trait + ".csv"
+    sample_size = args.sampleSize
+    train_filepath = "E:/learning resource/PhD/sugarcane/" + args.train + "_" + args.trait + "_" + sample_size + ".csv"
+    test_filepath = "E:/learning resource/PhD/sugarcane/" + args.test + "_" + args.trait + "_" + sample_size + ".csv"
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using {} device".format(device))
     print("Loading data from directory")
@@ -215,61 +217,72 @@ def main():
     test_data = pd.read_csv(test_filepath,sep="\t").sample(400)
     print("Finidsh test data loading")
 
-    trYs = torch.tensor(np.array(train_data[[args.trait]]).astype(float))
-    print(trYs.shape)
-    traits = [trYs[:, x].reshape(trYs.shape[0], 1) for x in range(1)]
+    by_region = {}
+    if "Region" in train_data.keys() and args.region is True:
+        for region in pd.unique(train_data["Region"]):
+            sub_train = train_data[train_data["Region"] == region]
+            sub_test = test_data[test_data["Region"] == region]
+            by_region[region] = (sub_train,sub_test)
+    else:
+        by_region["whole"] = (train_data,test_data)
 
-    testYs = torch.tensor(np.array(test_data[[args.trait]]).astype(float))
-    test_traits = [testYs[:, x].reshape(testYs.shape[0], 1) for x in range(1)]
+    for region in by_region.keys():
+        print("Now process {} data.".format(region))
+        subset = by_region[region]
+        trYs = torch.tensor(np.array(subset[0][[args.trait]]).astype(float))
+        print(trYs.shape)
+        traits = [trYs[:, x].reshape(trYs.shape[0], 1) for x in range(1)]
 
-    # trYs = trYs.reshape(trYs.shape[0], 3).type(torch.float32)
-    loss = nn.L1Loss()
+        testYs = torch.tensor(np.array(subset[1][[args.trait]]).astype(float))
+        test_traits = [testYs[:, x].reshape(testYs.shape[0], 1) for x in range(1)]
 
-    print(train_data.shape)
-    trXgenos = torch.tensor(np.array(train_data.drop([args.trait],axis=1)).astype(float))  # , dtype=torch.float32)
-    print(trXgenos.shape)
-    trXgenos = trXgenos.reshape(trXgenos.shape[0], trXgenos.shape[1]).type(torch.float32)
+        # trYs = trYs.reshape(trYs.shape[0], 3).type(torch.float32)
+        loss = nn.L1Loss()
 
-    testXgenos = torch.tensor(np.array(test_data.drop([args.trait],axis=1)).astype(float))
-    testXgenos = testXgenos.reshape(testXgenos.shape[0], testXgenos.shape[1]).type(torch.float32)
+        print(train_data.shape)
+        trXgenos = torch.tensor(np.array(subset[0].drop([args.trait], axis=1)).astype(float))  # , dtype=torch.float32)
+        print(trXgenos.shape)
+        trXgenos = trXgenos.reshape(trXgenos.shape[0], trXgenos.shape[1]).type(torch.float32)
+
+        testXgenos = torch.tensor(np.array(subset[1].drop([args.trait], axis=1)).astype(float))
+        testXgenos = testXgenos.reshape(testXgenos.shape[0], testXgenos.shape[1]).type(torch.float32)
+
+        print("Finish loading")
+
+        print("Start allocating dataset.")
+        trainDatas = [Mydataset(trait, trXgenos) for trait in traits]
+
+        testDatas = [Mydataset(trait, testXgenos) for trait in
+                     test_traits]  # [Mydataset(trait, trXgenos) for trait in traits]
+
+        batch_size = 64
+        epochs = 50
+        train_models = []
+        # names = ["CCSBlup","TCHBlup","FibreBlup"]
+        for idx in range(len(traits)):
+            BtestLoader = DataLoader(dataset=testDatas[idx], batch_size=batch_size, shuffle=False)
+            # n = names[idx]
+            m = train(trainDatas[idx], batch_size, epochs, device, args.trait)
+            train_models.append(m)
+
+            test_results = test(BtestLoader, m, loss, device)
+            print(test_results)
+            obv = test_results[0]
+            pred = test_results[1]
+            obv = obv.cpu().reshape(1, obv.shape[0])
+            pred = pred.cpu().reshape(1, pred.shape[0])
+            print(np.corrcoef(pred, obv))
+        for i in range(len(train_models)):
+            name = args.trait
+            mm = train_models[i]
+            print("saving")
+            torch.save(mm, "{}{}_{}_model.pth".format(locat,region,name))
+        print("DONE")
 
 
-    print(trYs.shape)
-    print(trXgenos.shape)
-
-    print("Finish loading")
-
-    print("Start allocating dataset.")
-    trainDatas = [Mydataset(trait, trXgenos) for trait in traits]
-
-    testDatas = [Mydataset(trait, testXgenos) for trait in test_traits] # [Mydataset(trait, trXgenos) for trait in traits]
-
-    batch_size = 256
-    epochs = 50
-    train_models = []
-    #names = ["CCSBlup","TCHBlup","FibreBlup"]
-    for idx in range(len(traits)):
-        BtestLoader = DataLoader(dataset=testDatas[idx], batch_size=batch_size, shuffle=False)
-        #n = names[idx]
-        m = train(trainDatas[idx],batch_size,epochs,device,args.trait)
-        train_models.append(m)
-
-        test_results = test(BtestLoader,m,loss,device)
-        print(test_results)
-        obv = test_results[0]
-        pred = test_results[1]
-        obv = obv.cpu().reshape(1,obv.shape[0])
-        pred = pred.cpu().reshape(1,pred.shape[0])
-        print(np.corrcoef(pred,obv))
-    for i in range(len(train_models)):
-        name = args.trait
-        mm = train_models[i]
-        print("saving")
-        torch.save(mm,"../models/{}_model.pth".format(name))
-    print("DONE")
 
 
 if __name__ == "__main__":
     main()
 
-#python AlexNet.py -1 2015 -2 2016 -t CCSBlup -o ../new_model/
+#python AlexNet.py -1 2015 -2 2016 -t CCSBlup -o ../new_model/ -s 2000
