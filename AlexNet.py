@@ -136,7 +136,7 @@ class Mydataset(Dataset):
 
 
 
-def train(dataset,batch_size,epochs,device,name):
+def train(dataset,batch_size,epochs,device,**kwargs):
 
     trainLoader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
     testLoader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
@@ -180,15 +180,19 @@ def train(dataset,batch_size,epochs,device,name):
         epoch_i += ii
         print("test")
         test(testLoader, model, criterion, device)
-    plt.plot(range(len(all_loss)),all_loss)
-    plt.xlabel("Round")
-    plt.ylabel("Overall Loss")
-    plt.title(name)
-    plt.show()
+    if kwargs["fig"] == True:
+        figname = kwargs["figname"]
+        plt.plot(range(len(all_loss)),all_loss)
+        plt.xlabel("Round")
+        plt.ylabel("Overall Loss")
+        plt.title(figname)
+        filename = kwargs["path"]+kwargs["figname"]+".jpg"
+        plt.savefig(filename)
+
     return model
 
 
-
+OUTPATH=""
 def main():
     parser = argparse.ArgumentParser(description=INTRO)
     req_grp = parser.add_argument_group(title='Required')
@@ -205,6 +209,14 @@ def main():
         locat = '/' + args.output.strip('/') + '/'
     else:
         locat = args.output.strip('/') + '/'
+    sub_folder = locat + "Train_{}_Test_{}_{}/".format(args.train,args.test,args.sampleSize)
+    try:
+        os.system("mkdir -p {}".format(locat))
+        os.system("mkdir -p {}".format(sub_folder))
+    except:
+        print("folder exist.")
+    global OUTPATH
+    OUTPATH = sub_folder
     sample_size = args.sampleSize
     train_filepath = "E:/learning resource/PhD/sugarcane/" + args.train + "_" + args.trait + "_" + sample_size + ".csv"
     test_filepath = "E:/learning resource/PhD/sugarcane/" + args.test + "_" + args.trait + "_" + sample_size + ".csv"
@@ -222,8 +234,8 @@ def main():
         for region in pd.unique(train_data["Region"]):
             sub_train = train_data[train_data["Region"] == region]
             sub_test = test_data[test_data["Region"] == region]
-            sub_test.drop(["Region"],inplace=True)
-            sub_train.drop(["Region"],inplace=True)
+            sub_test.drop(["Region"],inplace=True,axis=1)
+            sub_train.drop(["Region"],inplace=True,axis=1)
             by_region[region] = (sub_train,sub_test)
     else:
         by_region["whole"] = (train_data,test_data)
@@ -233,7 +245,7 @@ def main():
         except:
             print("The data have no regions.")
 
-
+    records = pd.DataFrame(columns=["train", "accuracy"])
     for region in by_region.keys():
         print("Now process {} data.".format(region))
         subset = by_region[region]
@@ -248,11 +260,11 @@ def main():
         loss = nn.L1Loss()
 
         print(train_data.shape)
-        trXgenos = torch.tensor(np.array(subset[0].drop(["Region",args.trait], axis=1)).astype(float))  # dtype=torch.float32)
+        trXgenos = torch.tensor(np.array(subset[0].drop([args.trait], axis=1)).astype(float))  # dtype=torch.float32)
         print(trXgenos.shape)
         trXgenos = trXgenos.reshape(trXgenos.shape[0], trXgenos.shape[1]).type(torch.float32)
 
-        testXgenos = torch.tensor(np.array(subset[1].drop(["Region",args.trait], axis=1)).astype(float))
+        testXgenos = torch.tensor(np.array(subset[1].drop([args.trait], axis=1)).astype(float))
         testXgenos = testXgenos.reshape(testXgenos.shape[0], testXgenos.shape[1]).type(torch.float32)
 
         print("Finish loading")
@@ -261,16 +273,18 @@ def main():
         trainDatas = [Mydataset(trait, trXgenos) for trait in traits]
 
         testDatas = [Mydataset(trait, testXgenos) for trait in
-                     test_traits]  # [Mydataset(trait, trXgenos) for trait in traits]
+                     test_traits]
 
         batch_size = 64
-        epochs = 100
+        epochs = 10
         train_models = []
+
         # names = ["CCSBlup","TCHBlup","FibreBlup"]
         for idx in range(len(traits)):
             BtestLoader = DataLoader(dataset=testDatas[idx], batch_size=batch_size, shuffle=False)
             # n = names[idx]
-            m = train(trainDatas[idx], batch_size, epochs, device, args.trait)
+            train_name = "{}_{}".format(region,args.trait)
+            m = train(trainDatas[idx], batch_size, epochs, device, fig=True, path=OUTPATH, figname=train_name)
             train_models.append(m)
 
             test_results = test(BtestLoader, m, loss, device)
@@ -279,15 +293,18 @@ def main():
             pred = test_results[1]
             obv = obv.cpu().reshape(1, obv.shape[0])
             pred = pred.cpu().reshape(1, pred.shape[0])
-            print(np.corrcoef(pred, obv))
+            print(train_name)
+            records.append({"train":train_name,"accuracy":np.corrcoef(pred, obv)[0][1]},ignore_index=True)
         for i in range(len(train_models)):
             name = args.trait
             mm = train_models[i]
             print("saving")
             torch.save(mm, "{}{}_{}_model.pth".format(locat,region,name))
-        print("DONE")
 
-
+    print(records)
+    records_name = OUTPATH + "records.csv"
+    records.to_csv(records_name, sep="\t")
+    print("DONE")
 
 
 if __name__ == "__main__":
