@@ -11,18 +11,13 @@ Date: 01/Sept/2021 - 31/Sept/2021
 Current Goals:
 
 + Write some draft (introduction, theory work) [in working]
-
-+ Setting up a validation method for performance comparison [in working]
-
-+ Optimize AlexNet model [week 2]
-
++ Setting up a validation method for performance comparison [DONE]
++ Optimize AlexNet model [week 2] (Working)
 + Add interaction features to AlexNet [tending] 
-
 + Test performance per EnvSet (Series, Region, Crop) 
-
 + Try to build ResNet (Residual Network)
-
-+ Create separated train dataset and test dataset (For both GBLUP and DL) by region and years.
++ Create separated train dataset and test dataset (For both GBLUP and DL) by region and years. (DONE)
++ Build a tool for managing sugarcane data (in future can solve more species) [DONE]
 
 
 
