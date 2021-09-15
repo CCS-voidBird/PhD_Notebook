@@ -32,19 +32,32 @@ class AlexNet(nn.Module):
             nn.ReLU(inplace=True),
             # nn.BatchNorm1d(256),
 
-            nn.MaxPool1d(kernel_size=3, stride=2),  # (12 - 3) /2 +1 = 5x5
+            nn.AvgPool1d(kernel_size=3, stride=2),  # (12 - 3) /2 +1 = 5x5
 
-            nn.Conv1d(1, 1, kernel_size=3, padding=1, stride=1),  # (5-3+2*1)/1+1=5x5
-
+            #nn.Conv1d(1, 1, kernel_size=3, padding=1, stride=1),  # (5-3+2*1)/1+1=5x5
+            #nn.MaxPool1d(kernel_size=3,stride=2)
         )
+
+        #6519
+        after_conv = init_shape
+        for i in range(2):
+            after_conv = (after_conv-3)/1 + 1
+            after_conv = (after_conv-3)/2 + 1
+        after_conv = (after_conv - 1) / 2 + 1
+        after_conv = (after_conv - 3) / 2 + 1
 
         self.classifier = nn.Sequential(
 
             nn.Linear(6519, 3000),
-
+            #nn.ReLU(),
             nn.Dropout(0.3),
+            nn.Linear(3000,1500),
+            #nn.ReLU(),
+            nn.Linear(1500,1),
 
-            nn.Linear(3000, 1),
+            #nn.Dropout(0.3),
+
+            #nn.Linear(128, 1),
 
         )
         if init_weights:
@@ -236,10 +249,11 @@ def main():
             sub_train.drop(["Region"],inplace=True,axis=1)
             by_region[region] = (sub_train,sub_test)
     else:
+        print("training for whole set.")
         by_region["whole"] = (train_data,test_data)
         try:
             for data in by_region["whole"]:
-                data.drop(["Region"],inplace=True)
+                data.drop(["Region"],inplace=True,axis=1)
         except:
             print("The data have no regions.")
 
@@ -276,7 +290,7 @@ def main():
                      test_traits]
 
         batch_size = 64
-        epochs = 50
+        epochs = 40
         train_models = []
 
         # names = ["CCSBlup","TCHBlup","FibreBlup"]

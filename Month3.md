@@ -82,6 +82,23 @@ Deep Learning Draft
 
 
 
+[code for transforming categorical features]
+
+```python
+def oneHotEncode(df,colNames):
+    for col in colNames:
+        if( df[col].dtype == np.dtype('object')):
+            # pandas.get_dummies 
+            dummies = pd.get_dummies(df[col],prefix=col)
+            df = pd.concat([df,dummies],axis=1)
+
+            # drop the encoded column
+            df.drop([col],axis = 1 , inplace=True)
+    return df
+```
+
+
+
 [Draft of 3MT] Abstract
 
 Emerging biological and genetic discoveries provide more chances to find out new advanced breeding technologies. However, it could be a large challenge for scientists to combine genotype and traits in vary levels. For example, determining breeding value for a certain SNP with given traits from a joint marker array could be quite difficult if the breeder need to consider mixed factors such as polyploid or non-additive effects. Meanwhile, the non-genetic factors such as environmental factors might contain hidden effects to certain SNPs. Previous studies have built many elegant statistical algorithms such as Bayes-A/B, GBLUP for solving breeding requirements based on complex genome constructions but this world still need more novel approaches to speed up the "Artificial evolution". This research would introduce multiple kinds of artificial intelligence strategies including convoluntional neural network for optimizing current breeding system. Many of them are already playing important roles in imaging classification, audio prediction field, while the above tasks are full of discovered or hidden patterns which would be very similar with genetic prediction. The study is expected to build up a combination of conventional statistial models and machine learning approaches, and try to predict traits of many agriculture species including sugarcane and cattle. By importing these digital brains with current statistical predicting methods, the system might have capacity to merge genetic features in different levels efficiently, finally increase the accuracy and speed in both genome prediction and selection. 
