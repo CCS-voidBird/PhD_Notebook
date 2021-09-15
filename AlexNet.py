@@ -13,16 +13,13 @@ os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 
 
 class AlexNet(nn.Module):
-    def __init__(self ,init_weights=False):
+    def __init__(self ,init_weights=False,init_shape = None):
         super(AlexNet, self).__init__()
 
 
         '''
-
-        data size:3channel x32x32
-        1st convolutional layer, input channel=3, output channel=96, kernel size=3x3, step=1*1'''
-
-        '''feature map size=(32-3)/1+1=30,feature map dimension 96*30*30'''
+        
+        '''
 
         self.features = nn.Sequential(
             nn.Conv1d(1 ,1, kernel_size=3, stride=1), # output channel: pic size;
@@ -144,9 +141,9 @@ def train(dataset,batch_size,epochs,device,**kwargs):
     print("Done data contribution... move to GPU process")
 
     all_loss = []
-
+    feature_size = kwargs["feature_size"]
     print("start modelling")
-    model = AlexNet().to(device)
+    model = AlexNet(init_shape=feature_size).to(device)
 
     criterion = nn.L1Loss()
 
@@ -200,10 +197,9 @@ def main():
     req_grp.add_argument('-2', '--test', type=str, help="Input test set.", required=True)
     req_grp.add_argument('-t', '--trait', type=str, help="Input trait.", required=True)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
-    req_grp.add_argument('-s', '--sampleSize', type=str, help="input sample size", default=all)
+    req_grp.add_argument('-s', '--sampleSize', type=str, help="input sample size", default="all")
     req_grp.add_argument('-r', '--region', type=bool, help="train by region?", default=False)
-    #req_grp.add_argument('-f', '--filter-blank', type=bool, help="filter NA values", default=True)
-    #req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
+
     args = parser.parse_args()
     if args.output[0] == "/":
         locat = '/' + args.output.strip('/') + '/'
@@ -215,6 +211,8 @@ def main():
         os.system("mkdir -p {}".format(sub_folder))
     except:
         print("folder exist.")
+
+
     global OUTPATH
     OUTPATH = sub_folder
     sample_size = args.sampleSize
@@ -247,8 +245,10 @@ def main():
 
     records = pd.DataFrame(columns=["train", "accuracy"])
     for region in by_region.keys():
+
         print("Now process {} data.".format(region))
         subset = by_region[region]
+        feature_size = subset[0].shape[1]
         trYs = torch.tensor(np.array(subset[0][[args.trait]]).astype(float))
         print(trYs.shape)
         traits = [trYs[:, x].reshape(trYs.shape[0], 1) for x in range(1)]
@@ -276,7 +276,7 @@ def main():
                      test_traits]
 
         batch_size = 64
-        epochs = 10
+        epochs = 50
         train_models = []
 
         # names = ["CCSBlup","TCHBlup","FibreBlup"]
@@ -284,7 +284,7 @@ def main():
             BtestLoader = DataLoader(dataset=testDatas[idx], batch_size=batch_size, shuffle=False)
             # n = names[idx]
             train_name = "{}_{}".format(region,args.trait)
-            m = train(trainDatas[idx], batch_size, epochs, device, fig=True, path=OUTPATH, figname=train_name)
+            m = train(trainDatas[idx], batch_size, epochs, device, fig=True, path=OUTPATH, figname=train_name,feature_size=feature_size)
             train_models.append(m)
 
             test_results = test(BtestLoader, m, loss, device)
@@ -294,7 +294,9 @@ def main():
             obv = obv.cpu().reshape(1, obv.shape[0])
             pred = pred.cpu().reshape(1, pred.shape[0])
             print(train_name)
-            records.append({"train":train_name,"accuracy":np.corrcoef(pred, obv)[0][1]},ignore_index=True)
+            accuracy =  np.corrcoef(pred, obv)[0][1]
+            print(accuracy)
+            records = records.append({"train":train_name,"accuracy":accuracy},ignore_index=True)
         for i in range(len(train_models)):
             name = args.trait
             mm = train_models[i]
@@ -302,7 +304,7 @@ def main():
             torch.save(mm, "{}{}_{}_model.pth".format(locat,region,name))
 
     print(records)
-    records_name = OUTPATH + "records.csv"
+    records_name = OUTPATH + args.trait + "records.csv"
     records.to_csv(records_name, sep="\t")
     print("DONE")
 
@@ -310,4 +312,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-#python AlexNet.py -1 2015 -2 2016 -t CCSBlup -o ../new_model/ -s 2000
+#python AlexNet.py -1 2015 -2 2016 -t CCSBlup -o ../new_model/ -s 2000 -r True
