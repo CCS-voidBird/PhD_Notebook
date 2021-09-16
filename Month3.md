@@ -36,9 +36,22 @@ Read list:
 Deep Learning Draft
 
 1. Machine Learning concept
-   + Supervised model
-   + Unsupervised model
-   
+   + Supervised learning
+
+     The "Supervised learning" is a kind of strategy to fit the model to the observation data with their labels. The labels are usually measured by real experiments or defined by certain principles. For example:
+
+     > Examples include protein secondary structure prediction[13](https://www.nature.com/articles/s41580-021-00407-0#ref-CR13) and prediction of genome accessibility to genome-regulatory factors[14](https://www.nature.com/articles/s41580-021-00407-0#ref-CR14). In both cases, the ground truth is derived ultimately from laboratory observations, but often these raw data are preprocessed in some way. In the case of secondary structure, for example, the ground truth data are derived from analysing protein crystal structure data in the Protein Data Bank, and in the latter case, the ground truth comes from data derived from DNA-sequencing experiments. [[6]](#6)
+
+   + Unsupervised learning 
+
+     The non-supervised learning is more likely to discover hidden patterns from dataset, which contains samples with similar phenotypes/traits and a brunch of unlabeled features.
+
+   + Classification or Regression
+
+     + Classification is used to assign a series of data points into several clusters (binary or multiple). The model will usually output a vector of probabilities for certain data point belongs to one cluster, then the output layer selects the group with highest probability. 
+
+     + > By contrast, regression models output a continuous set of values, such as predicting the free energy change of folding after mutating a residue in a protein. Continuous values can be thresholded or otherwise discretized, meaning that it is often possible to reformulate regression problems as classification problems. [[6]](#6)
+
 2. Neural network
    + A typical neural network is an organic integrity of artificial neurons, connection layers and methmatic/transmission functions for simulating biological brains and achieving predictions. As the basic unit of neural network, an artificial neurons contains a input portal, a weight $w$ for measuring neuron input, a bias $b$, an inner-procession algorithm $z$ (e.g. $z = wx +b$), a tempory memory for restore processed signal and an output portal. 
 
@@ -74,7 +87,9 @@ Deep Learning Draft
    + The main feature of convolutional neural network is its convolutional layer and pooling layers; The combination of convolutional layer and pooling layer is inspired by animal visual cortex [[4]](#4). For each convolutional layer, it only collects features that belong to its own receptive field (e.g a 3x3 area). By moving based on a "step" parameter (e.g. 1 per move), certain convolutional layer would regenerates a feature map. As all the feature units collected by one convolutaional layer share the same weight, the calculation burden of weights updating could be rapidly decreased. 
    + The pooling layers are used to reduce the dimensions of data. a pooling layer has a pooling method, such as max pooling layer, which output the highest value in certain feature map.
 
-5. Hyper-petermeters
+5. Hyper-parameters
+
+   + The hyper-parameters such as learning rate and decay rate, these are a series of global interactive values that configure the modelling process. The hyper-parameters usually don't be regarded as a part of DL models and won't be updated by algorithms during the training. However, the role of hyper-parameters play a important role in modeling for avoid overfitting and other possible issues.
 
 6. MLP/CNN in genetic research
 
@@ -127,3 +142,5 @@ Reference
 <a name="4">[4]</a> Fukushima, Kunihiko, and Sei Miyake. "Neocognitron: A self-organizing neural network model for a mechanism of visual pattern recognition." *Competition and cooperation in neural nets*. Springer, Berlin, Heidelberg, 1982. 267-285.
 
 <a name="5">[5]</a>Collobert, Ronan, and Jason Weston. "A unified architecture for natural language processing: Deep neural networks with multitask learning." *Proceedings of the 25th international conference on Machine learning*. 2008.
+
+<a name="6">[6]</a>Greener, J.G., Kandathil, S.M., Moffat, L. *et al.* A guide to machine learning for biologists. *Nat Rev Mol Cell Biol* (2021). https://doi.org/10.1038/s41580-021-00407-0
