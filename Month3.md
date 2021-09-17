@@ -90,6 +90,7 @@ Deep Learning Draft
 5. Hyper-parameters
 
    + The hyper-parameters such as learning rate and decay rate, these are a series of global interactive values that configure the modelling process. The hyper-parameters usually don't be regarded as a part of DL models and won't be updated by algorithms during the training. However, the role of hyper-parameters play a important role in modeling for avoid overfitting and other possible issues.
+   + Hyper-parameter tuning method: https://github.com/autonomio/talos 
 
 6. MLP/CNN in genetic research
 
