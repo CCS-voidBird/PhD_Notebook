@@ -88,13 +88,18 @@ class AlexNet(nn.Module):
 
         return out
 
+def npL1(y,y_hat):
+    return np.sum(np.abs(y-y_hat))
+
+def npL2(y,y_hat):
+    return np.sum(np.square(y-y_hat))
 
 def test(dataloader, model, loss_fn, device):
 
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     y,pred = 0,0
-    test_loss, correct = 0, 0
+    test_loss, test_L1, test_L2 = 0, 0,0
     with torch.no_grad():
         for i, (images, labels) in enumerate(dataloader): # enumerate
 
@@ -109,15 +114,16 @@ def test(dataloader, model, loss_fn, device):
             pred = model(X)
 
             test_loss += loss_fn(pred, y)
+            test_L2 += nn.MSELoss(pred,y)
 
             #correct += (pred == y).sum().item()
             # correct += (pred == y).type(torch.max).sum().item()
             size += len(labels)
-        correct /= size
         test_loss /= num_batches
 
+
     print(f"Test Error: \n  Avg loss: {test_loss:>8f} \n")
-    return y, pred
+    return y, pred,test_loss
 
 
 class Mydataset(Dataset):
@@ -158,7 +164,7 @@ def train(dataset,batch_size,epochs,device,**kwargs):
     print("start modelling")
     model = AlexNet(init_shape=feature_size).to(device)
 
-    criterion = nn.L1Loss()
+    criterion = nn.MSELoss()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001,weight_decay=0.00001)
 
@@ -257,7 +263,7 @@ def main():
         except:
             print("The data have no regions.")
 
-    records = pd.DataFrame(columns=["train", "accuracy"])
+    records = pd.DataFrame(columns=["train", "accuracy", "L1", "L2"])
     for region in by_region.keys():
 
         print("Now process {} data.".format(region))
@@ -271,7 +277,7 @@ def main():
         test_traits = [testYs[:, x].reshape(testYs.shape[0], 1) for x in range(1)]
 
         # trYs = trYs.reshape(trYs.shape[0], 3).type(torch.float32)
-        loss = nn.L1Loss()
+        loss = nn.MSELoss()
 
         print(train_data.shape)
         trXgenos = torch.tensor(np.array(subset[0].drop([args.trait], axis=1)).astype(float))  # dtype=torch.float32)
@@ -310,7 +316,7 @@ def main():
             print(train_name)
             accuracy =  np.corrcoef(pred, obv)[0][1]
             print(accuracy)
-            records = records.append({"train":train_name,"accuracy":accuracy},ignore_index=True)
+            records = records.append({"train":train_name,"accuracy":accuracy,"L1":npL1(obv,pred),"L2":test_results[2]},ignore_index=True)
         for i in range(len(train_models)):
             name = args.trait
             mm = train_models[i]

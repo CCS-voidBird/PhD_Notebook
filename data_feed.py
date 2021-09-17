@@ -108,6 +108,9 @@ def main():
         locat = '/' + args.output.strip('/') + '/'
     else:
         locat = args.output.strip('/') + '/'
+    os.system("mkdir -p {}".format(locat))
+    global PATH
+    PATH = locat
     geno_path = args.geno
     pheno_path = args.trait
     sample_size = args.sample
@@ -118,14 +121,14 @@ def main():
         for trait in ["CCSBlup", "TCHBlup", "FibreBlup"]:
             sugarcane_data.select_single("Series",year,trait,sample_size)
 
-
+    """
     for year in ["2013","2014","2015"]:
         trainset = [field for field in sugarcane_data.fields if year in field]
     set2016 = [field for field in sugarcane_data.fields if "2016" in field]
     set2017 = [field for field in sugarcane_data.fields if "2017" in field]
 
     #samples = phenotypes["Clone"]
-    """
+    
     arrays = genos.T
     arrays.dropna(axis=0, how="any", inplace=True)
     arrays.index = arrays.index.set_names("sample")
