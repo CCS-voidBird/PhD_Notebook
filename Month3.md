@@ -18,6 +18,7 @@ Current Goals:
 + Try to build ResNet (Residual Network)
 + Create separated train dataset and test dataset (For both GBLUP and DL) by region and years. (DONE)
 + Build a tool for managing sugarcane data (in future can solve more species) [DONE]
++ Upload data to Wiener and make subsets.
 
 
 
