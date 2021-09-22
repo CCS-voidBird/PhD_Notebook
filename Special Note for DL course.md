@@ -58,3 +58,29 @@ optimiser
 learning rate
 
 local minimum -> momentum
+
+
+
+Day3
+
+
+
+​	k-fold cross-validation (typically k=5,10)
+
++ k random partition of equal size
++ each partition in turn is used for validation, the rest for training
++ k estimates of model performance
+
+
+
+Hyper-parameters
+
++ number of filters
++ size of the filters
++ Stride
++ padding (0-> valid 1,2-> same)
++ Activation function (usually RELU)
+
+
+
+early stopping

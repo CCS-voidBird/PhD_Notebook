@@ -132,6 +132,10 @@ data shape
 (2912, 26087)
 (7691, 26089)
 
+**use 3 channels for signals (AA,AT,TT) to feed the model**
+
+**Try add a RELU layer before the first conv layer**
+
 Reference 
 
 <a name="1">[1]</a> Deng, Li, and Dong Yu. "Deep learning: methods and applications." *Foundations and trends in signal processing* 7.3–4 (2014): 197-387.
