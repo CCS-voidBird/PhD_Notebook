@@ -136,6 +136,40 @@ data shape
 
 **Try add a RELU layer before the first conv layer**
 
+
+
+A CNN model by Keras: tending between Relu, leaky Relu and elu activate function
+
+```python
+def modelling(n_layers,n_units,input_shape):
+
+    model = Sequential()
+    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',input_shape=input_shape,activation='elu'))
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='elu'))
+    model.add(MaxPooling1D(pool_size=2))
+    #model.add(Dropout(0.2))
+    model.add(Conv1D(32, kernel_size=3, strides=1, padding='valid',activation='elu'))
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(Conv1D(16, kernel_size=3, strides=1, padding='valid',activation='elu'))
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(Flatten())
+    for layers in range(n_layers):
+        model.add(Dense(n_units,activation="elu"))
+    model.add(Dropout(0.2))
+    #model.add(Dense(n_layers,activation="linear"))
+    model.add(Dense(n_layers, activation="linear"))
+    model.add(Dense(1, activation="linear"))
+    tf.keras.optimizers.RMSprop(learning_rate=0.00001)
+    model.compile(optimizer="rmsprop",loss="mean_squared_error")
+
+    return model
+```
+
+
+
+
+
 Reference 
 
 <a name="1">[1]</a> Deng, Li, and Dong Yu. "Deep learning: methods and applications." *Foundations and trends in signal processing* 7.3–4 (2014): 197-387.

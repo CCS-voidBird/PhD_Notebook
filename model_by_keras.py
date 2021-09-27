@@ -24,9 +24,9 @@ sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
 def modelling(n_layers,n_units,input_shape):
 
     model = Sequential()
-    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',input_shape=input_shape,activation='elu'))
+    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',input_shape=input_shape,activation='relu'))
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='elu'))
+    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='relu'))
     model.add(MaxPooling1D(pool_size=2))
     #model.add(Dropout(0.2))
     model.add(Conv1D(32, kernel_size=3, strides=1, padding='valid',activation='elu'))
@@ -99,7 +99,7 @@ def main():
     val_loss = 200
 
 
-    while val_loss >= 20:
+    while val_loss >= 70:
         model = modelling(n_layers=3, n_units=5, input_shape=input_size)
         #model = model_from_json("../keras_models/TCHBlup_model_best.json")
         #model.load_weights("../keras_models/TCHBlup_model_best.json.h5")
