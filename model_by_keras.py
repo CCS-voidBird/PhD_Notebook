@@ -22,14 +22,14 @@ sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
 def modelling(n_layers,n_units,input_shape):
 
     model = Sequential()
-    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='relu',input_shape=input_shape))
+    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='elu',input_shape=input_shape))
     model.add(MaxPooling1D(pool_size=2))
     model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='relu'))
     model.add(MaxPooling1D(pool_size=2))
     #model.add(Dropout(0.2))
     model.add(Conv1D(32, kernel_size=3, strides=1, padding='valid',activation='elu'))
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(16, kernel_size=3, strides=1, padding='valid',activation='elu'))
+    model.add(Conv1D(16, kernel_size=3, strides=1, padding='valid',activation='relu'))
     model.add(MaxPooling1D(pool_size=2))
     model.add(Flatten())
     for layers in range(n_layers):
@@ -54,9 +54,11 @@ def plot_loss_history(h, title):
 
 def main():
 
+    #prepare data from csv files
     train_data = pd.read_csv(TRAIN_PATH,sep="\t").drop(columns="Region")
-    valid_data = pd.read_csv(VALID_PATH,sep="\t").drop(columns="Region")
+    valid_data = pd.read_csv(VALID_PATH,sep="\t").drop(columns="Region") #The final valid data
 
+    #pro-process data, add dim and select features
     train_targets = train_data["TCHBlup"].values
     train_features = train_data.iloc[:,2:]
 
@@ -67,6 +69,7 @@ def main():
     valid_features = valid_data.iloc[:, 2:]
     valid_features = np.expand_dims(valid_features, axis=2)
 
+    #split train data into 2 part - train and test
     features_train, features_val, target_train, target_val = train_test_split(train_features, train_targets,test_size=0.2)
 
     input_size = (n_features, 1)
@@ -84,7 +87,6 @@ def main():
         print(' - train loss     : ' + str(history.history['loss'][-1]))
         print(' - validation loss: ' + str(history.history['val_loss'][-1]))
         val_loss = history.history['val_loss'][-1]
-        # model.save("../keras_models/TCHBlup_model_{}".format(time.localtime(time.time())))
 
         y_pred = np.reshape(model.predict(valid_features), (2000,))
         print(y_pred.shape, valid_targets.shape)
@@ -98,6 +100,7 @@ def main():
                 file.write(json)
             model.save_weights("E:/learning resource/PhD/keras_models/sep_TCHBlup_model.json.h5")
             val_loss = history.history['val_loss'][-1]
-        # "../keras_models/TCHBlup_model_{}".format(time.localtime(time.time()))
+
+
 if __name__ == "__main__":
     main()
