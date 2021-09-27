@@ -8,6 +8,8 @@ import keras.metrics
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedShuffleSplit
 from keras.models import model_from_json
 import time
 
@@ -15,29 +17,30 @@ GENO_PATH = "E:\learning resource\PhD\geno_data1.csv"
 PHENO_PATH = "E:\learning resource\PhD\phenotypes.csv"
 
 TRAIN_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
-VALID_PATH = "E:\learning resource\PhD\sugarcane\/2015_TCHBlup_2000.csv"
+VALID_PATH = "E:/learning resource/PhD/sugarcane/2015_TCHBlup_2000.csv"
 LABEL_COLUMN = 'TCHBlup'
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
 
 def modelling(n_layers,n_units,input_shape):
 
     model = Sequential()
-    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',input_shape=input_shape,activation='relu'))
+    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',input_shape=input_shape,activation='elu'))
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='relu'))
+    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='elu'))
     model.add(MaxPooling1D(pool_size=2))
     #model.add(Dropout(0.2))
-    model.add(Conv1D(32, kernel_size=3, strides=1, padding='valid',activation='relu'))
+    model.add(Conv1D(32, kernel_size=3, strides=1, padding='valid',activation='elu'))
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(16, kernel_size=3, strides=1, padding='valid',activation='relu'))
+    model.add(Conv1D(16, kernel_size=3, strides=1, padding='valid',activation='elu'))
     model.add(MaxPooling1D(pool_size=2))
     model.add(Flatten())
     for layers in range(n_layers):
-        model.add(Dense(n_units,activation="relu"))
+        model.add(Dense(n_units,activation="elu"))
     model.add(Dropout(0.2))
     #model.add(Dense(n_layers,activation="linear"))
     model.add(Dense(n_layers, activation="linear"))
     model.add(Dense(1, activation="linear"))
-    tf.keras.optimizers.RMSprop(learning_rate=2e-5)
+    tf.keras.optimizers.RMSprop(learning_rate=0.00001)
     model.compile(optimizer="rmsprop",loss="mean_squared_error")
 
     return model
@@ -72,14 +75,16 @@ def main():
     valid_data = pd.read_csv(VALID_PATH,sep="\t").drop(columns="Region")
 
     train_targets = train_data["TCHBlup"].values
-    train_features = train_data.iloc[:,1:]
+    train_features = train_data.iloc[:,2:]
 
     n_features = train_features.shape[1]
     train_features = np.expand_dims(train_features,axis=2)
 
+    features_train, features_val, target_train, target_val = train_test_split(train_features, train_targets, test_size=0.2)
+
 
     valid_targets = valid_data["TCHBlup"].values
-    valid_features = valid_data.iloc[:,1:]
+    valid_features = valid_data.iloc[:,2:]
     valid_features = np.expand_dims(valid_features, axis=2)
 
     input_size = (n_features,1)
@@ -100,9 +105,9 @@ def main():
         #model.load_weights("../keras_models/TCHBlup_model_best.json.h5")
         print(model.summary())
         history = model.fit(
-            train_features, train_targets,
+            features_train, target_train,
             epochs=30,
-            validation_data=(valid_features, valid_targets), verbose=1)
+            validation_data=(features_val, target_val), verbose=1)
         plot_loss_history(history, "TCHBlup")
 
         # let's just print the final loss
@@ -117,12 +122,12 @@ def main():
         print(valid_targets)
         accuracy = np.corrcoef(y_pred, valid_targets)
         print("accuracy (measured as Pearson's correlation) is: ", accuracy)
-
-        json = model.to_json()
-        with open("E:/learning resource/PhD/keras_models/TCHBlup_model.json", "w") as file:
-            file.write(json)
-        model.save_weights("E:/learning resource/PhD/keras_models/TCHBlup_model.json.h5")
-        val_loss = history.history['val_loss'][-1]
+        if history.history['val_loss'][-1] < val_loss:
+            json = model.to_json()
+            with open("E:/learning resource/PhD/keras_models/sep_TCHBlup_model.json", "w") as file:
+                file.write(json)
+            model.save_weights("E:/learning resource/PhD/keras_models/sep_TCHBlup_model.json.h5")
+            val_loss = history.history['val_loss'][-1]
         # "../keras_models/TCHBlup_model_{}".format(time.localtime(time.time()))
 if __name__ == "__main__":
     main()
