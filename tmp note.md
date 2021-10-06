@@ -1,8 +1,10 @@
 month 4 add read list
 
-Bourke PM, Voorrips RE, Visser RGF, Maliepaard C. Tools for Genetic Studies in Experimental Populations of Polyploids. Front Plant Sci. 2018 Apr 18;9:513. doi: 10.3389/fpls.2018.00513. PMID: 29720992; PMCID: PMC5915555.
+[Done] Bourke PM, Voorrips RE, Visser RGF, Maliepaard C. Tools for Genetic Studies in Experimental Populations of Polyploids. Front Plant Sci. 2018 Apr 18;9:513. doi: 10.3389/fpls.2018.00513. PMID: 29720992; PMCID: PMC5915555.
 
+Biemans F, de Jong MCM, Bijma P. Genetic parameters and genomic breeding values for digital dermatitis in Holstein Friesian dairy cattle: host susceptibility, infectivity and the basic reproduction ratio. Genet Sel Evol. 2019 Nov 20;51(1):67. doi: 10.1186/s12711-019-0505-3. PMID: 31747869; PMCID: PMC6865030.
 
+Santos DJA, Cole JB, Lawlor TJ Jr, VanRaden PM, Tonhati H, Ma L. Variance of gametic diversity and its application in selection programs. J Dairy Sci. 2019 Jun;102(6):5279-5294. doi: 10.3168/jds.2018-15971. Epub 2019 Apr 10. PMID: 30981488.
 
 
 
