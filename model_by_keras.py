@@ -61,6 +61,20 @@ def plot_loss_history(h, title):
 
 def main():
 
+    train_year = "2015"
+    valid_year = "2016"
+
+    folder = "E:/learning resource/PhD/sugarcane/"
+
+    paths = {"TCHBlup":None,
+             "CCSBlup":None,
+             "FibreBlup":None}
+
+    """
+    add a parameter function: T/V year, trait/all. 
+    output format: a table with avg accuracy for each parameter/trait
+    """
+
     #prepare data from csv files
     train_data = pd.read_csv(TRAIN_PATH,sep="\t")  #.drop(columns="Region")
     valid_data = pd.read_csv(VALID_PATH,sep="\t")  #.drop(columns="Region") The final valid data
@@ -101,7 +115,6 @@ def main():
                                                                               test_size=0.5)
 
     input_size = (n_features, 1)
-    val_loss = 200
     round = 0
     accs = {"TCH":[]}
     while round < 20:
@@ -132,7 +145,6 @@ def main():
             with open("E:/learning resource/PhD/keras_models/sep_TCHBlup_model.json", "w") as file:
                 file.write(json)
             model.save_weights("E:/learning resource/PhD/keras_models/sep_TCHBlup_model.json.h5")
-            val_loss = history.history['val_loss'][-1]
         round += 1
         accs["TCH"].append(accuracy_future)
 
