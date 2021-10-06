@@ -24,7 +24,9 @@ Biemans F, de Jong MCM, Bijma P. Genetic parameters and genomic breeding values 
 
 Santos DJA, Cole JB, Lawlor TJ Jr, VanRaden PM, Tonhati H, Ma L. Variance of gametic diversity and its application in selection programs. J Dairy Sci. 2019 Jun;102(6):5279-5294. doi: 10.3168/jds.2018-15971. Epub 2019 Apr 10. PMID: 30981488.
 
+T H E Meuwissen, B J Hayes, M E Goddard, Prediction of Total Genetic Value Using Genome-Wide Dense Marker Maps, *Genetics*, Volume 157, Issue 4, 1 April 2001, Pages 1819–1829, https://doi.org/10.1093/genetics/157.4.1819
 
+Goddard, M. Genomic selection: prediction of accuracy and maximisation of long term response. *Genetica* **136,** 245–257 (2009). https://doi.org/10.1007/s10709-008-9308-0
 
 polyploid related
 
