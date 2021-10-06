@@ -23,13 +23,14 @@ sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
 def modelling(n_layers,n_units,input_shape):
 
     model = Sequential()
-    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='elu',input_shape=input_shape))
+    model.add(Conv1D(64,kernel_size=5,strides=1,padding='valid',activation='elu',input_shape=input_shape))
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='relu'))
+    #model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='relu'))
+    #model.add(MaxPooling1D(pool_size=2))
+
+    model.add(Conv1D(8, kernel_size=3, strides=1, padding='valid',activation='elu'))
     model.add(MaxPooling1D(pool_size=2))
-    #model.add(Dropout(0.2))
-    model.add(Conv1D(32, kernel_size=3, strides=1, padding='valid',activation='elu'))
-    model.add(MaxPooling1D(pool_size=2))
+    model.add(Dropout(0.2))
     #model.add(Conv1D(16, kernel_size=3, strides=1, padding='valid',activation='relu'))
     #model.add(MaxPooling1D(pool_size=2))
 
@@ -96,35 +97,46 @@ def main():
     #split train data into 2 part - train and test
     features_train, features_val, target_train, target_val = train_test_split(train_features, train_targets,test_size=0.2)
 
+    features_train_val, features_val_val, target_train_val, target_val_val = train_test_split(features_val, target_val,
+                                                                              test_size=0.5)
+
     input_size = (n_features, 1)
     val_loss = 200
-    while val_loss >= 70:
+    round = 0
+    accs = {"TCH":[]}
+    while round < 20:
         model = modelling(n_layers=3, n_units=8, input_shape=input_size)
         print(model.summary())
         history = model.fit(
             features_train, target_train,
             epochs=50,
-            validation_data=(features_val, target_val), verbose=1)
+            validation_data=(features_val_val, target_val_val), verbose=1)
         plot_loss_history(history, "TCHBlup")
 
         # let's just print the final loss
         print(' - train loss     : ' + str(history.history['loss'][-1]))
         print(' - validation loss: ' + str(history.history['val_loss'][-1]))
         val_loss = history.history['val_loss'][-1]
-
-        y_pred = np.reshape(model.predict(valid_features), (2000,))
+        length = target_train_val.shape[0]
+        y_pred = np.reshape(model.predict(features_train_val), (length,))
+        y_pred_future = np.reshape(model.predict(valid_features), (2000,))
         #print(y_pred.shape, valid_targets.shape)
-        print("Predicted: ",y_pred)
-        print("observed: ",valid_targets)
-        accuracy = np.corrcoef(y_pred, valid_targets)
-        print("accuracy (measured as Pearson's correlation) is: ", accuracy)
+        print("Predicted: ",y_pred[:10])
+        print("observed: ",target_train_val[:10])
+        accuracy = np.corrcoef(y_pred, target_train_val)[0,1]
+        accuracy_future = np.corrcoef(y_pred_future, valid_targets)[0,1]
+        print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy)
+        print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy_future)
         if history.history['val_loss'][-1] < val_loss:
             json = model.to_json()
             with open("E:/learning resource/PhD/keras_models/sep_TCHBlup_model.json", "w") as file:
                 file.write(json)
             model.save_weights("E:/learning resource/PhD/keras_models/sep_TCHBlup_model.json.h5")
             val_loss = history.history['val_loss'][-1]
+        round += 1
+        accs["TCH"].append(accuracy_future)
 
+    print("The Mean accuracy of TCH model is: ",np.mean(accs["TCH"]))
 
 if __name__ == "__main__":
     main()
