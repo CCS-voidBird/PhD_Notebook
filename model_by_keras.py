@@ -28,9 +28,9 @@ VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
 """
 
 
-sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
+#sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
 
-def modelling(n_layers,n_units,input_shape,optimizer):
+def modelling(n_layers,n_units,input_shape,optimizer):  # 26000 genotype markers for each sample (AA,AT,TT)
 
     model = Sequential()
     model.add(Conv1D(64,kernel_size=5,strides=3,padding='valid',activation='elu',input_shape=input_shape))
@@ -44,8 +44,7 @@ def modelling(n_layers,n_units,input_shape,optimizer):
     for layers in range(n_layers):
         model.add(Dense(n_units,activation="elu"))
     model.add(Dropout(0.2))
-    #model.add(Dense(n_layers,activation="linear"))
-    #model.add(Dense(n_layers, activation="linear"))
+
     model.add(Dense(1, activation="linear"))
     tf.keras.optimizers.RMSprop(learning_rate=0.00001)
     model.compile(optimizer="rmsprop",loss="mean_squared_error")
