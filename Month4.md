@@ -28,6 +28,10 @@ T H E Meuwissen, B J Hayes, M E Goddard, Prediction of Total Genetic Value Using
 
 Goddard, M. Genomic selection: prediction of accuracy and maximisation of long term response. *Genetica* **136,** 245–257 (2009). https://doi.org/10.1007/s10709-008-9308-0
 
+Khatkar, Mehar S., et al. "Quantitative trait loci mapping in dairy cattle: review and meta-analysis." *Genetics Selection Evolution* 36.2 (2004): 163-190.
+
+Kendziorski, C., Wang, P. A review of statistical methods for expression quantitative trait loci mapping. *Mamm Genome* **17,** 509–517 (2006). https://doi.org/10.1007/s00335-005-0189-6
+
 polyploid related
 
 (1) polyploid genotyping, including the scoring of marker dosage (allele counts) and generation of haplotypes; 
@@ -67,6 +71,28 @@ Polyploid inheritance and simulation
   + polySegratio [7]
   + HaploSim [8]
 
+
+
+Quantitative trait loci (QTL)
+
+> However, if a QTL has been fine mapped with respect to closely linked markers that are in linkage disequilibrium (LD) with the QTL, the associations between specific marker haplotypes and QTL alleles should hold across populations and need not be re-established for each individual family. [9]
+
+
+
+"cM" = centimorgan
+
+
+
+**Genetic linkage**
+
+
+
+paras：
+
+number of filters (16, 32, 64, 128), regularization (i.e., weight decay in DL terminology, 0, 0.1, 0.01, 0.001), learning rate (0.1, 0.01, 0.001, 0.0025), number of neurons in fully connected layer (4, 8, 12, 16), number of hidden layers (1,5,10), and dropout (0, 0.01, 0.1, 0.2).
+
+
+
 [1] Ng SB, Turner EH, Robertson PD, Flygare SD, Bigham AW, Lee C, Shaffer T, Wong M, Bhattacharjee A, Eichler EE, Bamshad M, Nickerson DA, Shendure J. Targeted capture and massively parallel sequencing of 12 human exomes. Nature. 2009 Sep 10;461(7261):272-6. doi: 10.1038/nature08250. Epub 2009 Aug 16. PMID: 19684571; PMCID: PMC2844771.
 
 [2] Mamanova, Lira, et al. "Target-enrichment strategies for next-generation sequencing." *Nature methods* 7.2 (2010): 111-118.
@@ -82,3 +108,5 @@ Polyploid inheritance and simulation
 [7] Baker, P. (2014). polySegratio: simulate and test marker dosage for dominant markers in autopolyploids. R Package Version 0.2–4. doi: 10.1007/s00122-010-1283-z
 
 [8] Motazedi, E., Finkers, R., Maliepaard, C., and De Ridder, D. (2017). Exploiting next-generation sequencing to solve the haplotyping puzzle in polyploids: a simulation study. *Br. Bioinformat.* doi: 10.1093/bib/bbw126 [Epub ahead of print].
+
+[9] Khatkar, Mehar S., et al. "Quantitative trait loci mapping in dairy cattle: review and meta-analysis." *Genetics Selection Evolution* 36.2 (2004): 163-190.

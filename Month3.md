@@ -56,7 +56,7 @@ Deep Learning Draft
 2. Neural network
    + A typical neural network is an organic integrity of artificial neurons, connection layers and methmatic/transmission functions for simulating biological brains and achieving predictions. As the basic unit of neural network, an artificial neurons contains a input portal, a weight $w$ for measuring neuron input, a bias $b$, an inner-procession algorithm $z$ (e.g. $z = wx +b$), a tempory memory for restore processed signal and an output portal. 
 
-   + **[Add a pragraph to explain neurons]** The role of neurons is process the data by its build-in function and weight, a single neuron probably won't have exact meaning in reality.
+   + The role of neurons is process the data by its build-in function and weight, a single neuron probably won't have exact meaning in reality.
 
    + A certain number $N$ of artificial neuron (as far as channels) can contribute into a layer (can be defined as hidden layer or output layer), each layer contain a weight&bias matrix ($N_{output} \times N_{input}$). By default, the input data will be reformatted as a ($N_ {input}\times M$) matrix; the input layer won't perform any calculations (as long as transformation) to the data, then the first hidden layer receives the data, it feed the data into a activate function $af$ such as sigmoid, softmax and linear, the process can be described as $A = af(wx +b)$, and the dimension of the output will be a ($N_{output} \times M$) matrix until the output layer which has a $(N \times N_y)$ weight matrix exports the predicted $\hat{y}$. The above process is also be named as feed-forward propagation.
 
