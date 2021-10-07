@@ -13,27 +13,32 @@ from sklearn.model_selection import StratifiedShuffleSplit
 import argparse
 from sklearn.preprocessing import OneHotEncoder
 
+##############################################################
+##########Training requirement################################
+##Training by para-sets -- convolutional act function + full connected act function + optimizer + learningRate###
+##Output format: an table with mean accuracy for each para set; A density plot for each accuracy##########
+#################################################################
+
+"""
 GENO_PATH = "E:\learning resource\PhD\geno_data1.csv"
 PHENO_PATH = "E:\learning resource\PhD\phenotypes.csv"
 
 TRAIN_PATH = "E:/learning resource/PhD/sugarcane/2015_TCHBlup_2000.csv"
 VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
-LABEL_COLUMN = 'TCHBlup'
+"""
+
+
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
 
-def modelling(n_layers,n_units,input_shape):
+def modelling(n_layers,n_units,input_shape,optimizer):
 
     model = Sequential()
-    model.add(Conv1D(64,kernel_size=5,strides=1,padding='valid',activation='elu',input_shape=input_shape))
+    model.add(Conv1D(64,kernel_size=5,strides=3,padding='valid',activation='elu',input_shape=input_shape))
     model.add(MaxPooling1D(pool_size=2))
-    #model.add(Conv1D(64,kernel_size=3,strides=1,padding='valid',activation='relu'))
-    #model.add(MaxPooling1D(pool_size=2))
 
-    model.add(Conv1D(8, kernel_size=3, strides=1, padding='valid',activation='elu'))
+    model.add(Conv1D(128, kernel_size=3, strides=1, padding='valid',activation='elu'))
     model.add(MaxPooling1D(pool_size=2))
     model.add(Dropout(0.2))
-    #model.add(Conv1D(16, kernel_size=3, strides=1, padding='valid',activation='relu'))
-    #model.add(MaxPooling1D(pool_size=2))
 
     model.add(Flatten())
     for layers in range(n_layers):
@@ -62,11 +67,6 @@ def plot_loss_history(h, title):
 
 def main():
 
-    train_year = "2015"
-    valid_year = "2016"
-
-    folder = "E:/learning resource/PhD/sugarcane/"
-
     traits = ["TCHBlup",
              "CCSBlup",
              "FibreBlup"]
@@ -75,7 +75,7 @@ def main():
     add a parameter function: T/V year, trait/all. 
     output format: a table with avg accuracy for each parameter/trait
     """
-    # python model_by_keras.py -p "E:/learning resource/PhD/sugarcane/" -1 2016 -2 2016 -o ../new_model/test/ -s 400
+    # python model_by_keras.py -p "E:/learning resource/PhD/sugarcane/" -1 2016 -2 2017 -o ../new_model/test/ -s 2000 -r 1
     parser = argparse.ArgumentParser()
     req_grp = parser.add_argument_group(title='Required')
     req_grp.add_argument('-p', '--path', type=str, help="Input path.", required=True)
@@ -185,9 +185,8 @@ def main():
         print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs[trait]))
     for key in accs.keys():
         record.write("{}\t{}\n".format(key,np.mean(accs[key])))
-
+        plt.plot()
     record.close()
-
 
 if __name__ == "__main__":
     main()
