@@ -2,14 +2,13 @@ import glob     #for checking dir content
 import os       #for dir creation
 import pandas as pd
 from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling1D, Flatten, Dense, Conv1D, ReLU
+from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D
 from keras.layers import Dropout
 import keras.metrics
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import StratifiedShuffleSplit
 import argparse
 from sklearn.preprocessing import OneHotEncoder
 
@@ -47,8 +46,20 @@ def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
     #model.add(Dense(n_layers,activation="linear"))
     #model.add(Dense(n_layers, activation="linear"))
     model.add(Dense(1, activation="linear"))
-    tf.keras.optimizers.RMSprop(learning_rate=lr)
-    model.compile(optimizer=optimizer,loss="mean_squared_error")
+    try:
+        adm = keras.optimizers.Adam(learning_rate=lr)
+        rms = keras.optimizers.RMSprop(learning_rate=lr)
+        sgd = keras.optimizers.SGD(learning_rate=lr)
+    except:
+        adm = keras.optimizers.Adam(lr=lr)
+        rms = keras.optimizers.RMSprop(lr=lr)
+        sgd = keras.optimizers.SGD(lr=lr)
+
+    optimizers = {"rmsprop":rms,
+                 "Adam": adm,
+                 "SGD": sgd}
+
+    model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
 
     """
     Optimizers: Adam, RMSProp, Momentum 
@@ -85,6 +96,12 @@ def main():
     req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
     req_grp.add_argument('-a', '--region', type=bool, help="add regions (T/F)", default=False)
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
+    req_grp.add_argument('-opt', '--optimizer', type=str, help="selecting optimizer from Adam, SGD, rmsprop",
+                         default="rmsprop")
+    req_grp.add_argument('-plot', '--plot', type=bool, help="give plot?",
+                         default=False)
+    req_grp.add_argument('-sli', '--silence', type=bool, help="silence mode",
+                         default=True)
     args = parser.parse_args()
     par_path = args.path
     if args.output[0] == "/":
@@ -92,6 +109,11 @@ def main():
     else:
         locat = args.output.strip('/') + '/'
     os.system("mkdir -p {}".format(locat))
+    model_path = locat + "models/"
+    os.system("mkdir -p {}".format(model_path))
+    record_path = locat + "records_{}/".format(args.optimizer)
+    os.system("mkdir -p {}".format(record_path))
+    sli_mode = 0 if args.silence == True else 1
     global PATH
     PATH = locat
     train_year = args.train
@@ -99,9 +121,10 @@ def main():
     if args.sample != "all":
         sample_size = "_" + args.sample
     else:
-        sample_size = ""
+        sample_size = "_" + args.sample
 
-    record = open(locat+"train_record_{}_vs_{}.csv".format(train_year,valid_year),"a")
+    record = open(record_path+"train_record_{}_vs_{}.csv".format(train_year,valid_year),"w")
+    raw_record = open(record_path+"train_record_{}_vs_{}_raw.csv".format(train_year,valid_year),"w")
     accs = {"TCHBlup": [], "CCSBlup": [], "FibreBlup": []}
 
     for trait in traits:
@@ -157,36 +180,39 @@ def main():
             history = model.fit(
                 features_train, target_train,
                 epochs=50,
-                validation_data=(features_val_val, target_val_val), verbose=1)
-            plot_loss_history(history, "TCHBlup")
+                validation_data=(features_val_val, target_val_val), verbose=sli_mode)
+            if args.plot is True:
+                plot_loss_history(history, "TCHBlup")
 
             # let's just print the final loss
             print(' - train loss     : ' + str(history.history['loss'][-1]))
             print(' - validation loss: ' + str(history.history['val_loss'][-1]))
             val_loss = history.history['val_loss'][-1]
             length = target_train_val.shape[0]
+            val_length = valid_targets.shape[0]
             y_pred = np.reshape(model.predict(features_train_val), (length,))
-            y_pred_future = np.reshape(model.predict(valid_features), (2000,))
-            # print(y_pred.shape, valid_targets.shape)
+            y_pred_future = np.reshape(model.predict(valid_features), (val_length,))
+
             print("Predicted: ", y_pred[:10])
             print("observed: ", target_train_val[:10])
             accuracy = np.corrcoef(y_pred, target_train_val)[0, 1]
             accuracy_future = np.corrcoef(y_pred_future, valid_targets)[0, 1]
             print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy)
-            print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy_future)
+            print("Future prediction accuracy (measured as Pearson's correlation) is: ", accuracy_future)
             if history.history['val_loss'][-1] < val_loss:
                 json = model.to_json()
-                with open("E:/learning resource/PhD/keras_models/sep_TCHBlup_model.json", "w") as file:
+                with open("{}sep_TCHBlup_model.json".format(model_path), "w") as file:
                     file.write(json)
-                model.save_weights("E:/learning resource/PhD/keras_models/sep_TCHBlup_model.json.h5")
+                model.save_weights("{}sep_TCHBlup_model.json.h5".format(model_path))
             round += 1
             accs[trait].append(accuracy_future)
 
         print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs[trait]))
     for key in accs.keys():
         record.write("{}\t{}\n".format(key,np.mean(accs[key])))
-        plt.plot()
+        raw_record.write("{}\t{}\n".format(key,"\t".join([str(x) for x in accs[key]])))
     record.close()
+    raw_record.close()
 
 if __name__ == "__main__":
     main()
