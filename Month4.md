@@ -83,6 +83,37 @@ Quantitative trait loci (QTL)
 
 
 
+【Train note】
+
+env: 
+
++ anaconda/3.6;
++ tensorflow_2.2
++ openmpi3
+
++ cuda/10.0.130
++ 
+
+
+
+```bash
+srun -N 1 --mem=100G -p gpu --gres=gpu:tesla:1 --pty bash
+module load cuda/10.0.130
+module load gnu7
+module load openmpi3
+module load anaconda/3.6
+source activate /opt/ohpc/pub/apps/tensorflow_2.2
+module load anaconda/3.6
+source ~/.
+python ~/model_by_keras.py -p sugarcane_data/ -1 2016 -2 2017 -o models/ -r 10
+```
+
+
+
+
+
+
+
 **Genetic linkage**
 
 

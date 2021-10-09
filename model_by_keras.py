@@ -1,6 +1,7 @@
 import glob     #for checking dir content
 import os       #for dir creation
 import pandas as pd
+import keras
 from keras.models import Sequential
 from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D
 from keras.layers import Dropout
