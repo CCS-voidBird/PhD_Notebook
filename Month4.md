@@ -10,7 +10,8 @@ Current Goals:
 
 + Preparing training matrix
 + Write a proposal 
-+ 
+
+**continue: https://pubmed.ncbi.nlm.nih.gov/18076469/**
 
 Add to Read list:
 
@@ -31,6 +32,8 @@ Goddard, M. Genomic selection: prediction of accuracy and maximisation of long t
 Khatkar, Mehar S., et al. "Quantitative trait loci mapping in dairy cattle: review and meta-analysis." *Genetics Selection Evolution* 36.2 (2004): 163-190.
 
 Kendziorski, C., Wang, P. A review of statistical methods for expression quantitative trait loci mapping. *Mamm Genome* **17,** 509–517 (2006). https://doi.org/10.1007/s00335-005-0189-6
+
+Goddard, M. and Hayes, B. (2007), Genomic selection. Journal of Animal Breeding and Genetics, 124: 323-330. https://doi.org/10.1111/j.1439-0388.2007.00702.x
 
 polyploid related
 
@@ -105,6 +108,7 @@ module load anaconda/3.6
 source activate /opt/ohpc/pub/apps/tensorflow_2.2
 module load anaconda/3.6
 source ~/.
+# using RMSprop as optimizer
 python ~/model_by_keras.py -p sugarcane_data/ -1 2016 -2 2017 -o models/ -r 10
 ```
 
