@@ -157,11 +157,11 @@ _________________________________________________________________
 
 
 
+![train_den.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/2016-2017/train_den.png?raw=true)
 
 
 
-
-
+![train_box.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/2016-2017/train_box.png?raw=true)
 
 **Genetic linkage**
 
