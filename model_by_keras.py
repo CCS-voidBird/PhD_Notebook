@@ -63,7 +63,7 @@ def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
     model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
 
     """
-    Optimizers: Adam, RMSProp, Momentum 
+    Optimizers: Adam, RMSProp, SGD 
     """
 
     return model
@@ -97,23 +97,31 @@ def main():
     req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
     req_grp.add_argument('-a', '--region', type=bool, help="add regions (T/F)", default=False)
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
-    req_grp.add_argument('-opt', '--optimizer', type=str, help="selecting optimizer from Adam, SGD, rmsprop",
+    req_grp.add_argument('-opt', '--optimizer', type=str, help='select optimizer: Adam, SGD, rmsprop',
                          default="rmsprop")
     req_grp.add_argument('-plot', '--plot', type=bool, help="give plot?",
                          default=False)
-    req_grp.add_argument('-sli', '--silence', type=bool, help="silence mode",
+    req_grp.add_argument('-sli', '--silence', type=bool, help="silent mode",
                          default=True)
+    req_grp.add_argument('-loss', '--loss', type=int, help="The target loss",
+                         default=10)
     args = parser.parse_args()
     par_path = args.path
     if args.output[0] == "/":
         locat = '/' + args.output.strip('/') + '/'
     else:
         locat = args.output.strip('/') + '/'
-    os.system("mkdir -p {}".format(locat))
+    locat = locat + "{}_vs_{}/".format(args.train, args.valid)
     model_path = locat + "models/"
-    os.system("mkdir -p {}".format(model_path))
     record_path = locat + "records_{}/".format(args.optimizer)
-    os.system("mkdir -p {}".format(record_path))
+    for path in [locat,model_path,record_path]:
+        if not os.path.exists(path):
+            os.mkdir(path)
+    # os.system("mkdir -p {}".format(locat))
+    # os.system("mkdir -p {}".format(locat))
+    #os.system("mkdir -p {}".format(model_path))
+
+    #os.system("mkdir -p {}".format(record_path))
     sli_mode = 0 if args.silence == True else 1
     global PATH
     PATH = locat
@@ -183,7 +191,7 @@ def main():
                 epochs=50,
                 validation_data=(features_val_val, target_val_val), verbose=sli_mode)
             if args.plot is True:
-                plot_loss_history(history, "TCHBlup")
+                plot_loss_history(history, trait)
 
             # let's just print the final loss
             print(' - train loss     : ' + str(history.history['loss'][-1]))
@@ -200,11 +208,11 @@ def main():
             accuracy_future = np.corrcoef(y_pred_future, valid_targets)[0, 1]
             print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy)
             print("Future prediction accuracy (measured as Pearson's correlation) is: ", accuracy_future)
-            if history.history['val_loss'][-1] < val_loss:
+            if history.history['val_loss'][-1] < args.loss:
                 json = model.to_json()
-                with open("{}sep_TCHBlup_model.json".format(model_path), "w") as file:
+                with open("{}{}_{}_model.json".format(model_path,trait,args.optimizer), "w") as file:
                     file.write(json)
-                model.save_weights("{}sep_TCHBlup_model.json.h5".format(model_path))
+                model.save_weights("{}{}_{}_model.json.h5".format(model_path,trait,args.optimizer))
             round += 1
             accs[trait].append(accuracy_future)
 

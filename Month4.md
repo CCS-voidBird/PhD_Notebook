@@ -95,9 +95,10 @@ env:
 + openmpi3
 
 + cuda/10.0.130
-+ 
 
 
+
+Prediction example code trunk:
 
 ```bash
 srun -N 1 --mem=100G -p gpu --gres=gpu:tesla:1 --pty bash
@@ -107,12 +108,52 @@ module load openmpi3
 module load anaconda/3.6
 source activate /opt/ohpc/pub/apps/tensorflow_2.2
 module load anaconda/3.6
-source ~/.
-# using RMSprop as optimizer
+
+# using RMSprop as optimizer, train set - 2016, valid set - 2017, 10 round for getting average accuracy
 python ~/model_by_keras.py -p sugarcane_data/ -1 2016 -2 2017 -o models/ -r 10
 ```
 
+The whole test will introduce 3 optimizers - Adam, RMSprop and SGD;
 
+The output will be a folder named [Train_year]\_vs\_[Valid_Year], contain the raw accuracy record for each round; and the average accuracy for whole round per optimizer;
+
+Currently the model details can only be recorded manually with a table-like format: 
+
+
+
+```bash
+Model: "sequential"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #
+=================================================================
+conv1d (Conv1D)              (None, 8694, 64)          384
+_________________________________________________________________
+max_pooling1d (MaxPooling1D) (None, 4347, 64)          0
+_________________________________________________________________
+conv1d_1 (Conv1D)            (None, 4345, 128)         24704
+_________________________________________________________________
+max_pooling1d_1 (MaxPooling1 (None, 2172, 128)         0
+_________________________________________________________________
+dropout (Dropout)            (None, 2172, 128)         0
+_________________________________________________________________
+flatten (Flatten)            (None, 278016)            0
+_________________________________________________________________
+dense (Dense)                (None, 8)                 2224136
+_________________________________________________________________
+dense_1 (Dense)              (None, 8)                 72
+_________________________________________________________________
+dense_2 (Dense)              (None, 8)                 72
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 8)                 0
+_________________________________________________________________
+dense_3 (Dense)              (None, 1)                 9
+=================================================================
+Total params: 2,249,377
+Trainable params: 2,249,377
+Non-trainable params: 0
+_________________________________________________________________
+
+```
 
 
 
