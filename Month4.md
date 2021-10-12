@@ -13,6 +13,8 @@ Current Goals:
 
 **continue: https://pubmed.ncbi.nlm.nih.gov/18076469/**
 
+https://www.nature.com/articles/nrg2575 #pig
+
 Add to Read list:
 
 + https://github.com/ne1s0n/coding_excercises
@@ -25,7 +27,7 @@ Biemans F, de Jong MCM, Bijma P. Genetic parameters and genomic breeding values 
 
 Santos DJA, Cole JB, Lawlor TJ Jr, VanRaden PM, Tonhati H, Ma L. Variance of gametic diversity and its application in selection programs. J Dairy Sci. 2019 Jun;102(6):5279-5294. doi: 10.3168/jds.2018-15971. Epub 2019 Apr 10. PMID: 30981488.
 
-T H E Meuwissen, B J Hayes, M E Goddard, Prediction of Total Genetic Value Using Genome-Wide Dense Marker Maps, *Genetics*, Volume 157, Issue 4, 1 April 2001, Pages 1819–1829, https://doi.org/10.1093/genetics/157.4.1819
+**T H E Meuwissen, B J Hayes, M E Goddard, Prediction of Total Genetic Value Using Genome-Wide Dense Marker Maps, *Genetics*, Volume 157, Issue 4, 1 April 2001, Pages 1819–1829, https://doi.org/10.1093/genetics/157.4.1819**
 
 Goddard, M. Genomic selection: prediction of accuracy and maximisation of long term response. *Genetica* **136,** 245–257 (2009). https://doi.org/10.1007/s10709-008-9308-0
 
@@ -142,7 +144,7 @@ source activate /opt/ohpc/pub/apps/tensorflow_2.2
 module load anaconda/3.6
 
 # using RMSprop as optimizer, train set - 2016, valid set - 2017, 10 round for getting average accuracy
-python ~/model_by_keras.py -p sugarcane_data/ -1 2016 -2 2017 -o models/ -r 10
+python ~/model_by_keras.py -p sugarcane_data/ -1 2016 -2 2017 -o models/ -r 10 #epochs 50 per opt
 ```
 
 The whole test will introduce 3 optimizers - Adam, RMSprop and SGD;
@@ -151,10 +153,8 @@ The output will be a folder named [Train_year]\_vs\_[Valid_Year], contain the ra
 
 Currently the model details can only be recorded manually with a table-like format: 
 
-
-
 ```bash
-Model: "sequential" l0.00001
+Model: "sequential" lr=0.00001
 _________________________________________________________________
 Layer (type)                 Output Shape              Param #
 =================================================================
@@ -187,6 +187,38 @@ _________________________________________________________________
 
 ```
 
+The training set: 80% of 2016 data; 
+
+test set - 10% of 2016 data; 
+
+In-same-year valid set - 10% of 2016 data; 
+
+Future-valid-set 100% 2017 data;
+
+AA = 2; AT, TA =1,TT=0, Miss = 0.01
+
+in working: OneHotEncoding function
+
+​	3 binary channels for AA, AT ,TT (0/1) 
+
+​		markers  1    2    3
+
+​		AA            0	0	1
+
+​		AT/TA       1	0	0
+
+​		TT             0	1	0
+
+​	4 binary channels for regions
+
+​	
+
+Sugarcane data 26k marker - marker A in chr1
+
+10k marker - marker A in chr1 - Done
+
+
+
 
 
 ![train_den.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/2016-2017/train_den.png?raw=true)
@@ -199,7 +231,29 @@ _________________________________________________________________
 
 
 
-paras：
+Sugarcane TCHBlup - AI vs GBLUP  -- ask Seema to get split methods  
+
+
+
+
+
+
+
+Genomic selection
+
+![img](https://ars.els-cdn.com/content/image/1-s2.0-S0378111920304649-gr4.jpg)
+
+Question? the process of GS: 
+
+	1. set a framework of the genotype markers array - sugarcane markers and select traits.
+	2. training a genetic prediction model for the given markers ↑
+	3. Using another strategy to generate natural offspring - F1 F2 .. from the original/natural/actual parents.
+	4. Using the trained prediction model to predict phenotypes of these digital offspring -> select highest outcomes
+	5. Record breeding traces for those outstanding offspring
+
+
+
+upcoming paras：
 
 number of filters (16, 32, 64, 128), regularization (i.e., weight decay in DL terminology, 0, 0.1, 0.01, 0.001), learning rate (0.1, 0.01, 0.001, 0.0025), number of neurons in fully connected layer (4, 8, 12, 16), number of hidden layers (1,5,10), and dropout (0, 0.01, 0.1, 0.2).
 
