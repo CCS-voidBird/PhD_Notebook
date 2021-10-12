@@ -55,7 +55,6 @@ polyploid related
 (3) quantitative trait analysis and genomic selection, including tools that perform quantitative trait locus (QTL) analysis in bi-parental populations, genome-wide association analysis (GWAS) and genomic selection and prediction. 
 
 + QTL analysis
-+ 
 
 
 
@@ -96,6 +95,39 @@ env:
 
 + cuda/10.0.130
 
+```bash
+usage: model_by_keras.py [-h] -p PATH -1 TRAIN -2 VALID -o OUTPUT [-s SAMPLE]
+                         [-a REGION] [-r ROUND] [-opt OPTIMIZER] [-plot PLOT]
+                         [-sli SILENCE] [-loss LOSS]
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+Required:
+  -p PATH, --path PATH  Input path for dataset.
+  -1 TRAIN, --train TRAIN
+                        Input train year.
+  -2 VALID, --valid VALID
+                        Input valid year.
+  -o OUTPUT, --output OUTPUT
+                        Input output dir.
+  -s SAMPLE, --sample SAMPLE
+                        number of sample e.g. 2015_TCHBlup_2000.csv
+  -a REGION, --region REGION
+                        add regions (T/F)
+  -r ROUND, --round ROUND
+                        training round for esitimate average performance.
+  -opt OPTIMIZER, --optimizer OPTIMIZER
+                        select optimizer: Adam, SGD, rmsprop
+  -plot PLOT, --plot PLOT
+                        give plot? Output training plot for each training
+  -sli SILENCE, --silence SILENCE
+                        silent mode
+  -loss LOSS, --loss LOSS
+                        The target loss
+
+```
+
 
 
 Prediction example code trunk:
@@ -122,7 +154,7 @@ Currently the model details can only be recorded manually with a table-like form
 
 
 ```bash
-Model: "sequential"
+Model: "sequential" l0.00001
 _________________________________________________________________
 Layer (type)                 Output Shape              Param #
 =================================================================
