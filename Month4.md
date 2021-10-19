@@ -10,6 +10,9 @@ Current Goals:
 
 + Preparing training matrix
 + Write a proposal 
++ add a function to model that receive multiple years
++ add a OneHotEncoding function to model
++ Rerun the model
 
 **continue: https://pubmed.ncbi.nlm.nih.gov/18076469/**
 
@@ -116,7 +119,7 @@ Required:
   -o OUTPUT, --output OUTPUT
                         Input output dir.
   -s SAMPLE, --sample SAMPLE
-                        number of sample e.g. 2015_TCHBlup_2000.csv
+                        number of sample e.g. 2000 for 2015_TCHBlup_2000.csv
   -a REGION, --region REGION
                         add regions (T/F)
   -r ROUND, --round ROUND
@@ -258,6 +261,43 @@ Question? the process of GS:
 upcoming paras：
 
 number of filters (16, 32, 64, 128), regularization (i.e., weight decay in DL terminology, 0, 0.1, 0.01, 0.001), learning rate (0.1, 0.01, 0.001, 0.0025), number of neurons in fully connected layer (4, 8, 12, 16), number of hidden layers (1,5,10), and dropout (0, 0.01, 0.1, 0.2).
+
+
+
+
+
++ Linkage length(region)
+
+> However, linkage analysis usually mapped the QTLs to a large interval of 20 centimorgans (cM) or more.
+
+[Ref] Van Laere, A. S. et al. A regulatory mutation in *IGF2* causes a major QTL effect on muscle growth in the pig. *Nature* **425**, 832–836 (2003).
+
+[Ref] Georges, M. et al. Mapping quantitative trait loci controlling milk production in dairy cattle by exploiting progeny testing. *Genetics* **139**, 907–920 (1995).
+
+
+
++ (Linkage disequilibrium) LD and the effect of effective population size.
+
+> LD decays while marker distance increasing. By contrast, LD mapping relies on chromosome segments inherited from a common ancestor before the recorded pedigree — this is because it is the inheritance of identical chromosome segments by multiple descendents from a common ancestor that causes LD.
+
+
+
++ MAS vs GS
+
+> The key difference between the two approaches is that MAS concentrates on a small number of QTLs that are tagged by markers with well-verified associations, whereas genomic selection uses a genome-wide panel of dense markers so that all QTLs are in LD with at least one marker. 
+
+
+
+Kinds of MAS
+
+
+
+principle of GS:
+
++ a sample of animals that have been assayed for the markers and recorded for the trait - reference population
++ Predict the genomic breeding value 
+
+
 
 
 
