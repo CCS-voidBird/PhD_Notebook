@@ -62,3 +62,27 @@ Polyploid inheritance and simulation
 [7] Baker, P. (2014). polySegratio: simulate and test marker dosage for dominant markers in autopolyploids. R Package Version 0.2–4. doi: 10.1007/s00122-010-1283-z
 
 [8] Motazedi, E., Finkers, R., Maliepaard, C., and De Ridder, D. (2017). Exploiting next-generation sequencing to solve the haplotyping puzzle in polyploids: a simulation study. *Br. Bioinformat.* doi: 10.1093/bib/bbw126 [Epub ahead of print].
+
+Month 4 19 Oct
+
+
+
++ Linkage length(region)
+
+> However, linkage analysis usually mapped the QTLs to a large interval of 20 centimorgans (cM) or more.
+
+[Ref] Van Laere, A. S. et al. A regulatory mutation in *IGF2* causes a major QTL effect on muscle growth in the pig. *Nature* **425**, 832–836 (2003).
+
+[Ref] Georges, M. et al. Mapping quantitative trait loci controlling milk production in dairy cattle by exploiting progeny testing. *Genetics* **139**, 907–920 (1995).
+
+
+
++ (Linkage disequilibrium) LD and the effect of effective population size.
+
+> LD decays while marker distance increasing. By contrast, LD mapping relies on chromosome segments inherited from a common ancestor before the recorded pedigree — this is because it is the inheritance of identical chromosome segments by multiple descendents from a common ancestor that causes LD.
+
+
+
++ MAS vs GS
+
+> The key difference between the two approaches is that MAS concentrates on a small number of QTLs that are tagged by markers with well-verified associations, whereas genomic selection uses a genome-wide panel of dense markers so that all QTLs are in LD with at least one marker. 
