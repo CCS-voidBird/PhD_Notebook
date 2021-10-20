@@ -1,15 +1,17 @@
 import glob     #for checking dir content
 import os       #for dir creation
+from Functions import *
 import pandas as pd
 import keras
 from keras.models import Sequential
-from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D
+from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
 from keras.layers import Dropout
 import keras.metrics
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 from sklearn.model_selection import train_test_split
+from keras.utils import to_categorical
 import argparse
 from sklearn.preprocessing import OneHotEncoder
 
@@ -117,16 +119,12 @@ def main():
     for path in [locat,model_path,record_path]:
         if not os.path.exists(path):
             os.mkdir(path)
-    # os.system("mkdir -p {}".format(locat))
-    # os.system("mkdir -p {}".format(locat))
-    #os.system("mkdir -p {}".format(model_path))
 
-    #os.system("mkdir -p {}".format(record_path))
     sli_mode = 0 if args.silence == True else 1
     global PATH
     PATH = locat
-    train_year = args.train
-    valid_year = args.valid
+    train_year = args.train.split("-")
+    valid_year = args.valid.split("-")
     if args.sample != "all":
         sample_size = "_" + args.sample
     else:
@@ -137,11 +135,11 @@ def main():
     accs = {"TCHBlup": [], "CCSBlup": [], "FibreBlup": []}
 
     for trait in traits:
-        train_path = par_path + train_year + "_" + trait + sample_size + ".csv"
-        valid_path = par_path + valid_year + "_" + trait + sample_size + ".csv"
         # prepare data from csv files
-        train_data = pd.read_csv(train_path, sep="\t")  # .drop(columns="Region")
-        valid_data = pd.read_csv(valid_path, sep="\t")  # .drop(columns="Region") The final valid data
+        train_path = [par_path + year + "_" + trait + sample_size + ".csv" for year in train_year]
+        train_data = pd.concat([pd.read_csv(path, sep="\t") for path in train_path],axis=0)  # .drop(columns="Region")
+        valid_path = [par_path + year + "_" + trait + sample_size + ".csv" for year in valid_year]
+        valid_data = pd.concat([pd.read_csv(path, sep="\t") for path in valid_path],axis=0)  # .drop(columns="Region") The final valid data
 
         """
         Drop sampling index 
@@ -152,7 +150,6 @@ def main():
 
         print("Train data:")
         print(train_data.head(3))
-        print(train_data.iloc[:, 0])
         print("Valid data:")
         print(valid_data.head(3))
 
@@ -165,12 +162,18 @@ def main():
         # train_features = ohe.transform(train_features)
 
         n_features = train_features.shape[1]
-        train_features = np.expand_dims(train_features, axis=2)
+        train_features = to_categorical(train_features)
+        print(train_features.shape)
+        #train_features = np.expand_dims(train_features, axis=3)
+        #print("expand: ",train_features[1].shape)
+
 
         valid_targets = valid_data[trait].values
         valid_features = valid_data.iloc[:, 2:]
         # valid_features = ohe.transform(valid_features) # hot encode region data
-        valid_features = np.expand_dims(valid_features, axis=2)
+        valid_features = to_categorical(valid_features)
+
+        #valid_features = np.expand_dims(valid_features, axis=3)
 
         # split train data into 2 part - train and test
         features_train, features_val, target_train, target_val = train_test_split(train_features, train_targets,
@@ -180,7 +183,7 @@ def main():
                                                                                                   target_val,
                                                                                                   test_size=0.5)
 
-        input_size = (n_features, 1)
+        input_size = [n_features,3] #(n_features, 1)
         round = 0
 
         while round < args.round:
@@ -196,7 +199,6 @@ def main():
             # let's just print the final loss
             print(' - train loss     : ' + str(history.history['loss'][-1]))
             print(' - validation loss: ' + str(history.history['val_loss'][-1]))
-            val_loss = history.history['val_loss'][-1]
             length = target_train_val.shape[0]
             val_length = valid_targets.shape[0]
             y_pred = np.reshape(model.predict(features_train_val), (length,))
