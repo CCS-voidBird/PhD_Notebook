@@ -216,7 +216,19 @@ in working: OneHotEncoding function
 
 ​	4 binary channels for regions
 
-​	
+​	[21/OCT update] An alternative encoding: 3 channels for 4 categories:
+
+​	markers  1    2    3
+
+​	AA            0	0	1
+
+​	AT/TA       1	0	0
+
+​	TT             0	1	0       Set Missed data as 0 in all 3 channels.
+
+
+
+
 
 Sugarcane data 26k marker - marker A in chr1
 
@@ -236,7 +248,7 @@ Sugarcane data 26k marker - marker A in chr1
 
 
 
-Sugarcane TCHBlup - AI vs GBLUP  -- ask Seema to get split methods  
+Sugarcane TCHBlup - AI vs GBLUP  -- ask Seema to get split methods (No major change)
 
 
 
