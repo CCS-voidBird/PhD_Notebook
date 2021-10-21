@@ -226,7 +226,15 @@ in working: OneHotEncoding function
 
 ​	TT             0	1	0       Set Missed data as 0 in all 3 channels.
 
+```bash
+python ~/GS_model.py -p sugarcane_data/ -1 2013-2015 -2 2017 -o models/ -r 10
+```
 
+
+
+Training set: 2013-2015
+
+Valid set: 2016、2017
 
 
 
