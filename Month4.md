@@ -135,6 +135,23 @@ Required:
 
 ```
 
+geno data pre-process:
+
+```python
+import pandas as
+data = pd.read_csv("../genos_SelTools.txt",sep=" ")
+datat= data.T
+data.drop(data.columns[0],inplace=True,axis=1)
+datat.fillna("miss",inplace=True)
+datat.index = datat.index.set_names("sample")
+datat = datat.reset_index()
+datat.to_csv("../fitted_genos.csv",sep="\t")
+```
+
+
+
+
+
 
 
 Prediction example code trunk:

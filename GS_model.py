@@ -1,6 +1,6 @@
 import glob     #for checking dir content
 import os       #for dir creation
-#from Functions import *
+from Functions import *
 import pandas as pd
 import keras
 from keras.models import Sequential
