@@ -129,8 +129,8 @@ def main():
     else:
         sample_size = "_" + args.sample
 
-    record = open(record_path+"train_record_{}_vs_{}.csv".format(train_year,valid_year),"w")
-    raw_record = open(record_path+"train_record_{}_vs_{}_raw.csv".format(train_year,valid_year),"w")
+    record = open(record_path+"train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
+    raw_record = open(record_path+"train_record_{}_vs_{}_raw.csv".format("_".join(train_year),"_".join(valid_year)),"w")
     accs = {"TCHBlup": [], "CCSBlup": [], "FibreBlup": []}
 
     for trait in traits:
