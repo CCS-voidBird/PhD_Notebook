@@ -46,7 +46,7 @@ def main():
     years=[2015,2016]
     goal = read_pipes(geno_data,pheno_data,years)
     print(goal.info())
-    print(goal.head(3))
+    print(goal.Series.unique())
     print("done")
 
 if __name__ == "__main__":
