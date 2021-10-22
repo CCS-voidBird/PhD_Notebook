@@ -20,6 +20,10 @@ https://www.nature.com/articles/nrg2575 #pig
 
 https://www.biorxiv.org/content/10.1101/2021.05.20.445038v1.full.pdf
 
+Random forest example
+
+https://redditech.github.io/team-fast-tabulous/jupyter/2021/07/21/Regressor-Versus-Classifier.html
+
 Add to Read list:
 
 + https://github.com/ne1s0n/coding_excercises
