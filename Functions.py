@@ -29,7 +29,7 @@ def read_pipes(genotype, phenotypes, years):
     #selected_genos = genotype.query('sample in @selected_phenos.Clone')
     #selected_genos = genotype.iloc[genotype.sample in selected_phenos.Clone.values]
     #merged_data = pd.merge(selected_phenos,selected_genos,left_on="Clone",right_on="sample")
-
+    print(years)
     goal = (phenotypes
             .query('Series in @years')
             .pipe(mid_merge,genos=genotype)
@@ -43,7 +43,7 @@ def main():
     geno_data.drop(geno_data.columns[0],axis=1,inplace=True)
     print(geno_data.columns)
     pheno_data = pd.read_csv("../phenotypes.csv",sep="\t")
-    years=[2015,2016]
+    years=[x for x in range(2013,2016)]
     goal = read_pipes(geno_data,pheno_data,years)
     print(goal.info())
     print(goal.Series.unique())
