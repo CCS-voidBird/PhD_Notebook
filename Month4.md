@@ -10,9 +10,9 @@ Current Goals:
 
 + Preparing training matrix
 + Write a proposal 
-+ add a function to model that receive multiple years
-+ add a OneHotEncoding function to model
-+ Rerun the model
++ add a function to model that receive multiple years (DONE)
++ add a OneHotEncoding function to model (to_categorical testing)
++ Rerun the model (2013-15 vs 2017)DONE
 
 **continue: https://pubmed.ncbi.nlm.nih.gov/18076469/**
 

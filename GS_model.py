@@ -1,6 +1,7 @@
 import glob     #for checking dir content
 import os       #for dir creation
 from Functions import *
+from GSModel import *
 import pandas as pd
 import keras
 from keras.models import Sequential
@@ -31,16 +32,16 @@ VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
 
 
 #sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0 )
-
+"""
 def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     model = Sequential()
-    model.add(Conv1D(64,kernel_size=5,strides=3,padding='valid',activation='elu',input_shape=input_shape))
+    model.add(Conv1D(64,ernel_size=5,strides=3,padding='valid',activation='elu',input_shape=input_shape))
     model.add(MaxPooling1D(pool_size=2))
 
     model.add(Conv1D(128, kernel_size=3, strides=1, padding='valid',activation='elu'))
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Dropout(0.2))
+    model.add(Dropout(rate = 0.2))
 
     model.add(Flatten())
     for layers in range(n_layers):
@@ -62,12 +63,12 @@ def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
 
-    """
-    Optimizers: Adam, RMSProp, SGD 
-    """
+    
+    #Optimizers: Adam, RMSProp, SGD 
+    
 
     return model
-
+"""
 
 def plot_loss_history(h, title):
     plt.plot(h.history['loss'], label = "Train loss")
@@ -162,7 +163,6 @@ def main():
         train_features = to_categorical(train_features)
         print(train_features.shape)
         #train_features = np.expand_dims(train_features, axis=3)
-        #print("expand: ",train_features[1].shape)
 
 
         valid_targets = valid_data[trait].values
