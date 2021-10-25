@@ -13,6 +13,7 @@ Current Goals:
 + add a function to model that receive multiple years (DONE)
 + add a OneHotEncoding function to model (to_categorical testing)
 + Rerun the model (2013-15 vs 2017)DONE
++ collecting data for a temp report
 
 **continue: https://pubmed.ncbi.nlm.nih.gov/18076469/**
 
@@ -273,6 +274,16 @@ Sugarcane data 26k marker - marker A in chr1
 
 ![train_box.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/2016-2017/train_box.png?raw=true)
 
+train 2013-2015 vs valid 2017:
+
+![image-20211025163806533](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20211025163806533.png)
+
+![image-20211025164640834](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20211025164640834.png)
+
+comparison
+
+![image-20211025180643879](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20211025180643879.png)
+
 **Genetic linkage**
 
 
@@ -294,7 +305,7 @@ Question? the process of GS:
 	1. set a framework of the genotype markers array - sugarcane markers and select traits.
 	2. training a genetic prediction model for the given markers ↑
 	3. Using another strategy to generate natural offspring - F1 F2 .. from the original/natural/actual parents.
-	4. Using the trained prediction model to predict phenotypes of these digital offspring -> select highest outcomes
+	4. Using the trained prediction model to predict phenotypes of these offspring -> select highest outcomes
 	5. Record breeding traces for those outstanding offspring
 
 
