@@ -282,7 +282,7 @@ train 2013-2015 vs valid 2017:
 
 comparison
 
-![image-20211025180643879](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20211025180643879.png)
+![image-20211025180643879](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/comparison/multi_VS_single.png?raw=true)
 
 **Genetic linkage**
 
