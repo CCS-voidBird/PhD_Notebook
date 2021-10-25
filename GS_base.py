@@ -36,7 +36,7 @@ VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
 def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     model = Sequential()
-    model.add(Conv1D(64,ernel_size=5,strides=3,padding='valid',activation='elu',input_shape=input_shape))
+    model.add(Conv1D(64,kernel_size=5,strides=3,padding='valid',activation='elu',input_shape=input_shape))
     model.add(MaxPooling1D(pool_size=2))
 
     model.add(Conv1D(128, kernel_size=3, strides=1, padding='valid',activation='elu'))
