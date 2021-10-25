@@ -10,18 +10,25 @@ import keras.metrics
 def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     model = Sequential()
+    """
+    Convolutional Layers
+    """
     model.add(Conv1D(64,kernel_size=5,strides=3,padding='valid',activation='elu',input_shape=input_shape))
     model.add(MaxPooling1D(pool_size=2))
 
     model.add(Conv1D(128, kernel_size=3, strides=1, padding='valid',activation='elu'))
     model.add(MaxPooling1D(pool_size=2))
+
+    # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
     model.add(Dropout(rate = 0.2))
 
     model.add(Flatten())
+
+    # Full connected layers, classic multilayer perceptron (MLP)
     for layers in range(n_layers):
         model.add(Dense(n_units,activation="elu"))
     model.add(Dropout(0.2))
-    model.add(Dense(1, activation="linear"))
+    model.add(Dense(1, activation="linear")) # The output layer uses a linear function to predict traits.
     try:
         adm = keras.optimizers.Adam(learning_rate=lr)
         rms = keras.optimizers.RMSprop(learning_rate=lr)
