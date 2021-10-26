@@ -50,5 +50,9 @@ def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     return model
 
-model = modelling(n_layers=3,n_units=8,input_shape=[26084,4])
-tf.keras.utils.plot_model(model, to_file="./print_model.png", show_shapes=True)
+def main():
+    model = modelling(n_layers=3,n_units=8,input_shape=[26084,4])
+    tf.keras.utils.plot_model(model, to_file="./print_model.png", show_shapes=True)
+
+if __name__ == "__main__":
+    main()

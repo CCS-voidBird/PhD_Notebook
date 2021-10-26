@@ -14,6 +14,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 import argparse
+from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 
 ##############################################################
@@ -130,10 +131,12 @@ def main():
     else:
         sample_size = "_" + args.sample
 
+    in_year_record = open(record_path+"in_year_train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
     record = open(record_path+"train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
     raw_record = open(record_path+"train_record_{}_vs_{}_raw.csv".format("_".join(train_year),"_".join(valid_year)),"w")
     accs = {"TCHBlup": [], "CCSBlup": [], "FibreBlup": []}
-
+    in_year_accs = {"TCHBlup": [], "CCSBlup": [], "FibreBlup": []}
+    label_encoder = LabelEncoder()
     for trait in traits:
         # prepare data from csv files
         train_path = [par_path + year + "_" + trait + sample_size + ".csv" for year in train_year]
@@ -156,20 +159,30 @@ def main():
         # pro-process data, add dim and select features
 
         train_targets = train_data[trait].values  # Get the target values from train set
+        valid_targets = valid_data[trait].values
         train_features = train_data.iloc[:, 2:]
-        train_features[train_features == 0.01] = 3
+        valid_features = valid_data.iloc[:, 2:]
+        train_features.replace(0.01, 3, inplace=True)
+        valid_features.replace(0.01, 3, inplace=True)
 
-        n_features = train_features.shape[1]
+        if args.region is True:
+            train_features["Region"] = train_data["Region"]
+            valid_features["Region"] = valid_data["Region"]
+            for dataset in [train_features, valid_features]:
+                dataset["Region"] = label_encoder.fit_transform(dataset["Region"])
+
+        #train_features[train_features == 0.01] = 3
+        #valid_features[valid_features == 0.01] = 3
+
         train_features = to_categorical(train_features)
+        valid_features = to_categorical(valid_features)
+        
+        n_features = train_features.shape[1:]
         print(train_features.shape)
+
         #train_features = np.expand_dims(train_features, axis=3)
 
-
-        valid_targets = valid_data[trait].values
-        valid_features = valid_data.iloc[:, 2:]
-        valid_features[valid_features == 0.01] = 3
         # valid_features = ohe.transform(valid_features) # hot encode region data
-        valid_features = to_categorical(valid_features)
 
         #valid_features = np.expand_dims(valid_features, axis=3)
 
@@ -181,7 +194,7 @@ def main():
                                                                                                   target_val,
                                                                                                   test_size=0.5)
         print(n_features)
-        input_size = (n_features, 4)
+        input_size = n_features
         round = 0
 
         while round < args.round:
@@ -215,13 +228,16 @@ def main():
                 model.save_weights("{}{}_{}_model.json.h5".format(model_path,trait,args.optimizer))
             round += 1
             accs[trait].append(accuracy_future)
+            in_year_accs[trait].append(accuracy)
 
         print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs[trait]))
     for key in accs.keys():
         record.write("{}\t{}\n".format(key,np.mean(accs[key])))
         raw_record.write("{}\t{}\n".format(key,"\t".join([str(x) for x in accs[key]])))
+        in_year_record.write("{}\t{}\n".format(key,"\t".join([str(x) for x in in_year_accs[key]])))
     record.close()
     raw_record.close()
+    in_year_record.close()
 
 if __name__ == "__main__":
     main()
