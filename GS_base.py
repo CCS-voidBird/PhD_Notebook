@@ -162,8 +162,8 @@ def main():
         valid_targets = valid_data[trait].values
         train_features = train_data.iloc[:, 2:]
         valid_features = valid_data.iloc[:, 2:]
-        train_features.replace(0.01, 3, inplace=True)
-        valid_features.replace(0.01, 3, inplace=True)
+        train_features.replace(0.01, None, inplace=True)
+        valid_features.replace(0.01, None, inplace=True)
 
         if args.region is True:
             train_features["Region"] = train_data["Region"]
@@ -176,7 +176,7 @@ def main():
 
         train_features = to_categorical(train_features)
         valid_features = to_categorical(valid_features)
-        
+
         n_features = train_features.shape[1:]
         print(train_features.shape)
 
