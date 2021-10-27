@@ -14,6 +14,7 @@ Current Goals:
 + add a OneHotEncoding function to model (to_categorical testing)
 + Rerun the model (2013-15 vs 2017)DONE
 + collecting data for a temp report
++ add a function to achieve prediction by region (For valid)
 
 **continue: https://pubmed.ncbi.nlm.nih.gov/18076469/**
 
@@ -46,6 +47,10 @@ Khatkar, Mehar S., et al. "Quantitative trait loci mapping in dairy cattle: revi
 Kendziorski, C., Wang, P. A review of statistical methods for expression quantitative trait loci mapping. *Mamm Genome* **17,** 509–517 (2006). https://doi.org/10.1007/s00335-005-0189-6
 
 Goddard, M. and Hayes, B. (2007), Genomic selection. Journal of Animal Breeding and Genetics, 124: 323-330. https://doi.org/10.1111/j.1439-0388.2007.00702.x
+
+Deomano, E., Jackson, P., Wei, X. *et al.* Genomic prediction of sugar content and cane yield in sugar cane clones in different stages of selection in a breeding program, with and without pedigree information. *Mol Breeding* **40,** 38 (2020). https://doi.org/10.1007/s11032-020-01120-0 【Sugarcane data source】
+
+
 
 polyploid related
 
@@ -283,6 +288,24 @@ train 2013-2015 vs valid 2017:
 comparison
 
 ![image-20211025180643879](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/comparison/multi_VS_single.png?raw=true)
+
+Final accuracy in current model:
+
+Train: 2013-2015; Valid: 2017; 
+
+naive CNN by Chensong; GBLUP by Seema in Scenario 1b; BayesR by Ben:
+
+TCH accuracy: 0.3164 ....  0.218 ~ 0.246.... 0.3
+
+CCS accuracy: 0.3381 .... 0.297 ~ 0.318 ..... 0.47
+
+Fibre accuracy: 0.4312 .... 0.389 ~ 0.396 .... 0.45
+
+
+
++ Try extend non-genetic factors as another channel for all genotype markers. (repeat region/year in a extra channel)
+
+
 
 **Genetic linkage**
 
