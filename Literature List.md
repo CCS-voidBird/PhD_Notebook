@@ -38,4 +38,7 @@
 
 + T H E Meuwissen, B J Hayes, M E Goddard, Prediction of Total Genetic Value Using Genome-Wide Dense Marker Maps, *Genetics*, Volume 157, Issue 4, 1 April 2001, Pages 1819–1829, https://doi.org/10.1093/genetics/157.4.1819
 
++ Sandhu, Karansher, Patil, Shruti Sunil, Pumphrey, Michael, & Carter, Arron. Multi-trait machine- and deep-learning models for genomic selection using spectral information in a wheat breeding program. *Plant Genome*. 2021; e20119. https://doi.org/10.1002/tpg2.20119
+
   
+

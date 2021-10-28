@@ -50,7 +50,7 @@ Goddard, M. and Hayes, B. (2007), Genomic selection. Journal of Animal Breeding 
 
 Deomano, E., Jackson, P., Wei, X. *et al.* Genomic prediction of sugar content and cane yield in sugar cane clones in different stages of selection in a breeding program, with and without pedigree information. *Mol Breeding* **40,** 38 (2020). https://doi.org/10.1007/s11032-020-01120-0 【Sugarcane data source】
 
-
+Sandhu, Karansher, Patil, Shruti Sunil, Pumphrey, Michael, & Carter, Arron. Multi-trait machine- and deep-learning models for genomic selection using spectral information in a wheat breeding program. *Plant Genome*. 2021; e20119. https://doi.org/10.1002/tpg2.20119
 
 polyploid related
 
