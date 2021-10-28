@@ -52,7 +52,11 @@ Deomano, E., Jackson, P., Wei, X. *et al.* Genomic prediction of sugar content a
 
 Sandhu, Karansher, Patil, Shruti Sunil, Pumphrey, Michael, & Carter, Arron. Multi-trait machine- and deep-learning models for genomic selection using spectral information in a wheat breeding program. *Plant Genome*. 2021; e20119. https://doi.org/10.1002/tpg2.20119
 
-polyploid related
+Sandhu, Karansher, Patil, Shruti Sunil, Pumphrey, Michael, & Carter, Arron. Multi-trait machine- and deep-learning models for genomic selection using spectral information in a wheat breeding program. *Plant Genome*. 2021; e20119. https://doi.org/10.1002/tpg2.20119
+
+
+
++ polyploid related
 
 (1) polyploid genotyping, including the scoring of marker dosage (allele counts) and generation of haplotypes; 
 
