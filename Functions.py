@@ -38,7 +38,22 @@ def read_pipes(genotype, phenotypes, years):
 
     return goal
 
+def load_data(args,config_path):
+    """
+    :param paths: a list(tuple) of paths contains geno/pheno data
+    :return: In-memory geno/pheno data
+    """
 
+    pass
+
+def factor_extender(data,factors):
+    """
+    This function helps create a 2D matrix from the origin 1D dataset (non-genetic factors, SNPs)
+    :param data: merged data waiting for extend non-genetic factors
+    :param factors: a list of non-genetic factors
+    :return: a 2D matrix which contains: a line of genotype with m SNPs ,n lines of non-genetic factors, each line contain m repeated factors.
+    """
+    pass
 
 def main():
     print("start")
