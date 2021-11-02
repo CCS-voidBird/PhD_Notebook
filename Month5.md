@@ -14,3 +14,9 @@ Current Goals:
   + hamming distance
 + touch Random forest model
 + Confirmation index
+
+
+
+Literature review:
+
++ 
