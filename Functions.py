@@ -1,5 +1,5 @@
 import pandas as pd
-
+import numpy as np
 
 """
 This python file is for building functions that can associate with main model;
@@ -43,16 +43,42 @@ def load_data(args,config_path):
     :param paths: a list(tuple) of paths contains geno/pheno data
     :return: In-memory geno/pheno data
     """
+    genotype = pd.read_csv(args.genotype,sep="\t")
+    print("Got genotype index: \n",genotype.columns)
+    genotype.drop(genotype.columns[0], axis=1, inplace=True) #Drop the sampling index of the genotype
 
-    pass
+    phenotype = pd.read_csv(args.phenotype,sep="\t")
 
-def factor_extender(data,factors):
+    all_selected_series = args.train.split("-") + args.valid.split("-")
+
+    filtered_data = read_pipes(genotype,phenotype,all_selected_series)
+
+    return filtered_data
+
+
+def factor_extender(data,factors,n_repeat):
     """
     This function helps create a 2D matrix from the origin 1D dataset (non-genetic factors, SNPs)
     :param data: merged data waiting for extend non-genetic factors
     :param factors: a list of non-genetic factors
     :return: a 2D matrix which contains: a line of genotype with m SNPs ,n lines of non-genetic factors, each line contain m repeated factors.
     """
+
+    factors = data[factors]
+
+    data.drop(factors,inplace=True)
+
+    extended_factors = np.expand_dims(factors,1).repeat(n_repeat,axis=0)
+
+    extended_genos = np.expand_dims(data,1)
+
+    final_data = np.dstack([extended_factors,extended_genos])
+
+    return final_data
+
+
+
+
     pass
 
 def main():
