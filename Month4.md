@@ -52,7 +52,7 @@ Deomano, E., Jackson, P., Wei, X. *et al.* Genomic prediction of sugar content a
 
 Sandhu, Karansher, Patil, Shruti Sunil, Pumphrey, Michael, & Carter, Arron. Multi-trait machine- and deep-learning models for genomic selection using spectral information in a wheat breeding program. *Plant Genome*. 2021; e20119. https://doi.org/10.1002/tpg2.20119
 
-Sandhu, Karansher, Patil, Shruti Sunil, Pumphrey, Michael, & Carter, Arron. Multi-trait machine- and deep-learning models for genomic selection using spectral information in a wheat breeding program. *Plant Genome*. 2021; e20119. https://doi.org/10.1002/tpg2.20119
+Sandhu K, Patil SS, Pumphrey M, Carter A. Multitrait machine- and deep-learning models for genomic selection using spectral information in a wheat breeding program. Plant Genome. 2021 Sep 5:e20119. doi: 10.1002/tpg2.20119. Epub ahead of print. PMID: 34482627.
 
 
 
