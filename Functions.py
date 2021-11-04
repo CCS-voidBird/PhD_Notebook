@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import configparser
 
 """
 This python file is for building functions that can associate with main model;
@@ -38,7 +39,7 @@ def read_pipes(genotype, phenotypes, years):
 
     return goal
 
-def load_data(args,config_path):
+def load_data(args):
     """
     :param paths: a list(tuple) of paths contains geno/pheno data
     :return: In-memory geno/pheno data
@@ -56,7 +57,7 @@ def load_data(args,config_path):
     return filtered_data
 
 
-def factor_extender(data,factors,n_repeat):
+def factor_extender(data,factors):
     """
     This function helps create a 2D matrix from the origin 1D dataset (non-genetic factors, SNPs)
     :param data: merged data waiting for extend non-genetic factors
@@ -64,33 +65,53 @@ def factor_extender(data,factors,n_repeat):
     :return: a 2D matrix which contains: a line of genotype with m SNPs ,n lines of non-genetic factors, each line contain m repeated factors.
     """
 
-    factors = data[factors]
-
-    data.drop(factors,inplace=True)
-
-    extended_factors = np.expand_dims(factors,1).repeat(n_repeat,axis=0)
+    n_factor = data[factors]
+    print(n_factor.shape)
+    data.drop(factors,inplace=True,axis=1)
+    n_repeat = data.shape[1]
+    extended_factors = np.expand_dims(n_factor,1).repeat(n_repeat,axis=1)
+    print("factor dim: ",extended_factors.shape)
 
     extended_genos = np.expand_dims(data,1)
+    print("geno dim: ",extended_genos.shape)
 
-    final_data = np.dstack([extended_factors,extended_genos])
+    try:
+        final_data = np.dstack([extended_factors, extended_genos])
+        #final_data = np.dstack([extended_factors,extended_genos])
+    except:
+        print("Use concatenate")
+        final_data = np.concatenate([extended_factors, extended_genos],axis=1)
 
     return final_data
 
-
-
-
-    pass
-
 def main():
     print("start")
-    geno_data = pd.read_csv("../fitted_genos.csv",sep="\t")
+    config = configparser.ConfigParser()
+    config.read("./MLP_parameters.ini")
+    geno_data=None
+    pheno_data = None
+    try:
+        geno_data = pd.read_csv(config["PATH"]["genotype"],sep="\t")   # pd.read_csv("../fitted_genos.csv",sep="\t")
+        pheno_data = pd.read_csv(config["PATH"]["phenotype"],sep="\t")# pd.read_csv("../phenotypes.csv",sep="\t")
+    except:
+        try:
+            print("Using backup path (for trouble shooting)")
+            geno_data = pd.read_csv(config["BACKUP_PATH"]["genotype"],sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
+            pheno_data = pd.read_csv(config["BACKUP_PATH"]["phenotype"],sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
+        except:
+            print("No valid path found.")
+            quit()
     geno_data.drop(geno_data.columns[0],axis=1,inplace=True)
     print(geno_data.columns)
-    pheno_data = pd.read_csv("../phenotypes.csv",sep="\t")
     years=[x for x in range(2013,2016)]
     goal = read_pipes(geno_data,pheno_data,years)
+    traits = goal[["TCHBlup","CCSBlup","FibreBlup"]]
+    goal.drop(["TCHBlup","CCSBlup","FibreBlup"],inplace=True,axis=1)
+    ext_goal = factor_extender(goal,["Series"])
+    print("Finish transforming")
     print(goal.info())
     print(goal.Series.unique())
+    print(ext_goal.shape)
     print("done")
 
 if __name__ == "__main__":

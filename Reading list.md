@@ -14,3 +14,4 @@ Documents:
 
 + https://mp.weixin.qq.com/s?__biz=MzAxMjMwODMyMQ==&mid=2456339877&idx=1&sn=052181488836a6a8cf2fb120cb39de99&scene=21#wechat_redirect 一文彻底搞懂BP算法：原理推导+数据演示+项目实战（上篇）
 + 
+

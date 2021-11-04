@@ -85,7 +85,12 @@ Deep Learning Draft
 
    + The CNN is designed for solving qustions which contains a large population of fearures. For example, in graphical classification task, an image would contain millions of pixel and each pixel has 3 channels (RGB) while shifting into numeric values. 
 
-   + The main feature of convolutional neural network is its convolutional layer and pooling layers; The combination of convolutional layer and pooling layer is inspired by animal visual cortex [[4]](#4). For each convolutional layer, it only collects features that belong to its own receptive field (e.g a 3x3 area). By moving based on a "step" parameter (e.g. 1 per move), certain convolutional layer would regenerates a feature map. As all the feature units collected by one convolutaional layer share the same weight, the calculation burden of weights updating could be rapidly decreased. 
+   + The main feature of convolutional neural network is its convolutional layer and pooling layers; The combination of convolutional layer and pooling layer is inspired by animal visual cortex [[4]](#4). For each convolutional layer, it only collects features that belong to its own receptive field (e.g a 3x3 area). By moving based on a "step" parameter (e.g. 1 per move), certain convolutional layer would regenerates a feature map. As all the feature units collected by one convolutaional layer share the same weight, the calculation burden of weights updating could be rapidly decreased.  The output of the convolutional function can be defined as an integral transofrmation and is represented as:
+
+     + ​	$$s(t)=(f∗k)(t)=∑_xk(t−x)f(x)$$
+
+     + > where *k* represents the kernel, convolution is the transformation of *f* into *s(t)*, and this operation is performed over an infinite number of copies *f* shifting over the kernel along each chromosome and filters take into account the linkage disequilibrium along the chromosome.
+
    + The pooling layers are used to reduce the dimensions of data. a pooling layer has a pooling method, such as max pooling layer, which output the highest value in certain feature map.
 
 5. Hyper-parameters

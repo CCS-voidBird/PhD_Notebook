@@ -95,7 +95,6 @@ def main():
     add a parameter function: T/V year, trait/all. 
     output format: a table with avg accuracy for each parameter/trait
     """
-    # python model_by_keras.py -p "E:/learning resource/PhD/sugarcane/" -1 2015-2016 -2 2017 -o ../new_model/test/ -s 2000 -r 1
     parser = argparse.ArgumentParser()
     req_grp = parser.add_argument_group(title='Required')
     req_grp.add_argument('-p', '--path', type=str, help="Input path.", required=True)
@@ -118,7 +117,7 @@ def main():
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
-    config.read("./MLP_parameters.ini")
+    config.read("/clusterdata/uqcche32/MLP_parameters.ini")
 
     par_path = args.path
     modelling = METHODS[args.method]
@@ -227,7 +226,7 @@ def main():
             history = model.fit(
                 features_train, target_train,
                 epochs=args.epoch,
-                validation_data=(features_val_val, target_val_val), verbose=1)
+                validation_data=(features_val_val, target_val_val), verbose=sli_mode)
             if args.plot is True:
                 plot_loss_history(history, trait)
 
