@@ -76,7 +76,7 @@ def factor_extender(data,factors):
     print("geno dim: ",extended_genos.shape)
 
     try:
-        final_data = np.dstack([extended_factors, extended_genos])
+        final_data = np.dstack([extended_factors, data])
         #final_data = np.dstack([extended_factors,extended_genos])
     except:
         print("Use concatenate")
@@ -106,12 +106,14 @@ def main():
     years=[x for x in range(2013,2016)]
     goal = read_pipes(geno_data,pheno_data,years)
     traits = goal[["TCHBlup","CCSBlup","FibreBlup"]]
-    goal.drop(["TCHBlup","CCSBlup","FibreBlup"],inplace=True,axis=1)
-    ext_goal = factor_extender(goal,["Series"])
+    goal.drop(["TCHBlup","CCSBlup","FibreBlup","sample","Region"],inplace=True,axis=1)
+
     print("Finish transforming")
     print(goal.info())
     print(goal.Series.unique())
+    ext_goal = factor_extender(goal, ["Series"])
     print(ext_goal.shape)
+    print(ext_goal[:,:,1])
     print("done")
 
 if __name__ == "__main__":
