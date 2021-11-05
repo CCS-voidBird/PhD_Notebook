@@ -7,7 +7,7 @@ from keras.layers import Dropout
 import tensorflow as tf
 import keras.metrics
 
-def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
+def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     model = Sequential()
     """
@@ -50,8 +50,35 @@ def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     return model
 
+def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
+    model = Sequential()
+    model.add(Dense(n_units, activation="elu",input_shape=input_shape))
+    for layers in range(n_layers):
+        model.add(Dense(n_units, activation="elu"))
+    #model.add(Dropout(0.2))
+
+    model.add(Dense(1, activation="linear"))
+
+    try:
+        adm = keras.optimizers.Adam(learning_rate=lr)
+        rms = keras.optimizers.RMSprop(learning_rate=lr)
+        sgd = keras.optimizers.SGD(learning_rate=lr)
+    except:
+        adm = keras.optimizers.Adam(lr=lr)
+        rms = keras.optimizers.RMSprop(lr=lr)
+        sgd = keras.optimizers.SGD(lr=lr)
+
+    optimizers = {"rmsprop":rms,
+                 "Adam": adm,
+                 "SGD": sgd}
+
+    model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
+
+    return model
+
+
 def main():
-    model = modelling(n_layers=3,n_units=8,input_shape=[26084,4])
+    model = CNN(n_layers=3,n_units=8,input_shape=[26084,4])
     tf.keras.utils.plot_model(model, to_file="./print_model.png", show_shapes=True)
 
 if __name__ == "__main__":

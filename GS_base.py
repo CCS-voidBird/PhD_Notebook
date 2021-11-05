@@ -3,6 +3,7 @@ import os       #for dir creation
 from Functions import *
 from GSModel import *
 import pandas as pd
+import configparser
 import keras
 from keras.models import Sequential
 from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
@@ -30,6 +31,11 @@ PHENO_PATH = "E:\learning resource\PhD\phenotypes.csv"
 TRAIN_PATH = "E:/learning resource/PhD/sugarcane/2015_TCHBlup_2000.csv"
 VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
 """
+
+METHODS = {
+    "MLP": MLP,
+    "CNN": CNN,
+}
 
 
 #sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0 )
@@ -89,12 +95,12 @@ def main():
     add a parameter function: T/V year, trait/all. 
     output format: a table with avg accuracy for each parameter/trait
     """
-    # python model_by_keras.py -p "E:/learning resource/PhD/sugarcane/" -1 2015-2016 -2 2017 -o ../new_model/test/ -s 2000 -r 1
     parser = argparse.ArgumentParser()
     req_grp = parser.add_argument_group(title='Required')
     req_grp.add_argument('-p', '--path', type=str, help="Input path.", required=True)
     req_grp.add_argument('-1', '--train', type=str, help="Input train year.", required=True)
     req_grp.add_argument('-2', '--valid', type=str, help="Input valid year.", required=True)
+    req_grp.add_argument('-m', '--method', type=str, help="Select training method (CNN/MLP).", default="CNN")
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
     req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
     req_grp.add_argument('-a', '--region', type=bool, help="add regions (T/F)", default=False)
@@ -109,11 +115,18 @@ def main():
     req_grp.add_argument('-loss', '--loss', type=int, help="The target loss",
                          default=10)
     args = parser.parse_args()
+
+    config = configparser.ConfigParser()
+    config.read("/clusterdata/uqcche32/MLP_parameters.ini")
+
     par_path = args.path
+    modelling = METHODS[args.method]
     if args.output[0] == "/":
         locat = '/' + args.output.strip('/') + '/'
     else:
         locat = args.output.strip('/') + '/'
+    if not os.path.exists(locat):
+        os.mkdir(locat)
     locat = locat + "{}_vs_{}/".format(args.train, args.valid)
     model_path = locat + "models/"
     record_path = locat + "records_{}/".format(args.optimizer)
@@ -121,7 +134,10 @@ def main():
         if not os.path.exists(path):
             os.mkdir(path)
 
-    sli_mode = 0 if args.silence == True else 1
+    sli_mode = 0
+    if args.slience == True:
+        sli_mode = 1
+
     global PATH
     PATH = locat
     train_year = args.train.split("-")
@@ -158,24 +174,30 @@ def main():
 
         # pro-process data, add dim and select features
 
+
         train_targets = train_data[trait].values  # Get the target values from train set
         valid_targets = valid_data[trait].values
         train_features = train_data.iloc[:, 2:]
         valid_features = valid_data.iloc[:, 2:]
-        train_features.replace(0.01, 3, inplace=True)
-        valid_features.replace(0.01, 3, inplace=True)
+        print("currently the training method is: ",args.method)
+        if args.method == "CNN":
+            print("USE CNN MODEL as training method")
+            train_features.replace(0.01, 3, inplace=True)
+            valid_features.replace(0.01, 3, inplace=True)
 
-        if args.region is True:
-            train_features["Region"] = train_data["Region"]
-            valid_features["Region"] = valid_data["Region"]
-            for dataset in [train_features, valid_features]:
-                dataset["Region"] = label_encoder.fit_transform(dataset["Region"])
+            if args.region is True:
+                train_features["Region"] = train_data["Region"]
+                valid_features["Region"] = valid_data["Region"]
+                for dataset in [train_features, valid_features]:
+                    dataset["Region"] = label_encoder.fit_transform(dataset["Region"])
+
+            train_features = to_categorical(train_features)
+            valid_features = to_categorical(valid_features)
 
         #train_features[train_features == 0.01] = 3
         #valid_features[valid_features == 0.01] = 3
 
-        train_features = to_categorical(train_features)
-        valid_features = to_categorical(valid_features)
+
 
         n_features = train_features.shape[1:]
         print(train_features.shape)
@@ -198,7 +220,8 @@ def main():
         round = 0
 
         while round < args.round:
-            model = modelling(n_layers=3, n_units=8, input_shape=input_size)
+            print(input_size)
+            model = modelling(n_layers=int(config[args.method]["n_layers"]), n_units=int(config[args.method]["n_units"]), input_shape=input_size)
             print(model.summary())
             history = model.fit(
                 features_train, target_train,
