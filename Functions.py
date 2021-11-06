@@ -10,6 +10,7 @@ This python file is for building functions that can associate with main model;
     2. Move/merge plot/model_save functions to this file.
 """
 
+
 def mid_merge(x,genos):
 
     merged = (genos
@@ -105,7 +106,7 @@ def main():
     print(geno_data.columns)
     years=[x for x in range(2013,2016)]
     goal = read_pipes(geno_data,pheno_data,years)
-    traits = goal[["TCHBlup","CCSBlup","FibreBlup"]]
+    traits = goal[config["TRAIT"]["traits"].split("#")]
     goal.drop(["TCHBlup","CCSBlup","FibreBlup","sample","Region"],inplace=True,axis=1)
 
     print("Finish transforming")

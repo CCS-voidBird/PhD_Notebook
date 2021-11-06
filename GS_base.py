@@ -135,8 +135,8 @@ def main():
             os.mkdir(path)
 
     sli_mode = 0
-    if args.slience == True:
-        sli_mode = 1
+    if args.silence == True:
+        sil_mode = 1
 
     global PATH
     PATH = locat
@@ -226,7 +226,7 @@ def main():
             history = model.fit(
                 features_train, target_train,
                 epochs=args.epoch,
-                validation_data=(features_val_val, target_val_val), verbose=sli_mode)
+                validation_data=(features_val_val, target_val_val), verbose=sil_mode)
             if args.plot is True:
                 plot_loss_history(history, trait)
 
