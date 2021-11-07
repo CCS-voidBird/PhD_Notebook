@@ -134,7 +134,7 @@ def main():
         if not os.path.exists(path):
             os.mkdir(path)
 
-    sli_mode = 0
+    sil_mode = 0
     if args.silence == True:
         sil_mode = 1
 
