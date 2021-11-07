@@ -6,6 +6,8 @@ from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv
 from keras.layers import Dropout
 import tensorflow as tf
 import keras.metrics
+from sklearn.datasets import make_regression
+from sklearn.ensemble import RandomForestRegressor
 
 def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
@@ -75,6 +77,13 @@ def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
     model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
 
     return model
+
+def RM():
+
+    model = RandomForestRegressor(n_jobs=-1,random_state=42,criterion="mse",oob_score=False)
+
+    return model
+
 
 
 def main():

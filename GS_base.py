@@ -222,7 +222,10 @@ def main():
         while round < args.round:
             print(input_size)
             model = modelling(n_layers=int(config[args.method]["n_layers"]), n_units=int(config[args.method]["n_units"]), input_shape=input_size)
-            print(model.summary())
+            try:
+                print(model.summary())
+            except:
+                print("It is a sklean-Random-forest model.")
             history = model.fit(
                 features_train, target_train,
                 epochs=args.epoch,

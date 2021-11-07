@@ -40,6 +40,14 @@ def read_pipes(genotype, phenotypes, years):
 
     return goal
 
+def decoding(data):
+
+    snps = {'TT':0,'AT':1,'AA':2,'--':0.01}
+    data.replace(snps,inplace=True)
+    data.fillna("0.01",inplace=True)
+
+    return data
+
 def load_data(args):
     """
     :param paths: a list(tuple) of paths contains geno/pheno data

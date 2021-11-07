@@ -15,8 +15,9 @@ Current Goals:
 + touch Random forest model
 + Confirmation index
 + Try a MLP model (Sandhu Km et)
++ Setting up lab desk environment XD
 
-
+**The Random Forest developed with keras/tensorflow seems not support current Linux environment.**
 
 Literature List:
 
@@ -31,7 +32,7 @@ Literature List:
 ###################################################################################
 
 1. Project Summary
-   1. From background to research aims
+   1. From background to research aims - Agricultural breeding and genomic selection, improve accuracy (capacities).
    2. The approaches will be used in research activations
    3. The likely significance of the research
 2. Research Background
@@ -62,3 +63,4 @@ Literature List:
 ###################################################################################
 
 Agricultural breeding 
+
