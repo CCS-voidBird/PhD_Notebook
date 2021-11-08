@@ -25,6 +25,16 @@ Literature List:
 
 
 
+
+
+Random forest case hyper-parameters:
+
+> Three hyperparameters, including number of trees (*ntree*), number of features sampled in each iteration (*mtry*), and number of samples in the final nodes (*nodesize*) must be defined by the user. We assessed various combinations of values of *ntree* = (200, 500, 1000), *mtry* = (500, 1000, 2000, 5000), with the default *nodesize* = 5. The configuration with the minimum out of-bag (OOB) error was *ntree* = 500, *mtry* = 2000 and *nodesize* = 5. The random forest package [[28](https://gsejournal.biomedcentral.com/articles/10.1186/s12711-020-00531-z#ref-CR28)] in the R language/environment, version 3.6.1 [[24](https://gsejournal.biomedcentral.com/articles/10.1186/s12711-020-00531-z#ref-CR24)] was used for implementing RF.
+
+
+
+
+
 ###################################################################################
 
 #########################INDEX#################################################

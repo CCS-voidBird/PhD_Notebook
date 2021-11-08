@@ -6,6 +6,7 @@ import tensorflow as tf
 import keras.metrics
 from sklearn.datasets import make_regression
 from sklearn.ensemble import RandomForestRegressor
+import configparser
 
 def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
@@ -76,9 +77,13 @@ def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     return model
 
-def RM():
+def RM(rm_config = None):
 
-    model = RandomForestRegressor(n_jobs=-1,random_state=0,criterion="mse",oob_score=False,verbose=1,n_estimators=2000)
+    try:
+        model = RandomForestRegressor(n_jobs=-1,random_state=0,criterion="mse",oob_score=False,verbose=1,**rm_config["RM"])
+    except:
+        print("Cannot find the config file 'RM_parameters.ini")
+        model = RandomForestRegressor(n_jobs=-1,random_state=0,criterion="mse",oob_score=False,verbose=1,n_estimators=2000)
 
     return model
 
