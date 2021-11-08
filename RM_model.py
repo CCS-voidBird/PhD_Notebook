@@ -7,6 +7,7 @@ from GSModel import RM
 def main():
     print("start")
     config = configparser.ConfigParser()
+    #config.read("./MLP_parameters.ini")
     config.read("/clusterdata/uqcche32/MLP_parameters.ini")
     geno_data=None
     pheno_data = None
@@ -20,7 +21,7 @@ def main():
             pheno_data = pd.read_csv(config["BACKUP_PATH"]["phenotype"],sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
         except:
             print("No valid path found.")
-            quit()
+            exit()
     geno_data.drop(geno_data.columns[0],axis=1,inplace=True)
     geno_data = decoding(geno_data)
     print(geno_data.columns)
@@ -40,7 +41,7 @@ def main():
 
 
     traits = ["TCHBlup","CCSBlup","FibreBlup"]
-    accs = pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
+    accs = [] # pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
     for trait in traits:
         model = RM()
         in_train = train.dropna(subset=[trait],axis=0)
@@ -68,9 +69,9 @@ def main():
         print("observe: ",obversed[:10])
         print("predicted: ",n_predict[:10])
         accs.append([trait,"2013-15","2017",score,accuracy])
-
+    results = pd.DataFrame(accs,columns=["trait","trainSet","validSet","score","cov"])
     print("Result:")
-    print(accs)
+    print(results)
 
 if __name__ == "__main__":
     main()
