@@ -78,7 +78,7 @@ def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
 def RM():
 
-    model = RandomForestRegressor(n_jobs=-1,random_state=42,criterion="mse",oob_score=False,verbose=1)
+    model = RandomForestRegressor(n_jobs=-1,random_state=0,criterion="mse",oob_score=False,verbose=1,n_estimators=2000)
 
     return model
 

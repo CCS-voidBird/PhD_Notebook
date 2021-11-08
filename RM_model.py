@@ -3,6 +3,7 @@ from sklearn.ensemble import RandomForestRegressor
 from Functions import *
 import configparser
 from GSModel import RM
+from sklearn.model_selection import cross_val_score
 
 def main():
     print("start")
@@ -55,7 +56,7 @@ def main():
             train_target = in_train[[trait]]
             valid_target = in_valid[[trait]]
 
-            dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'sample']
+            dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'Series','sample']
 
             in_train.drop(dropout, axis=1, inplace=True)
             in_valid.drop(dropout, axis=1, inplace=True)
