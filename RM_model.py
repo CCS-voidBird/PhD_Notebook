@@ -22,10 +22,11 @@ def main():
             print("No valid path found.")
             quit()
     geno_data.drop(geno_data.columns[0],axis=1,inplace=True)
+    geno_data = decoding(geno_data)
     print(geno_data.columns)
     train_year = [2013,2014,2015]
     valid_year = [2017]
-    filtered_data = decoding(read_pipes(geno_data,pheno_data,[2013,2014,2015,2017]))
+    filtered_data = read_pipes(geno_data,pheno_data,[2013,2014,2015,2017])
 
 
     train = filtered_data.query('Series in @train_year')
@@ -35,23 +36,33 @@ def main():
     print(train.Series.unique())
     print(valid.info())
     print(valid.Series.unique())
+    #print(train.iloc[:,2].unique())
 
-    print(train.iloc[:,2].unique())
 
-    model = RM()
-    train_target = train.TCHBlup
-    valid_target = valid.TCHBlup
+    traits = ["TCHBlup","CCSBlup","FibreBlup"]
+    for trait in traits:
+        model = RM()
+        in_train = train.dropna(subset=[trait],axis=0)
+        in_valid = valid.dropna(subset=[trait],axis=0)
+        print(in_train.columns)
+        train_target = in_train[[trait]]
+        valid_target = in_valid[[trait]]
+        print(valid_target)
 
-    dropout = ["TCHBlup","Region",'Trial', 'Crop', 'Clone','sample']
-    print(train.columns)
+        dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'sample']
 
-    history = model.fit(train.drop(dropout,axis=1),train_target)
+        in_train.drop(dropout, axis=1, inplace=True)
+        in_valid.drop(dropout,axis=1,inplace=True)
+        print(train.columns)
+        model.fit(in_train, np.array(train_target))
 
-    predict = history.predict(valid.drop(dropout,axis=1))
+        n_predict = model.predict(in_valid)
+        print(model.score(in_valid,valid_target.values))
+        print(valid_target.shape)
+        print(n_predict.shape)
+        accuracy = np.corrcoef(n_predict, np.reshape(valid_target,(1,)))[0, 1]
 
-    accuracy = np.corrcoef(predict, valid_target)[0, 1]
-
-    print(accuracy)
+        print(accuracy)
 
 if __name__ == "__main__":
     main()
