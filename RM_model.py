@@ -40,31 +40,37 @@ def main():
 
 
     traits = ["TCHBlup","CCSBlup","FibreBlup"]
+    accs = pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
     for trait in traits:
         model = RM()
         in_train = train.dropna(subset=[trait],axis=0)
         in_valid = valid.dropna(subset=[trait],axis=0)
-        print(in_train.columns)
+        #print(in_train.columns)
         train_target = in_train[[trait]]
         valid_target = in_valid[[trait]]
-        print(valid_target)
 
         dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'sample']
 
         in_train.drop(dropout, axis=1, inplace=True)
         in_valid.drop(dropout,axis=1,inplace=True)
-        print(train.columns)
         model.fit(in_train, np.array(train_target))
 
         n_predict = model.predict(in_valid)
-        print(model.score(in_valid,valid_target.values))
-        print(valid_target.shape)
-        print(n_predict.shape)
+        score = model.score(in_valid,valid_target.values)
+        #print(valid_target.shape)
+        #print(n_predict.shape)
         obversed = np.squeeze(valid_target)
         print(obversed.shape)
         accuracy = np.corrcoef(n_predict, obversed)[0, 1]
 
-        print(accuracy)
+        print("The accuracy for {} in RM is: {}".format(trait,accuracy))
+        print("A bite of output:")
+        print("observe: ",obversed[:10])
+        print("predicted: ",n_predict[:10])
+        accs.append([trait,"2013-15","2017",score,accuracy])
+
+    print("Result:")
+    print(accs)
 
 if __name__ == "__main__":
     main()
