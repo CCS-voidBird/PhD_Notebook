@@ -7,7 +7,7 @@ from GSModel import RM
 def main():
     print("start")
     config = configparser.ConfigParser()
-    config.read("./MLP_parameters.ini")
+    config.read("/clusterdata/uqcche32/MLP_parameters.ini")
     geno_data=None
     pheno_data = None
     try:
@@ -60,7 +60,9 @@ def main():
         print(model.score(in_valid,valid_target.values))
         print(valid_target.shape)
         print(n_predict.shape)
-        accuracy = np.corrcoef(n_predict, np.reshape(valid_target,(valid_target.shape[0],)))[0, 1]
+        obversed = np.squeeze(valid_target)
+        print(obversed.shape)
+        accuracy = np.corrcoef(n_predict, obversed)[0, 1]
 
         print(accuracy)
 
