@@ -1,6 +1,4 @@
 import keras
-import pydot
-import graphviz
 from keras.models import Sequential
 from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
 from keras.layers import Dropout
