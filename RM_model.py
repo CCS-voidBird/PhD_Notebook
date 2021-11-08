@@ -60,7 +60,7 @@ def main():
         print(model.score(in_valid,valid_target.values))
         print(valid_target.shape)
         print(n_predict.shape)
-        accuracy = np.corrcoef(n_predict, np.reshape(valid_target,(1,)))[0, 1]
+        accuracy = np.corrcoef(n_predict, np.reshape(valid_target,(valid_target.shape[0],)))[0, 1]
 
         print(accuracy)
 
