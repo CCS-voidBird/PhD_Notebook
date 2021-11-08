@@ -42,34 +42,45 @@ def main():
 
     traits = ["TCHBlup","CCSBlup","FibreBlup"]
     accs = [] # pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
+    r = 0
+
     for trait in traits:
-        model = RM()
-        in_train = train.dropna(subset=[trait],axis=0)
-        in_valid = valid.dropna(subset=[trait],axis=0)
-        #print(in_train.columns)
-        train_target = in_train[[trait]]
-        valid_target = in_valid[[trait]]
+        avg_acc = []
+        avg_score = []
+        while r < 10:
+            model = RM()
+            in_train = train.dropna(subset=[trait], axis=0)
+            in_valid = valid.dropna(subset=[trait], axis=0)
+            # print(in_train.columns)
+            train_target = in_train[[trait]]
+            valid_target = in_valid[[trait]]
 
-        dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'sample']
+            dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'sample']
 
-        in_train.drop(dropout, axis=1, inplace=True)
-        in_valid.drop(dropout,axis=1,inplace=True)
-        model.fit(in_train, np.array(train_target))
+            in_train.drop(dropout, axis=1, inplace=True)
+            in_valid.drop(dropout, axis=1, inplace=True)
 
-        n_predict = model.predict(in_valid)
-        score = model.score(in_valid,valid_target.values)
-        #print(valid_target.shape)
-        #print(n_predict.shape)
-        obversed = np.squeeze(valid_target)
-        print(obversed.shape)
-        accuracy = np.corrcoef(n_predict, obversed)[0, 1]
+            print(in_train.columns[:10])
+            model.fit(in_train, np.array(train_target))
 
-        print("The accuracy for {} in RM is: {}".format(trait,accuracy))
-        print("A bite of output:")
-        print("observe: ",obversed[:10])
-        print("predicted: ",n_predict[:10])
-        accs.append([trait,"2013-15","2017",score,accuracy])
-    results = pd.DataFrame(accs,columns=["trait","trainSet","validSet","score","cov"])
+            n_predict = model.predict(in_valid)
+            score = model.score(in_valid, valid_target.values)
+            # print(valid_target.shape)
+            # print(n_predict.shape)
+            obversed = np.squeeze(valid_target)
+            print(obversed.shape)
+            accuracy = np.corrcoef(n_predict, obversed)[0, 1]
+
+            print("The accuracy for {} in RM is: {}".format(trait, accuracy))
+            print("A bite of output:")
+            print("observe: ", obversed[:10])
+            print("predicted: ", n_predict[:10])
+            avg_acc.append(accuracy)
+            avg_score.append(score)
+            r += 1
+        accs.append([trait, "2013-15", "2017", np.mean(avg_score), np.mean(avg_acc)])
+
+    results = pd.DataFrame(accs,columns=["trait","trainSet","validSet","score","accuracy"])
     print("Result:")
     print(results)
 
