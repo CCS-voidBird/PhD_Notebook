@@ -13,3 +13,7 @@ genos_SelTools.txt.zip
 *.iml
 *.pyc
 *.pyc
+.idea/misc.xml
+.idea/PHD_Notebook.iml
+__pycache__/Functions.cpython-37.pyc
+__pycache__/GSModel.cpython-37.pyc
