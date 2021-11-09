@@ -45,14 +45,14 @@ Random forest case hyper-parameters:
    1. From background to research aims - Agricultural breeding and genomic selection, improve accuracy (capacities).
    2. The approaches will be used in research activations
    3. The likely significance of the research
-2. Research Background
+2. Research Background - 1st
    1. Refer to reliable previous researches (literature), identify at least one blank/gap in certain field.
    2. Assign a aim - Answering for a question; Hypothesis; Achieve a creative goal.
-3. Research approach
+3. Research approach - 1st
    1. Genomic selection
    2. Artificial intelligence 
    3. Biological regression
-4. Significant of the Research
+4. Significant of the Research 2nd
    1. Describe the contribution that the research will achieve.
    2. Provide information, insights, potential applications or direct material outcomes 
 5. Timeline
