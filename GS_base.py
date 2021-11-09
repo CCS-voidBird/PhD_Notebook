@@ -35,6 +35,7 @@ VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
 METHODS = {
     "MLP": MLP,
     "CNN": CNN,
+    "TDCNN": TDCNN
 }
 
 
@@ -117,7 +118,8 @@ def main():
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
-    config.read("/clusterdata/uqcche32/MLP_parameters.ini")
+    #config.read("/clusterdata/uqcche32/MLP_parameters.ini")
+    config.read("./MLP_parameters.ini")
 
     par_path = args.path
     modelling = METHODS[args.method]
@@ -180,16 +182,21 @@ def main():
         train_features = train_data.iloc[:, 2:]
         valid_features = valid_data.iloc[:, 2:]
         print("currently the training method is: ",args.method)
-        if args.method == "CNN":
+        if "CNN" in args.method:
+            print(train_features.columns)
+            factors = []
             print("USE CNN MODEL as training method")
             train_features.replace(0.01, 3, inplace=True)
             valid_features.replace(0.01, 3, inplace=True)
 
             if args.region is True:
+                factors.append("Region")
                 train_features["Region"] = train_data["Region"]
                 valid_features["Region"] = valid_data["Region"]
                 for dataset in [train_features, valid_features]:
                     dataset["Region"] = label_encoder.fit_transform(dataset["Region"])
+            train_features = factor_extender(train_features,factors)
+            valid_features = factor_extender(valid_features,factors)
 
             train_features = to_categorical(train_features)
             valid_features = to_categorical(valid_features)
@@ -221,7 +228,7 @@ def main():
 
         while round < args.round:
             print(input_size)
-            model = modelling(n_layers=int(config[args.method]["n_layers"]), n_units=int(config[args.method]["n_units"]), input_shape=input_size)
+            model = modelling(n_layers=int(config[args.method]["n_layers"]), n_units=int(config[args.method]["n_units"]), input_shape=input_size,lr=config[args.method]["lr"])
             try:
                 print(model.summary())
             except:

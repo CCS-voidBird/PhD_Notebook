@@ -4,12 +4,13 @@ from Functions import *
 import configparser
 from GSModel import RM
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
 
 def main():
     print("start")
     config = configparser.ConfigParser()
-    #config.read("./MLP_parameters.ini")
-    config.read("/clusterdata/uqcche32/MLP_parameters.ini")
+    config.read("./MLP_parameters.ini")
+    #config.read("/clusterdata/uqcche32/MLP_parameters.ini")
     geno_data=None
     pheno_data = None
     try:
@@ -41,15 +42,21 @@ def main():
     #print(train.iloc[:,2].unique())
 
 
-    traits = ["TCHBlup","CCSBlup","FibreBlup"]
+    traits = ["CCSBlup","FibreBlup","TCHBlup"]
     accs = [] # pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
     r = 0
 
     for trait in traits:
+        print(trait)
         avg_acc = []
         avg_score = []
+        acg_same_score = []
         while r < 10:
-            model = RM()
+            model = RM(config)
+
+            """
+            Drop rows that contain NaN in trait value.
+            """
             in_train = train.dropna(subset=[trait], axis=0)
             in_valid = valid.dropna(subset=[trait], axis=0)
             # print(in_train.columns)
@@ -61,8 +68,12 @@ def main():
             in_train.drop(dropout, axis=1, inplace=True)
             in_valid.drop(dropout, axis=1, inplace=True)
 
+            xtrain, xtest, ytrain, ytest = train_test_split(in_train, train_target, test_size=3)
+
             print(in_train.columns[:10])
-            model.fit(in_train, np.array(train_target))
+            model.fit(xtrain, ytrain)
+
+            same_score = model.score(xtest,ytest)  # Calculating accuracy in the same year
 
             n_predict = model.predict(in_valid)
             score = model.score(in_valid, valid_target.values)
@@ -78,10 +89,11 @@ def main():
             print("predicted: ", n_predict[:10])
             avg_acc.append(accuracy)
             avg_score.append(score)
+            acg_same_score.append(same_score)
             r += 1
-        accs.append([trait, "2013-15", "2017", np.mean(avg_score), np.mean(avg_acc)])
+        accs.append([trait, "2013-15", "2017", np.mean(acg_same_score),np.mean(avg_score), np.mean(avg_acc)])
 
-    results = pd.DataFrame(accs,columns=["trait","trainSet","validSet","score","accuracy"])
+    results = pd.DataFrame(accs,columns=["trait","trainSet","validSet","test_score","valid_score","accuracy"])
     print("Result:")
     print(results)
 
