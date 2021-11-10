@@ -15,9 +15,8 @@ Current Goals:
 + touch Random forest model
 + Confirmation index
 + Try a MLP model (Sandhu Km et)
-+ Setting up lab desk environment XD
 
-**The Random Forest developed with keras/tensorflow seems not support current Linux environment.**
+
 
 Literature List:
 
@@ -25,11 +24,15 @@ Literature List:
 
 
 
+Experiment in RM/MLP/CNN
 
 
-Random forest case hyper-parameters:
 
-> Three hyperparameters, including number of trees (*ntree*), number of features sampled in each iteration (*mtry*), and number of samples in the final nodes (*nodesize*) must be defined by the user. We assessed various combinations of values of *ntree* = (200, 500, 1000), *mtry* = (500, 1000, 2000, 5000), with the default *nodesize* = 5. The configuration with the minimum out of-bag (OOB) error was *ntree* = 500, *mtry* = 2000 and *nodesize* = 5. The random forest package [[28](https://gsejournal.biomedcentral.com/articles/10.1186/s12711-020-00531-z#ref-CR28)] in the R language/environment, version 3.6.1 [[24](https://gsejournal.biomedcentral.com/articles/10.1186/s12711-020-00531-z#ref-CR24)] was used for implementing RF.
+RM: max_features: 500, 1000, 2000, 5000
+
+MLP: n_layers: 8, 16, 32, 48
+
+CNN: n_CNNlayers
 
 
 
@@ -42,17 +45,17 @@ Random forest case hyper-parameters:
 ###################################################################################
 
 1. Project Summary
-   1. From background to research aims - Agricultural breeding and genomic selection, improve accuracy (capacities).
+   1. From background to research aims
    2. The approaches will be used in research activations
    3. The likely significance of the research
-2. Research Background - 1st
+2. Research Background
    1. Refer to reliable previous researches (literature), identify at least one blank/gap in certain field.
    2. Assign a aim - Answering for a question; Hypothesis; Achieve a creative goal.
-3. Research approach - 1st
+3. Research approach
    1. Genomic selection
    2. Artificial intelligence 
    3. Biological regression
-4. Significant of the Research 2nd
+4. Significant of the Research
    1. Describe the contribution that the research will achieve.
    2. Provide information, insights, potential applications or direct material outcomes 
 5. Timeline
@@ -73,4 +76,3 @@ Random forest case hyper-parameters:
 ###################################################################################
 
 Agricultural breeding 
-
