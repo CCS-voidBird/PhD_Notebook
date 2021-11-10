@@ -115,6 +115,8 @@ def main():
                          default=True)
     req_grp.add_argument('-loss', '--loss', type=int, help="The target loss",
                          default=10)
+    req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
+                         default=False)
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
@@ -254,7 +256,7 @@ def main():
             accuracy_future = np.corrcoef(y_pred_future, valid_targets)[0, 1]
             print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy)
             print("Future prediction accuracy (measured as Pearson's correlation) is: ", accuracy_future)
-            if history.history['val_loss'][-1] < args.loss:
+            if args.save is True:
                 json = model.to_json()
                 with open("{}{}_{}_model.json".format(model_path,trait,args.optimizer), "w") as file:
                     file.write(json)

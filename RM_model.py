@@ -5,12 +5,16 @@ import configparser
 from GSModel import RM
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+import platform
 
 def main():
     print("start")
     config = configparser.ConfigParser()
-    config.read("./MLP_parameters.ini")
-    #config.read("/clusterdata/uqcche32/MLP_parameters.ini")
+    if platform.system().lower() == "windows":
+        config.read("./MLP_parameters.ini")
+    else:
+        config.read("/clusterdata/uqcche32/MLP_parameters.ini")
     geno_data=None
     pheno_data = None
     try:
@@ -44,58 +48,68 @@ def main():
 
     traits = ["CCSBlup","FibreBlup","TCHBlup"]
     accs = [] # pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
-    r = 0
 
-    for trait in traits:
-        print(trait)
-        avg_acc = []
-        avg_score = []
-        acg_same_score = []
-        while r < 10:
-            model = RM(config)
+    max_feature_list = [int(x) for x in config["RM"]["max_features"].split(",")]
 
-            """
-            Drop rows that contain NaN in trait value.
-            """
-            in_train = train.dropna(subset=[trait], axis=0)
-            in_valid = valid.dropna(subset=[trait], axis=0)
-            # print(in_train.columns)
-            train_target = in_train[[trait]]
-            valid_target = in_valid[[trait]]
+    for n_features in max_feature_list:
+        print("Now training by {} feature per tree.".format(n_features))
+        for trait in traits:
+            print(trait)
+            avg_acc = []
+            avg_score = []
+            acg_same_score = []
+            avg_mse = []
+            r = 0
+            while r < 10:
+                model = RM(specific=True,n_features=n_features)
 
-            dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'Series','sample']
+                """
+                Drop rows that contain NaN in trait value.
+                """
+                in_train = train.dropna(subset=[trait], axis=0)
+                in_valid = valid.dropna(subset=[trait], axis=0)
+                # print(in_train.columns)
+                train_target = np.squeeze(in_train[[trait]]).ravel()
+                valid_target = np.squeeze(in_valid[[trait]]).ravel()
 
-            in_train.drop(dropout, axis=1, inplace=True)
-            in_valid.drop(dropout, axis=1, inplace=True)
+                dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'Series', 'sample']
 
-            xtrain, xtest, ytrain, ytest = train_test_split(in_train, train_target, test_size=3)
+                in_train.drop(dropout, axis=1, inplace=True)
+                in_valid.drop(dropout, axis=1, inplace=True)
 
-            print(in_train.columns[:10])
-            model.fit(xtrain, ytrain)
+                xtrain, xtest, ytrain, ytest = train_test_split(in_train, train_target, test_size=3)
 
-            same_score = model.score(xtest,ytest)  # Calculating accuracy in the same year
+                print(in_train.columns[:10])
+                model.fit(xtrain, ytrain)
 
-            n_predict = model.predict(in_valid)
-            score = model.score(in_valid, valid_target.values)
-            # print(valid_target.shape)
-            # print(n_predict.shape)
-            obversed = np.squeeze(valid_target)
-            print(obversed.shape)
-            accuracy = np.corrcoef(n_predict, obversed)[0, 1]
+                same_score = model.score(xtest, ytest)  # Calculating accuracy in the same year
 
-            print("The accuracy for {} in RM is: {}".format(trait, accuracy))
-            print("A bite of output:")
-            print("observe: ", obversed[:10])
-            print("predicted: ", n_predict[:10])
-            avg_acc.append(accuracy)
-            avg_score.append(score)
-            acg_same_score.append(same_score)
-            r += 1
-        accs.append([trait, "2013-15", "2017", np.mean(acg_same_score),np.mean(avg_score), np.mean(avg_acc)])
+                n_predict = model.predict(in_valid)
+                score = model.score(in_valid, valid_target.values)
+                # print(valid_target.shape)
+                # print(n_predict.shape)
+                obversed = np.squeeze(valid_target)
+                print(obversed.shape)
+                accuracy = np.corrcoef(n_predict, obversed)[0, 1]
+                mse = mean_squared_error(obversed,n_predict)
+                print("The accuracy for {} in RM is: {}".format(trait, accuracy))
+                print("The mse for {} in RM is: {}".format(trait, mse))
+                print("A bite of output:")
+                print("observe: ", obversed[:10])
+                print("predicted: ", n_predict[:10])
 
-    results = pd.DataFrame(accs,columns=["trait","trainSet","validSet","test_score","valid_score","accuracy"])
+                avg_acc.append(accuracy)
+                avg_score.append(score)
+                acg_same_score.append(same_score)
+                avg_mse.append(mse)
+                r += 1
+            accs.append([trait, "2013-15", "2017", n_features, np.mean(acg_same_score), np.mean(avg_score), np.mean(avg_acc),np.mean(avg_mse)])
+
+
+    results = pd.DataFrame(accs,columns=["trait","trainSet","validSet","n_features","test_score","valid_score","accuracy","mse"])
     print("Result:")
     print(results)
+    results.to_csv("~/mlp_train_record.csv",sep="\t")
 
 if __name__ == "__main__":
     main()

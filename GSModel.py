@@ -121,15 +121,22 @@ def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     return model
 
-def RM(config = None):
-    rm_config = {x:int(config["RM"][x]) for x in config["RM"].keys()}
-    try:
-        model = RandomForestRegressor(n_jobs=-1,random_state=0,criterion="mse",oob_score=False,verbose=1,**rm_config)
-    except:
-        print("Cannot find the config file 'MLP_parameters.ini")
-        model = RandomForestRegressor(n_jobs=-1,random_state=0,criterion="mse",oob_score=False,verbose=1,n_estimators=2000)
+def RM(config = None,specific=False,n_features = 500,n_estimators = 200):
+    if specific == True:
+        model = RandomForestRegressor(n_jobs=-1, random_state=0, criterion="mse", oob_score=False, verbose=1,max_features=n_features,
+                                      n_estimators=n_estimators)
+        return model
+    else:
+        rm_config = {x: int(config["RM"][x]) for x in config["RM"].keys()}
+        try:
+            model = RandomForestRegressor(n_jobs=-1, random_state=0, criterion="mse", oob_score=False, verbose=1,
+                                          **rm_config)
+        except:
+            print("Cannot find the config file 'MLP_parameters.ini")
+            model = RandomForestRegressor(n_jobs=-1, random_state=0, criterion="mse", oob_score=False, verbose=1,
+                                          n_estimators=2000)
 
-    return model
+        return model
 
 
 
