@@ -85,7 +85,7 @@ def main():
                 same_score = model.score(xtest, ytest)  # Calculating accuracy in the same year
 
                 n_predict = model.predict(in_valid)
-                score = model.score(in_valid, valid_target.values)
+                score = model.score(in_valid, valid_target)
                 # print(valid_target.shape)
                 # print(n_predict.shape)
                 obversed = np.squeeze(valid_target)
