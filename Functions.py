@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import configparser
-
+import argparse
 """
 This python file is for building functions that can associate with main model;
     1. add a function that can read/select/transform geno/pheno data from the origin geno/pheno files rather than 
@@ -66,6 +66,25 @@ def load_data(args):
 
     return filtered_data
 
+def record_train_results(results:list,cols,method,path = ".",para = "default"):
+    """
+    This function records training performance to csv file.
+    :param results: a list contain performance data
+    :param cols: columns for recording requirements
+    :param method: training model
+    :param path: output Path
+    :param para: specific note for training
+    """
+    if results is not list:
+        print("The training results should be a dictionary.")
+    if len(cols) != len(results[0]):
+        print("Cannot match records with columns, printing raw records instead")
+        print(cols)
+        print(results)
+    record = pd.DataFrame(results,columns=cols)
+    record.to_csv("{}/{}_train_record_by_{}.csv".format(path,method,para),sep="\t")
+    print("Result:")
+    print(record)
 
 def factor_extender(data,factors):
     """
@@ -93,6 +112,34 @@ def factor_extender(data,factors):
         final_data = np.concatenate([extended_factors, extended_genos],axis=1)
 
     return final_data
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    req_grp = parser.add_argument_group(title='Required')
+    req_grp.add_argument('-p', '--path', type=str, help="Input path.", required=True)
+    req_grp.add_argument('-1', '--train', type=str, help="Input train year.", required=True)
+    req_grp.add_argument('-2', '--valid', type=str, help="Input valid year.", required=True)
+    req_grp.add_argument('-m', '--method', type=str, help="Select training method (CNN/MLP).", default="CNN")
+    req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
+    req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
+    req_grp.add_argument('-a', '--region', type=bool, help="add regions (T/F)", default=False)
+    req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
+    req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
+    req_grp.add_argument('-opt', '--optimizer', type=str, help='select optimizer: Adam, SGD, rmsprop',
+                         default="rmsprop")
+    req_grp.add_argument('-plot', '--plot', type=bool, help="give plot?",
+                         default=False)
+    req_grp.add_argument('-sli', '--silence', type=bool, help="silent mode",
+                         default=True)
+    req_grp.add_argument('-loss', '--loss', type=int, help="The target loss",
+                         default=10)
+    req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
+                         default=False)
+    args = parser.parse_args()
+
+    return args
+
+
 
 def main():
     print("start")

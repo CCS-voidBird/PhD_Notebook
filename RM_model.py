@@ -15,8 +15,11 @@ def main():
         config.read("./MLP_parameters.ini")
     else:
         config.read("/clusterdata/uqcche32/MLP_parameters.ini")
+
     geno_data=None
     pheno_data = None
+    traits = config["BASIC"]["traits"].split("#")
+
     try:
         geno_data = pd.read_csv(config["PATH"]["genotype"],sep="\t")   # pd.read_csv("../fitted_genos.csv",sep="\t")
         pheno_data = pd.read_csv(config["PATH"]["phenotype"],sep="\t")# pd.read_csv("../phenotypes.csv",sep="\t")
@@ -31,10 +34,11 @@ def main():
     geno_data.drop(geno_data.columns[0],axis=1,inplace=True)
     geno_data = decoding(geno_data)
     print(geno_data.columns)
+
     train_year = [2013,2014,2015]
     valid_year = [2017]
     filtered_data = read_pipes(geno_data,pheno_data,[2013,2014,2015,2017])
-
+    record_cols = ["trait", "trainSet", "validSet", "n_features", "test_score", "valid_score", "accuracy", "mse"]
 
     train = filtered_data.query('Series in @train_year')
     valid = filtered_data.query('Series in @valid_year')
@@ -46,7 +50,7 @@ def main():
     #print(train.iloc[:,2].unique())
 
 
-    traits = ["CCSBlup","FibreBlup","TCHBlup"]
+
     accs = [] # pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
 
     max_feature_list = [int(x) for x in config["RM"]["max_features"].split(",")]
@@ -94,9 +98,10 @@ def main():
                 mse = mean_squared_error(obversed,n_predict)
                 print("The accuracy for {} in RM is: {}".format(trait, accuracy))
                 print("The mse for {} in RM is: {}".format(trait, mse))
+                print("The variance for predicted {} is: ".format(trait,np.var(n_predict)))
                 print("A bite of output:")
-                print("observe: ", obversed[:10])
-                print("predicted: ", n_predict[:10])
+                print("observe: ", obversed[:50])
+                print("predicted: ", n_predict[:50])
 
                 avg_acc.append(accuracy)
                 avg_score.append(score)
@@ -106,10 +111,14 @@ def main():
             accs.append([trait, "2013-15", "2017", n_features, np.mean(acg_same_score), np.mean(avg_score), np.mean(avg_acc),np.mean(avg_mse)])
 
 
+    record_train_results(accs,cols=record_cols,method="RM",path="~",para="max_features")
+
+    """
     results = pd.DataFrame(accs,columns=["trait","trainSet","validSet","n_features","test_score","valid_score","accuracy","mse"])
     print("Result:")
     print(results)
-    results.to_csv("~/mlp_train_record.csv",sep="\t")
+    results.to_csv("~/rm_train_record.csv",sep="\t")
+    """
 
 if __name__ == "__main__":
     main()

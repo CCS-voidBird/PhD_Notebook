@@ -3,7 +3,6 @@ import os       #for dir creation
 from Functions import *
 from GSModel import *
 import pandas as pd
-import configparser
 import keras
 from keras.models import Sequential
 from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
@@ -17,6 +16,7 @@ from keras.utils import to_categorical
 import argparse
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
+import platform
 
 ##############################################################
 ##########Training requirement################################
@@ -38,46 +38,6 @@ METHODS = {
     "TDCNN": TDCNN
 }
 
-
-#sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0 )
-"""
-def modelling(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
-
-    model = Sequential()
-    model.add(Conv1D(64,kernel_size=5,strides=3,padding='valid',activation='elu',input_shape=input_shape))
-    model.add(MaxPooling1D(pool_size=2))
-
-    model.add(Conv1D(128, kernel_size=3, strides=1, padding='valid',activation='elu'))
-    model.add(MaxPooling1D(pool_size=2))
-    model.add(Dropout(rate = 0.2))
-
-    model.add(Flatten())
-    for layers in range(n_layers):
-        model.add(Dense(n_units,activation="elu"))
-    model.add(Dropout(0.2))
-    model.add(Dense(1, activation="linear"))
-    try:
-        adm = keras.optimizers.Adam(learning_rate=lr)
-        rms = keras.optimizers.RMSprop(learning_rate=lr)
-        sgd = keras.optimizers.SGD(learning_rate=lr)
-    except:
-        adm = keras.optimizers.Adam(lr=lr)
-        rms = keras.optimizers.RMSprop(lr=lr)
-        sgd = keras.optimizers.SGD(lr=lr)
-
-    optimizers = {"rmsprop":rms,
-                 "Adam": adm,
-                 "SGD": sgd}
-
-    model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
-
-    
-    #Optimizers: Adam, RMSProp, SGD 
-    
-
-    return model
-"""
-
 def plot_loss_history(h, title):
     plt.plot(h.history['loss'], label = "Train loss")
     plt.plot(h.history['val_loss'], label = "Validation loss")
@@ -88,41 +48,13 @@ def plot_loss_history(h, title):
 
 def main():
 
-    traits = ["TCHBlup",
-             "CCSBlup",
-             "FibreBlup"]
-
-    """
-    add a parameter function: T/V year, trait/all. 
-    output format: a table with avg accuracy for each parameter/trait
-    """
-    parser = argparse.ArgumentParser()
-    req_grp = parser.add_argument_group(title='Required')
-    req_grp.add_argument('-p', '--path', type=str, help="Input path.", required=True)
-    req_grp.add_argument('-1', '--train', type=str, help="Input train year.", required=True)
-    req_grp.add_argument('-2', '--valid', type=str, help="Input valid year.", required=True)
-    req_grp.add_argument('-m', '--method', type=str, help="Select training method (CNN/MLP).", default="CNN")
-    req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
-    req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
-    req_grp.add_argument('-a', '--region', type=bool, help="add regions (T/F)", default=False)
-    req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
-    req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
-    req_grp.add_argument('-opt', '--optimizer', type=str, help='select optimizer: Adam, SGD, rmsprop',
-                         default="rmsprop")
-    req_grp.add_argument('-plot', '--plot', type=bool, help="give plot?",
-                         default=False)
-    req_grp.add_argument('-sli', '--silence', type=bool, help="silent mode",
-                         default=True)
-    req_grp.add_argument('-loss', '--loss', type=int, help="The target loss",
-                         default=10)
-    req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
-                         default=False)
-    args = parser.parse_args()
-
+    args = get_args()
     config = configparser.ConfigParser()
-    #config.read("/clusterdata/uqcche32/MLP_parameters.ini")
-    config.read("./MLP_parameters.ini")
-
+    if platform.system().lower() == "windows":
+        config.read("./MLP_parameters.ini")
+    else:
+        config.read("/clusterdata/uqcche32/MLP_parameters.ini")
+    traits = config["BASIC"]["traits"].split("#")
     par_path = args.path
     modelling = METHODS[args.method]
     if args.output[0] == "/":
@@ -151,6 +83,10 @@ def main():
     else:
         sample_size = "_" + args.sample
 
+    #["trait","trainSet","validSet","n_features","test_score","valid_score","accuracy","mse"]
+    record_columns = ["trait","trainSet","validSet","n_layers","n_units","cnn_layers","in_year_accuracy",
+                      "predict_accuracy","mse"]
+    results = []
     in_year_record = open(record_path+"in_year_train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
     record = open(record_path+"train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
     raw_record = open(record_path+"train_record_{}_vs_{}_raw.csv".format("_".join(train_year),"_".join(valid_year)),"w")
@@ -158,6 +94,7 @@ def main():
     in_year_accs = {"TCHBlup": [], "CCSBlup": [], "FibreBlup": []}
     label_encoder = LabelEncoder()
     for trait in traits:
+
         # prepare data from csv files
         train_path = [par_path + year + "_" + trait + sample_size + ".csv" for year in train_year]
         train_data = pd.concat([pd.read_csv(path, sep="\t") for path in train_path],axis=0)  # .drop(columns="Region")
@@ -266,6 +203,8 @@ def main():
             in_year_accs[trait].append(accuracy)
 
         print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs[trait]))
+        #["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy","predict_accuracy", "mse"]
+        results.append([trait,train_year,valid_year,config["CNN"]["n_layers"]])
     for key in accs.keys():
         record.write("{}\t{}\n".format(key,np.mean(accs[key])))
         raw_record.write("{}\t{}\n".format(key,"\t".join([str(x) for x in accs[key]])))
