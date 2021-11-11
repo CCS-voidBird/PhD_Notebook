@@ -9,16 +9,18 @@ from sklearn.ensemble import RandomForestRegressor
 import configparser
 
 def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
-
+    n_factors = input_shape[1]
+    lr = float(lr)
     model = Sequential()
     """
     Convolutional Layers
     """
-    model.add(Conv1D(64,kernel_size=5,strides=3,padding='valid',activation='elu',input_shape=input_shape))
-    model.add(MaxPooling1D(pool_size=2))
+    model.add(Conv2D(64, kernel_size=(5, n_factors), strides=(3, 1), padding='valid', activation='elu',
+                     input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(2, 1)))
 
-    model.add(Conv1D(128, kernel_size=3, strides=1, padding='valid',activation='elu'))
-    model.add(MaxPooling1D(pool_size=2))
+    model.add(Conv2D(128, kernel_size=(3, 1), strides=(3, 1), padding='valid', activation='elu'))
+    model.add(MaxPooling2D(pool_size=(2, 1)))
 
     # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
     model.add(Dropout(rate = 0.2))
