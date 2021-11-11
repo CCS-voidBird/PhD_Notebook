@@ -15,6 +15,7 @@ Current Goals:
 + touch Random forest model
 + Confirmation index
 + Try a MLP model (Sandhu Km et)
++ Learn theory of Gradient Boosting
 
 
 

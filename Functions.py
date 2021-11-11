@@ -66,7 +66,7 @@ def load_data(args):
 
     return filtered_data
 
-def record_train_results(results:list,cols,method,path = ".",para = "default"):
+def record_train_results(results:list,cols,method,path = ".",para = "default",extra=''):
     """
     This function records training performance to csv file.
     :param results: a list contain performance data
@@ -82,7 +82,7 @@ def record_train_results(results:list,cols,method,path = ".",para = "default"):
         print(cols)
         print(results)
     record = pd.DataFrame(results,columns=cols)
-    record.to_csv("{}/{}_train_record_by_{}.csv".format(path,method,para),sep="\t")
+    record.to_csv("{}/{}_train_record_by_{}{}.csv".format(path,method,para,extra),sep="\t")
     print("Result:")
     print(record)
 

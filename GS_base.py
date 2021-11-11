@@ -87,11 +87,8 @@ def main():
     record_columns = ["trait","trainSet","validSet","n_layers","n_units","cnn_layers","in_year_accuracy",
                       "predict_accuracy","mse"]
     results = []
-    in_year_record = open(record_path+"in_year_train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
-    record = open(record_path+"train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
-    raw_record = open(record_path+"train_record_{}_vs_{}_raw.csv".format("_".join(train_year),"_".join(valid_year)),"w")
-    accs = {"TCHBlup": [], "CCSBlup": [], "FibreBlup": []}
-    in_year_accs = {"TCHBlup": [], "CCSBlup": [], "FibreBlup": []}
+    record_summary = []
+
     label_encoder = LabelEncoder()
     for trait in traits:
 
@@ -164,47 +161,60 @@ def main():
         print(n_features)
         input_size = n_features
         round = 0
+        for layers in config[args.method]["n_layers"].split(","):
+            for units in config[args.method]["n_units"].split(","):
+                print(layers,units)
+                accs = []
+                in_year_accs = []
+                while round < args.round:
+                    print(input_size)
+                    model = modelling(n_layers=int(layers),
+                                      n_units=int(int(units)), input_shape=input_size,
+                                      lr=float(config[args.method]["lr"]))
+                    try:
+                        print(model.summary())
+                    except:
+                        print("It is a sklean-Random-forest model.")
+                    history = model.fit(
+                        features_train, target_train,
+                        epochs=args.epoch,
+                        validation_data=(features_val_val, target_val_val), verbose=sil_mode)
+                    if args.plot is True:
+                        plot_loss_history(history, trait)
 
-        while round < args.round:
-            print(input_size)
-            model = modelling(n_layers=int(config[args.method]["n_layers"]), n_units=int(config[args.method]["n_units"]), input_shape=input_size,lr=config[args.method]["lr"])
-            try:
-                print(model.summary())
-            except:
-                print("It is a sklean-Random-forest model.")
-            history = model.fit(
-                features_train, target_train,
-                epochs=args.epoch,
-                validation_data=(features_val_val, target_val_val), verbose=sil_mode)
-            if args.plot is True:
-                plot_loss_history(history, trait)
+                    # let's just print the final loss
+                    print(' - train loss     : ' + str(history.history['loss'][-1]))
+                    print(' - validation loss: ' + str(history.history['val_loss'][-1]))
+                    length = target_train_val.shape[0]
+                    val_length = valid_targets.shape[0]
+                    y_pred = np.reshape(model.predict(features_train_val), (length,))
+                    y_pred_future = np.reshape(model.predict(valid_features), (val_length,))
 
-            # let's just print the final loss
-            print(' - train loss     : ' + str(history.history['loss'][-1]))
-            print(' - validation loss: ' + str(history.history['val_loss'][-1]))
-            length = target_train_val.shape[0]
-            val_length = valid_targets.shape[0]
-            y_pred = np.reshape(model.predict(features_train_val), (length,))
-            y_pred_future = np.reshape(model.predict(valid_features), (val_length,))
-
-            print("Predicted: ", y_pred[:10])
-            print("observed: ", target_train_val[:10])
-            accuracy = np.corrcoef(y_pred, target_train_val)[0, 1]
-            accuracy_future = np.corrcoef(y_pred_future, valid_targets)[0, 1]
-            print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy)
-            print("Future prediction accuracy (measured as Pearson's correlation) is: ", accuracy_future)
-            if args.save is True:
-                json = model.to_json()
-                with open("{}{}_{}_model.json".format(model_path,trait,args.optimizer), "w") as file:
-                    file.write(json)
-                model.save_weights("{}{}_{}_model.json.h5".format(model_path,trait,args.optimizer))
-            round += 1
-            accs[trait].append(accuracy_future)
-            in_year_accs[trait].append(accuracy)
-
-        print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs[trait]))
+                    print("Predicted: ", y_pred[:10])
+                    print("observed: ", target_train_val[:10])
+                    accuracy = np.corrcoef(y_pred, target_train_val)[0, 1]
+                    accuracy_future = np.corrcoef(y_pred_future, valid_targets)[0, 1]
+                    print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy)
+                    print("Future prediction accuracy (measured as Pearson's correlation) is: ", accuracy_future)
+                    if args.save is True:
+                        json = model.to_json()
+                        with open("{}{}_{}_model.json".format(model_path, trait, args.optimizer), "w") as file:
+                            file.write(json)
+                        model.save_weights("{}{}_{}_model.json.h5".format(model_path, trait, args.optimizer))
+                    round += 1
+                    accs.append(accuracy_future)
+                    in_year_accs.append(accuracy)
+                    results.append([trait,args.train,args.valid,layers,units,'N/A',accuracy,accuracy_future,"N/A"])
+                print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs))
         #["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy","predict_accuracy", "mse"]
-        results.append([trait,train_year,valid_year,config["CNN"]["n_layers"]])
+                record_summary.append([trait,train_year,valid_year,layers,units,'N/A',np.mean(in_year_accs),np.mean(accs),"N/A"])
+
+    record_train_results(results,record_columns,method=args.method,path = record_path)
+    record_train_results(record_summary,record_columns,args.method,path=record_path,extra="_summary")
+    """
+    in_year_record = open(record_path+"in_year_train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
+    record = open(record_path+"train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
+    raw_record = open(record_path+"train_record_{}_vs_{}_raw.csv".format("_".join(train_year),"_".join(valid_year)),"w")
     for key in accs.keys():
         record.write("{}\t{}\n".format(key,np.mean(accs[key])))
         raw_record.write("{}\t{}\n".format(key,"\t".join([str(x) for x in accs[key]])))
@@ -212,6 +222,7 @@ def main():
     record.close()
     raw_record.close()
     in_year_record.close()
+    """
 
 if __name__ == "__main__":
     main()
