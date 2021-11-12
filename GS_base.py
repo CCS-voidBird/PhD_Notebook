@@ -166,6 +166,7 @@ def main():
                 print(layers,units)
                 accs = []
                 in_year_accs = []
+                round = 0
                 while round < args.round:
                     print(input_size)
                     model = modelling(n_layers=int(layers),
