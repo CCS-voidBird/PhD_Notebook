@@ -160,12 +160,12 @@ def main():
                                                                                                   test_size=0.5)
         print(n_features)
         input_size = n_features
-        round = 0
         for layers in config[args.method]["n_layers"].split(","):
             for units in config[args.method]["n_units"].split(","):
                 print(layers,units)
                 accs = []
                 in_year_accs = []
+                round = 0
                 while round < args.round:
                     print(input_size)
                     model = modelling(n_layers=int(layers),

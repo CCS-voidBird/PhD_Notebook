@@ -15,13 +15,18 @@ Current Goals:
 + touch Random forest model
 + Confirmation index
 + Try a MLP model (Sandhu Km et)
-+ Learn theory of Gradient Boosting
 
 
 
 Literature List:
 
 + Sandhu, K. S., Lozada, D. N., Zhang, Z., Pumphrey, M. O., & Carter, A. H. (2021a). Deep learning for predicting complex traits in spring wheat breeding program. *Frontiers in Plant Science*, 11, 613325. https://doi.org/10.3389/fpls.2020.613325
+
+
+
+
+
+>  **The prediction accuracy was calculated as the correlation between the genomic estimated breeding values and the residual phenotype (phenotype adjusted for fixed effects using linear modeling) and divided by the square root of the estimated heritability.**
 
 
 
