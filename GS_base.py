@@ -207,7 +207,7 @@ def main():
                     results.append([trait,args.train,args.valid,layers,units,'N/A',accuracy,accuracy_future,"N/A"])
                 print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs))
         #["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy","predict_accuracy", "mse"]
-                record_summary.append([trait,train_year,valid_year,layers,units,'N/A',np.mean(in_year_accs),np.mean(accs),"N/A"])
+                record_summary.append([trait,args.train,args.valid,layers,units,'N/A',np.mean(in_year_accs),np.mean(accs),"N/A"])
 
     record_train_results(results,record_columns,method=args.method,path = record_path)
     record_train_results(record_summary,record_columns,args.method,path=record_path,extra="_summary")
