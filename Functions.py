@@ -75,7 +75,7 @@ def record_train_results(results:list,cols,method,path = ".",para = "default",ex
     :param path: output Path
     :param para: specific note for training
     """
-    if results is not list:
+    if isinstance(results,list) is not True:
         print("The training results should be a dictionary.")
     if len(cols) != len(results[0]):
         print("Cannot match records with columns, printing raw records instead")
