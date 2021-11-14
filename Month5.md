@@ -36,7 +36,7 @@ Experiment in RM/MLP/CNN
 
 RM: max_features: 500, 1000, 2000, 5000
 
-MLP: n_layers: 8, 16, 32, 48
+MLP: n_layers: 5 10 15 25
 
 CNN: n_CNNlayers
 
