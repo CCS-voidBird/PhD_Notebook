@@ -46,6 +46,10 @@ TCH: accuracy increased by n_units
 
 
 
+Next stage: testing hp: n_layers
+
+boosting methods
+
 
 
 ###################################################################################
