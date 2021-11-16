@@ -76,8 +76,8 @@ def main():
 
     global PATH
     PATH = locat
-    train_year = args.train.split("-")
-    valid_year = args.valid.split("-")
+    train_year = get_years(args.train)
+    valid_year = get_years(args.valid)
     if args.sample != "all":
         sample_size = "_" + args.sample
     else:
