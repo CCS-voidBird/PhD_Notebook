@@ -3,10 +3,12 @@ from sklearn.ensemble import RandomForestRegressor
 from Functions import *
 import configparser
 from GSModel import RM
+import pandas as pd
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 import platform
+import joblib
 
 def main():
     print("start")
@@ -102,6 +104,8 @@ def main():
                 print("A bite of output:")
                 print("observe: ", obversed[:50])
                 print("predicted: ", n_predict[:50])
+                save_df = pd.DataFrame({"obv":obversed,"pred":n_predict})
+                save_df.to_csv("~/saved_outcomes.csv",sep="\t")
 
                 avg_acc.append(accuracy)
                 avg_score.append(score)

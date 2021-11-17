@@ -33,7 +33,7 @@ def read_pipes(genotype, phenotypes, years):
     #selected_genos = genotype.iloc[genotype.sample in selected_phenos.Clone.values]
     #merged_data = pd.merge(selected_phenos,selected_genos,left_on="Clone",right_on="sample")
 
-    print(years)
+    print("Got selected years:",years)
     goal = (phenotypes
             .query('Series in @years')
             .pipe(mid_merge,genos=genotype)
