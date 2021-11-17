@@ -52,7 +52,7 @@ def main():
 
 
     accs = [] # pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
-
+    records = []
     max_feature_list = [int(x) for x in config["RM"]["max_features"].split(",")]
 
     for n_features in max_feature_list:
@@ -83,7 +83,7 @@ def main():
 
                 xtrain, xtest, ytrain, ytest = train_test_split(in_train, train_target, test_size=3)
 
-                print(in_train.columns[:10])
+                print(xtrain)
                 model.fit(xtrain, ytrain)
 
                 same_score = model.score(xtest, ytest)  # Calculating accuracy in the same year
@@ -108,10 +108,12 @@ def main():
                 acg_same_score.append(same_score)
                 avg_mse.append(mse)
                 r += 1
+                records.append([trait, "2013-15", "2017", n_features, same_score, score, accuracy,mse])
             accs.append([trait, "2013-15", "2017", n_features, np.mean(acg_same_score), np.mean(avg_score), np.mean(avg_acc),np.mean(avg_mse)])
 
 
     record_train_results(accs,cols=record_cols,method="RM",path="~",para="max_features")
+    record_train_results(records,cols=record_cols,method="RM",path="~",para="max_feature_raw")
 
     """
     results = pd.DataFrame(accs,columns=["trait","trainSet","validSet","n_features","test_score","valid_score","accuracy","mse"])

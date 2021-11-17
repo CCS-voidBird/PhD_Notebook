@@ -16,8 +16,6 @@ Current Goals:
 + Confirmation index
 + Try a MLP model (Sandhu Km et)
 
-
-
 Literature List:
 
 + Sandhu, K. S., Lozada, D. N., Zhang, Z., Pumphrey, M. O., & Carter, A. H. (2021a). Deep learning for predicting complex traits in spring wheat breeding program. *Frontiers in Plant Science*, 11, 613325. https://doi.org/10.3389/fpls.2020.613325
@@ -36,11 +34,21 @@ Experiment in RM/MLP/CNN
 
 RM: max_features: 500, 1000, 2000, 5000
 
-MLP: n_layers: 8, 16, 32, 48
+CNN: n_layers: 5 10 15 25
 
-CNN: n_CNNlayers
+MLP: n_layers = 4,8,16; n_units = 10,15,25,45
 
 
+
+Current outcomes:
+
+TCH: accuracy increased by n_units 
+
+
+
+Next stage: testing hp: n_layers
+
+boosting methods
 
 
 
