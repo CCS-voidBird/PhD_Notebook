@@ -19,8 +19,8 @@ Current Goals:
 Literature List:
 
 + Sandhu, K. S., Lozada, D. N., Zhang, Z., Pumphrey, M. O., & Carter, A. H. (2021a). Deep learning for predicting complex traits in spring wheat breeding program. *Frontiers in Plant Science*, 11, 613325. https://doi.org/10.3389/fpls.2020.613325
-
-
++ Wang, T., Chen, YP.P., Goddard, M.E. *et al.* A computationally efficient algorithm for genomic prediction using a Bayesian model. *Genet Sel Evol* **47,** 34 (2015). https://doi.org/10.1186/s12711-014-0082-4
++ Engle BN, Corbet NJ, Allen JM, Laing AR, Fordyce G, McGowan MR, Burns BM, Lyons RE, Hayes BJ. Multivariate genomic predictions for age at puberty in tropically adapted beef heifers. J Anim Sci. 2019 Jan 1;97(1):90-100. doi: 10.1093/jas/sky428. PMID: 30481306; PMCID: PMC6313118.
 
 
 
