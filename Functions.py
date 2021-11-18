@@ -68,10 +68,16 @@ def load_data(args):
 
 def get_years(years):
 
-    start,end = years.split("-")
-    period = [x for x in range(int(start),int(end)+1)]
+    if len(years) > 1:
+        start = years.split("-")[0]
+        end = years.split("-")[-1]
+        years = [x for x in range(int(start),int(end)+1)]
 
-    return period
+    return years
+
+def data_filter(data,filter_cols):
+
+    pass
 
 def record_train_results(results:list,cols,method,path = ".",para = "default",extra=''):
     """
