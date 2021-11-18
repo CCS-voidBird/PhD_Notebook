@@ -52,6 +52,14 @@ boosting methods
 
 
 
+BUG/ISSUES:
+
+Clones overlapping between genos and phenos  = 23, overall 227 records 
+
+overall overlapped Clones between genos and phenos = 42
+
+
+
 ###################################################################################
 
 #########################INDEX#################################################
