@@ -149,6 +149,8 @@ def main():
 
         in_train = train_data.dropna(subset=[trait], axis=0)
         in_valid = valid_data.dropna(subset=[trait], axis=0)
+        #in_train.to_csv("{}/train_record.csv".format(record_path),sep="\t")
+        #in_valid.to_csv("{}/valid_record.csv".format(record_path),sep="\t")
         train_targets = in_train[trait].values  # Get the target values from train set
         valid_targets = in_valid[trait].values
         train_features = in_train.drop(traits+["Series"],axis=1)
