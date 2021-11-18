@@ -14,8 +14,8 @@ This python file is for building functions that can associate with main model;
 def mid_merge(x,genos):
 
     merged = (genos
-           .query('sample in @x.Clone')
-           .pipe((pd.merge,'right'),left=x,left_on="Clone",right_on="sample"))
+           .query('Sample in @x.Clone')
+           .pipe((pd.merge,'right'),left=x,left_on="Clone",right_on="Sample"))
 
     return merged
 
