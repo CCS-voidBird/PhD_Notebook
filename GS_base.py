@@ -88,22 +88,57 @@ def main():
                       "predict_accuracy","mse"]
     results = []
     record_summary = []
-
     label_encoder = LabelEncoder()
+
+    geno_data = None
+    pheno_data = None
+
+    try:
+        geno_data = pd.read_csv(config["PATH"]["genotype"], sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
+        pheno_data = pd.read_csv(config["PATH"]["phenotype"], sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
+    except:
+        try:
+            print("Using backup path (for trouble shooting)")
+            geno_data = pd.read_csv(config["BACKUP_PATH"]["genotype"],
+                                    sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
+            pheno_data = pd.read_csv(config["BACKUP_PATH"]["phenotype"],
+                                     sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
+        except:
+            print("No valid path found.")
+            exit()
+
+    print("Removing sampling index...")
+    geno_data.drop(geno_data.columns[0], axis=1, inplace=True)
+    print(geno_data.columns)
+    geno_data = decoding(geno_data)
+
+    filtered_data = read_pipes(geno_data, pheno_data, train_year+valid_year)
+
+    dropout = config["BASIC"]["drop"].split("#") + ['sample']
+    keeping = [x for x in pheno_data.columns if x not in traits + config["BASIC"]["drop"].split("#")]
+    keeping.remove("Series")
+    print("Removing useless non-genetic factors: {}".format(dropout))
+    filtered_data.drop(dropout,axis=1,inplace=True)
+    print("Below factors will be fed into models: ")
+    print(keeping)
+
+    train_data = filtered_data.query('Series in @train_year').drop(["Series"],axis=1)
+    valid_data = filtered_data.query('Series in @valid_year').drop(["Series"],axis=1)
+
+
+
     for trait in traits:
 
-        # prepare data from csv files
+        """
         train_path = [par_path + year + "_" + trait + sample_size + ".csv" for year in train_year]
         train_data = pd.concat([pd.read_csv(path, sep="\t") for path in train_path],axis=0)  # .drop(columns="Region")
         valid_path = [par_path + year + "_" + trait + sample_size + ".csv" for year in valid_year]
         valid_data = pd.concat([pd.read_csv(path, sep="\t") for path in valid_path],axis=0)  # .drop(columns="Region") The final valid data
+        """
 
         """
         Drop sampling index 
         """
-
-        train_data.drop(train_data.columns[0], axis=1, inplace=True)
-        valid_data.drop(valid_data.columns[0], axis=1, inplace=True)
 
         print("Train data:")
         print(train_data.head(3))
@@ -112,35 +147,42 @@ def main():
 
         # pro-process data, add dim and select features
 
+        in_train = train_data.dropna(subset=[trait], axis=0)
+        in_valid = valid_data.dropna(subset=[trait], axis=0)
+        #in_train.to_csv("{}/train_record.csv".format(record_path),sep="\t")
+        #in_valid.to_csv("{}/valid_record.csv".format(record_path),sep="\t")
+        train_targets = in_train[trait].values  # Get the target values from train set
+        valid_targets = in_valid[trait].values
+        train_features = in_train.drop(traits,axis=1)
+        valid_features = in_valid.drop(traits,axis=1)
 
-        train_targets = train_data[trait].values  # Get the target values from train set
-        valid_targets = valid_data[trait].values
+        """
         train_features = train_data.iloc[:, 2:]
         valid_features = valid_data.iloc[:, 2:]
+        """
+
         print("currently the training method is: ",args.method)
         if "CNN" in args.method:
             print(train_features.columns)
-            factors = []
             print("USE CNN MODEL as training method")
-            train_features.replace(0.01, 3, inplace=True)
-            valid_features.replace(0.01, 3, inplace=True)
-
-            if args.region is True:
-                factors.append("Region")
-                train_features["Region"] = train_data["Region"]
-                valid_features["Region"] = valid_data["Region"]
+            if config["BASIC"]["OneHot"] == "1":
+                train_features.replace(0.01, 3, inplace=True)
+                valid_features.replace(0.01, 3, inplace=True)
                 for dataset in [train_features, valid_features]:
-                    dataset["Region"] = label_encoder.fit_transform(dataset["Region"])
-            train_features = factor_extender(train_features,factors)
-            valid_features = factor_extender(valid_features,factors)
+                    for factor in keeping:
+                        dataset[factor] = label_encoder.fit_transform(dataset[factor])
+                train_features = factor_extender(train_features, keeping)
+                valid_features = factor_extender(valid_features, keeping)
 
-            train_features = to_categorical(train_features)
-            valid_features = to_categorical(valid_features)
-
+                train_features = to_categorical(train_features)
+                valid_features = to_categorical(valid_features)
+            else:
+                print("Currently cannot solve non-numeric factors without OneHot functions.")
+                for dataset in [train_features, valid_features]:
+                    dataset.drop(keeping,axis=1,inplace=True)
+                print(train_features.columns)
         #train_features[train_features == 0.01] = 3
         #valid_features[valid_features == 0.01] = 3
-
-
 
         n_features = train_features.shape[1:]
         print(train_features.shape)

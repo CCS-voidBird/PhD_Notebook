@@ -57,6 +57,14 @@ Regression model accuracy metrics: R R-square, AIC, BIC,
 
 
 
+BUG/ISSUES:
+
+Clones overlapping between genos and phenos  = 23, overall 227 records 
+
+overall overlapped Clones between genos and phenos = 42
+
+
+
 ###################################################################################
 
 #########################INDEX#################################################

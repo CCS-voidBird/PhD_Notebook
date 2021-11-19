@@ -14,8 +14,8 @@ This python file is for building functions that can associate with main model;
 def mid_merge(x,genos):
 
     merged = (genos
-           .query('sample in @x.Clone')
-           .pipe((pd.merge,'right'),left=x,left_on="Clone",right_on="sample"))
+           .query('Sample in @x.Clone')
+           .pipe((pd.merge,'right'),left=x,left_on="Clone",right_on="Sample"))
 
     return merged
 
@@ -68,10 +68,16 @@ def load_data(args):
 
 def get_years(years):
 
-    start,end = years.split("-")
-    period = [x for x in range(int(start),int(end)+1)]
+    if len(years) > 1:
+        start = years.split("-")[0]
+        end = years.split("-")[-1]
+        years = [x for x in range(int(start),int(end)+1)]
 
-    return period
+    return years
+
+def data_filter(data,filter_cols):
+
+    pass
 
 def record_train_results(results:list,cols,method,path = ".",para = "default",extra=''):
     """
