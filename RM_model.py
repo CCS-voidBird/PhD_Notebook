@@ -78,7 +78,7 @@ def main():
                 train_target = np.squeeze(in_train[[trait]]).ravel()
                 valid_target = np.squeeze(in_valid[[trait]]).ravel()
 
-                dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'Series', 'sample']
+                dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'Series', 'Sample']
 
                 in_train.drop(dropout, axis=1, inplace=True)
                 in_valid.drop(dropout, axis=1, inplace=True)
