@@ -122,8 +122,8 @@ def main():
     print("Below factors will be fed into models: ")
     print(keeping)
 
-    train_data = filtered_data.query('Series in @train_year')
-    valid_data = filtered_data.query('Series in @valid_year')
+    train_data = filtered_data.query('Series in @train_year').drop(["Series"],axis=1)
+    valid_data = filtered_data.query('Series in @valid_year').drop(["Series"],axis=1)
 
 
 
@@ -153,8 +153,8 @@ def main():
         #in_valid.to_csv("{}/valid_record.csv".format(record_path),sep="\t")
         train_targets = in_train[trait].values  # Get the target values from train set
         valid_targets = in_valid[trait].values
-        train_features = in_train.drop(traits+["Series"],axis=1)
-        valid_features = in_valid.drop(traits+["Series"],axis=1)
+        train_features = in_train.drop(traits,axis=1)
+        valid_features = in_valid.drop(traits,axis=1)
 
         """
         train_features = train_data.iloc[:, 2:]
