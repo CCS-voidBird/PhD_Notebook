@@ -114,7 +114,7 @@ def main():
 
     filtered_data = read_pipes(geno_data, pheno_data, train_year+valid_year)
 
-    dropout = config["BASIC"]["drop"].split("#") + ['sample']
+    dropout = config["BASIC"]["drop"].split("#") + ['Sample']
     keeping = [x for x in pheno_data.columns if x not in traits + config["BASIC"]["drop"].split("#")]
     keeping.remove("Series")
     print("Removing useless non-genetic factors: {}".format(dropout))
