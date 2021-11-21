@@ -66,26 +66,27 @@ def main():
             acg_same_score = []
             avg_mse = []
             r = 0
+            """
+            Drop rows that contain NaN in trait value.
+            """
+            in_train = train.dropna(subset=[trait], axis=0)
+            in_valid = valid.dropna(subset=[trait], axis=0)
+            # print(in_train.columns)
+            train_target = np.squeeze(in_train[[trait]]).ravel()
+            valid_target = np.squeeze(in_valid[[trait]]).ravel()
+
+            dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'Series', 'Sample']
+
+            in_train.drop(dropout, axis=1, inplace=True)
+            in_valid.drop(dropout, axis=1, inplace=True)
+
+            xtrain, xtest, ytrain, ytest = train_test_split(in_train, train_target, test_size=3)
+
+            print(xtrain)
             while r < 10:
                 model = RM(specific=True,n_features=n_features)
 
-                """
-                Drop rows that contain NaN in trait value.
-                """
-                in_train = train.dropna(subset=[trait], axis=0)
-                in_valid = valid.dropna(subset=[trait], axis=0)
-                # print(in_train.columns)
-                train_target = np.squeeze(in_train[[trait]]).ravel()
-                valid_target = np.squeeze(in_valid[[trait]]).ravel()
 
-                dropout = ["TCHBlup", "CCSBlup", "FibreBlup", "Region", 'Trial', 'Crop', 'Clone', 'Series', 'Sample']
-
-                in_train.drop(dropout, axis=1, inplace=True)
-                in_valid.drop(dropout, axis=1, inplace=True)
-
-                xtrain, xtest, ytrain, ytest = train_test_split(in_train, train_target, test_size=3)
-
-                print(xtrain)
                 model.fit(xtrain, ytrain)
 
                 same_score = model.score(xtest, ytest)  # Calculating accuracy in the same year
