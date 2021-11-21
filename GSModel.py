@@ -1,9 +1,12 @@
-import keras
-from keras.models import Sequential
-from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
-from keras.layers import Dropout
-import tensorflow as tf
-import keras.metrics
+try:
+    import keras
+    from keras.models import Sequential
+    from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
+    from keras.layers import Dropout
+    import tensorflow as tf
+    import keras.metrics
+except:
+    print("This is not a GPU env.")
 from sklearn.datasets import make_regression
 from sklearn.ensemble import RandomForestRegressor
 import configparser
