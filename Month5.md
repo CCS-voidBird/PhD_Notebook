@@ -35,7 +35,7 @@ Experiment in RM/MLP/CNN
 
 RM: max_features: 500, 1000, 2000, 5000
 
-CNN: n_layers: 5 10 15 25
+CNN: MLP n_layers: 5 10 15 25
 
 MLP: n_layers = 4,8,16; n_units = 10,15,25,45
 
@@ -44,6 +44,10 @@ MLP: n_layers = 4,8,16; n_units = 10,15,25,45
 Current outcomes:
 
 TCH: accuracy increased by n_units 
+
+
+
+![method_comp_plus_rm.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/method_comp_plus_rm.png?raw=true)
 
 
 
