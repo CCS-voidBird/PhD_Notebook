@@ -31,13 +31,29 @@ Literature List:
 
 Experiment in RM/MLP/CNN
 
+[BASIC]
+traits = TCHBlup#CCSBlup#FibreBlup
+drop = Trial#Crop#Clone
+OneHot = 1
 
+[CNN]
+lr = 0.0001
+n_layers = 8
+n_units = 5,10,15,25
 
-RM: max_features: 500, 1000, 2000, 5000
+[TDCNN]
+lr = 0.0001
+n_layers = 8
+n_units = 5,10,15,25
 
-CNN: MLP n_layers: 5 10 15 25
+[MLP]
+lr = 0.0001
+n_layers = 4,8,16
+n_units = 10,15,25,45
 
-MLP: n_layers = 4,8,16; n_units = 10,15,25,45
+[RM]
+n_estimators = 200
+max_features = 500,1000,2000,5000
 
 
 
@@ -56,8 +72,6 @@ Next stage: testing hp: n_layers
 boosting methods
 
 Regression model accuracy metrics: R R-square, (AIC, BIC)
-
-
 
 
 
