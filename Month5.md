@@ -15,6 +15,8 @@ Current Goals:
 + touch Random forest model
 + Confirmation index
 + Try a MLP model (Sandhu Km et)
++ Review Seema's sugarcane paper to format the data pre-process (e.g. distribution transformation)
++ Try run RF by less n_features (~50)
 
 Literature List:
 
