@@ -171,13 +171,14 @@ def main():
                 for dataset in [train_features, valid_features]:
                     for factor in keeping:
                         dataset[factor] = label_encoder.fit_transform(dataset[factor])
-                train_features = factor_extender(train_features, keeping)
-                valid_features = factor_extender(valid_features, keeping)
+                if args.method == "TDCNN":
+                    train_features = factor_extender(train_features, keeping)
+                    valid_features = factor_extender(valid_features, keeping)
 
                 train_features = to_categorical(train_features)
                 valid_features = to_categorical(valid_features)
             else:
-                print("Currently cannot solve non-numeric factors without OneHot functions.")
+                print("Currently cannot solve non-genetic factors without OneHot functions.")
                 for dataset in [train_features, valid_features]:
                     dataset.drop(keeping,axis=1,inplace=True)
                 print(train_features.columns)
@@ -211,7 +212,7 @@ def main():
                 while round < args.round:
                     print(input_size)
                     model = modelling(n_layers=int(layers),
-                                      n_units=int(int(units)), input_shape=input_size,
+                                      n_units=int(units), input_shape=input_size,
                                       lr=float(config[args.method]["lr"]))
                     try:
                         print(model.summary())

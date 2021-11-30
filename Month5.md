@@ -1,7 +1,7 @@
 Month 5 Notebook
 ====
 
-Date: 01/Nov/2021 - 31/Nov/2021
+Date: 01/Nov/2021 - 30/Nov/2021
 
 <br> Editor: Chensong Chen
 ----
@@ -24,10 +24,15 @@ Literature List:
 + Wang, T., Chen, YP.P., Goddard, M.E. *et al.* A computationally efficient algorithm for genomic prediction using a Bayesian model. *Genet Sel Evol* **47,** 34 (2015). https://doi.org/10.1186/s12711-014-0082-4
 + Engle BN, Corbet NJ, Allen JM, Laing AR, Fordyce G, McGowan MR, Burns BM, Lyons RE, Hayes BJ. Multivariate genomic predictions for age at puberty in tropically adapted beef heifers. J Anim Sci. 2019 Jan 1;97(1):90-100. doi: 10.1093/jas/sky428. PMID: 30481306; PMCID: PMC6313118.
 + Stephan, J., Stegle, O. & Beyer, A. A random forest approach to capture genetic effects in the presence of population structure. *Nat Commun* **6,** 7432 (2015). https://doi.org/10.1038/ncomms8432
-
-
++ Whalen, S., Schreiber, J., Noble, W.S. *et al.* Navigating the pitfalls of applying machine learning in genomics. *Nat Rev Genet* (2021). https://doi.org/10.1038/s41576-021-00434-9
 
 >  **The prediction accuracy was calculated as the correlation between the genomic estimated breeding values and the residual phenotype (phenotype adjusted for fixed effects using linear modeling) and divided by the square root of the estimated heritability.**
+
+
+
+A online convolutional layer explainer:
+
+https://poloclub.github.io/cnn-explainer/
 
 
 
@@ -84,6 +89,32 @@ BUG/ISSUES:（SOLVED）
 Clones overlapping between genos and phenos  = 23, overall 227 records 
 
 overall overlapped Clones between genos and phenos = 42
+
+
+
+Discussion of Train-Test-Valid set selection:
+
+
+
+1. selecting by certain non-genetic factors (Series, Region) such as 1st factor, 2nd factor. The 1st factor will be used to determine processing set and valid set; the 2nd factor will be used inside the processing set, and separate into test set and valid set
+
+
+
+The assumptions of ML, DL
+
+> It **assumes that there is minimal or no multicollinearity among the independent variables**. It usually requires a large sample size to predict properly. It assumes the observations to be independent of each other.
+
+
+
+Traps in genetic ML:
+
++ Distributional differences
++ dependent examples
++ confounding
++ leaky preprocessing
++ unbalanced classes
+
+
 
 
 
