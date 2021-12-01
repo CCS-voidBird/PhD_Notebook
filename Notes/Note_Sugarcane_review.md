@@ -31,3 +31,11 @@ ref: Aitken K, Farmer A, Berkman P et al (2016) Generation of a 345K sugarcane S
 
 ref: Service, U. S. D. o. A. F. A. (2021). Sugar: World Markets and Trade. World Production, Markets, and Trade Report.
 
+[Whalen, S., Schreiber, J., Noble, W.S. et al. Navigating the pitfalls of applying machine learning in genomics. Nat Rev Genet (2021). https://doi.org/10.1038/s41576-021-00434-9]
+Traps in genetic ML:
+
++ Distributional differences
++ dependent examples
++ confounding
++ leaky preprocessing
++ unbalanced classes
