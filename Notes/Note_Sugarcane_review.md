@@ -9,6 +9,11 @@ ref: Meuwissen TH, Hayes BJ, Goddard ME (2001) Prediction of total genetic value
 
 ref: Gouy M, Rousselle Y, Bastianelli D, Lecomte P, Bonnal L, Roques D, Efile JC, Rocher S, Daugrois J, Toubi L, Nabeneza S, Hervouet C, Telismart H, Denis M, Thong-Chane A, Glaszmann JC, Hoarau JY, Nibouche S, Costet L (2013) Experimental assessment of the accuracy of genomic selection in sugarcane. Theor Appl Genet 126:2575–2586
 
+High heterozygous and polyploid crop due to their interspecific origin.
+ref: Garsmeur O, Droc G, Antonise R et al (2018) A mosaic monoploid reference sequence for the highly complex genome of sugarcane. Nat Commun. https://doi.org/10.1038/s41467-018-05051-5
+ref: Piperidis G, Piperidis N, D’Hont A (2010) Molecular cytogenetic investigation of chromosome composition and transmission in sugarcane. Mol Genet Genom 284:65–73. https://doi.org/10.1007/s00438-010-0546-3
+
+**Material**
 [Yadav, S., Wei, X., Joyce, P. et al. Improved genomic prediction of clonal performance in sugarcane by exploiting non-additive genetic effects. Theor Appl Genet 134, 2235–2252 (2021). https://doi.org/10.1007/s00122-021-03822-1]
 >Data resource: 3306 Clones that genotyped by a 70 K SC_Affymetrix Axiom cane SNP array.
 Aitken K, Farmer A, Berkman P et al (2016) Generation of a 345K sugarcane SNP chip. Proc Int Soc Cane Technol 29:1923–1930
@@ -31,6 +36,7 @@ ref: Aitken K, Farmer A, Berkman P et al (2016) Generation of a 345K sugarcane S
 
 ref: Service, U. S. D. o. A. F. A. (2021). Sugar: World Markets and Trade. World Production, Markets, and Trade Report.
 
+[Move to other places]
 [Whalen, S., Schreiber, J., Noble, W.S. et al. Navigating the pitfalls of applying machine learning in genomics. Nat Rev Genet (2021). https://doi.org/10.1038/s41576-021-00434-9]
 Traps in genetic ML:
 
