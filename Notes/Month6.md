@@ -37,3 +37,9 @@ Traps in genetic ML:
 
 RF performance from n_features 10-5000:
 
+![rm_comp_10_5000.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/2013to15vs2017/rm_comp_10_5000.png?raw=true)
+
+New 1D CNN: OHE on
+
+![1DCNN_onehot.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/2013to15vs2017/1DCNN_onehot.png?raw=true)
+
