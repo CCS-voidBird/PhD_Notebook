@@ -32,3 +32,8 @@ Traps in genetic ML:
 + confounding
 + leaky preprocessing
 + unbalanced classes
+
+
+
+RF performance from n_features 10-5000:
+

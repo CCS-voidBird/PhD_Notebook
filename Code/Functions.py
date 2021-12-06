@@ -3,6 +3,9 @@ import numpy as np
 import configparser
 import argparse
 import platform
+import psutil
+import os
+
 """
 This python file is for building functions that can associate with main model;
     1. add a function that can read/select/transform geno/pheno data from the origin geno/pheno files rather than 
@@ -48,8 +51,19 @@ def read_pipes(genotype, phenotypes, years):
 
     return goal
 
-def decoding(data):
+def check_usage():
+    info = psutil.virtual_memory()
+    print("Resource check:")
+    print("Total memory: %.4f GB" % (info.total/1024/1024/1024))
+    print("Currently using memory: %.4f GB" % (psutil.Process(os.getpid()).memory_info().rss/1024/1024/1024))
+    print("Ratio of used memory: %.4f GB" % (info.percent))
+    print("Number of CPU node: ",psutil.cpu_count())
 
+def decoding(data):
+    """
+    :param data: genotyping data (AA, AT, TT)
+    :return: numeric genotype data
+    """
     snps = {'TT':0,'AT':1,'AA':2,'--':0.01}
     data.replace(snps,inplace=True)
     data.fillna("0.01",inplace=True)
@@ -145,6 +159,7 @@ def get_args():
     req_grp.add_argument('-a', '--region', type=bool, help="add regions (T/F)", default=False)
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
+    req_grp.add_argument('-oh', '--onehot', type=int, help="One Hot encoder switch", default=1)
     req_grp.add_argument('-opt', '--optimizer', type=str, help='select optimizer: Adam, SGD, rmsprop',
                          default="rmsprop")
     req_grp.add_argument('-plot', '--plot', type=bool, help="give plot?",

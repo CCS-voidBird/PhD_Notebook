@@ -78,7 +78,7 @@ Next stage: testing hp: n_layers
 
 boosting methods
 
-Regression model accuracy metrics: R R-square, (AIC, BIC)
+Regression model accuracy metrics: R R-square, (AIC, BIC) - choose R
 
 
 

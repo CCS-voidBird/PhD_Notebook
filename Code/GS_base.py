@@ -165,20 +165,23 @@ def main():
         if "CNN" in args.method:
             print(train_features.columns)
             print("USE CNN MODEL as training method")
-            if config["BASIC"]["OneHot"] == "1":
+            if args.onehot == 1:
+                print("Import One-hot encoding method.")
                 train_features.replace(0.01, 3, inplace=True)
                 valid_features.replace(0.01, 3, inplace=True)
                 for dataset in [train_features, valid_features]:
                     for factor in keeping:
                         dataset[factor] = label_encoder.fit_transform(dataset[factor])
                 if args.method == "TDCNN":
+                    print("Using a 2D CNN.")
                     train_features = factor_extender(train_features, keeping)
                     valid_features = factor_extender(valid_features, keeping)
 
                 train_features = to_categorical(train_features)
                 valid_features = to_categorical(valid_features)
             else:
-                print("Currently cannot solve non-genetic factors without OneHot functions.")
+                print("Currently cannot solve non-genetic factors without OneHot functions.",
+                      "Meanwhile, the training model will be forced to 1DCNN.")
                 for dataset in [train_features, valid_features]:
                     dataset.drop(keeping,axis=1,inplace=True)
                 print(train_features.columns)
