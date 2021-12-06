@@ -12,7 +12,6 @@ from sklearn.ensemble import RandomForestRegressor
 import configparser
 
 def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
-    n_factors = input_shape[1]
     lr = float(lr)
     model = Sequential()
     """
