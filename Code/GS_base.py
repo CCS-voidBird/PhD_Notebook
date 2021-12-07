@@ -184,12 +184,13 @@ def main():
                       "Meanwhile, the training model will be forced to 1DCNN.")
                 for dataset in [train_features, valid_features]:
                     dataset.drop(keeping,axis=1,inplace=True)
+                    dataset = np.expand_dims(dataset,axis=1)
                 print(train_features.columns)
         #train_features[train_features == 0.01] = 3
         #valid_features[valid_features == 0.01] = 3
 
         n_features = train_features.shape[1:]
-        print(train_features.shape)
+        print("The shape of data:",train_features.shape)
 
         #train_features = np.expand_dims(train_features, axis=3)
 
@@ -204,7 +205,7 @@ def main():
         features_train_val, features_val_val, target_train_val, target_val_val = train_test_split(features_val,
                                                                                                   target_val,
                                                                                                   test_size=0.5)
-        print(n_features)
+        print("The input shape:",n_features)
         input_size = n_features
         for layers in config[args.method]["n_layers"].split(","):
             for units in config[args.method]["n_units"].split(","):
