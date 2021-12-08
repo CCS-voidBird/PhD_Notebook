@@ -19,6 +19,7 @@ from sklearn.preprocessing import OneHotEncoder
 import platform
 from datetime import datetime
 from sklearn.metrics import mean_squared_error
+import configparser
 
 ##############################################################
 ##########Training requirement################################
@@ -46,6 +47,7 @@ def main():
 
     args = get_args()
     config_path = os.path.abspath(args.config)
+    print("Get config file path: ",config_path)
     config = configparser.ConfigParser()
     if platform.system().lower() == "windows":
         config.read("./MLP_parameters.ini")
@@ -233,8 +235,8 @@ def main():
                     print(' - validation loss: ' + str(history.history['val_loss'][-1]))
                     print("Train End.")
                     endTime = datetime.now()
-                    runtime = str(endTime - startTime)
-                    print("Runtime: ",runtime)
+                    runtime = endTime - startTime
+                    print("Runtime: ",runtime.seconds/60," min")
                     print("Predicting valid set..")
                     length = target_train_val.shape[0]
                     val_length = valid_targets.shape[0]
@@ -258,10 +260,10 @@ def main():
                     in_year_accs.append(accuracy)
                     runtimes.append(runtime)
                     mses.append(mse)
-                    results.append([trait,args.train,args.valid,layers,units,'N/A',accuracy,accuracy_future,mse,runtime])
+                    results.append([trait,args.train,args.valid,layers,units,'N/A',accuracy,accuracy_future,mse,runtime.seconds/60])
                 print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs))
         #["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy","predict_accuracy", "mse"]
-                record_summary.append([trait,args.train,args.valid,layers,units,'N/A',np.mean(in_year_accs),np.mean(accs),np.mean(mses),np.mean(runtimes)])
+                record_summary.append([trait,args.train,args.valid,layers,units,'N/A',np.mean(in_year_accs),np.mean(accs),np.mean(mses),np.mean(runtimes).seconds/60])
 
     record_train_results(results,record_columns,method=args.method,path = record_path)
     record_train_results(record_summary,record_columns,args.method,path=record_path,extra="_summary")
