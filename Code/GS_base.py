@@ -17,6 +17,8 @@ import argparse
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 import platform
+from datetime import datetime
+from sklearn.metrics import mean_squared_error
 
 ##############################################################
 ##########Training requirement################################
@@ -32,12 +34,6 @@ TRAIN_PATH = "E:/learning resource/PhD/sugarcane/2015_TCHBlup_2000.csv"
 VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
 """
 
-METHODS = {
-    "MLP": MLP,
-    "CNN": CNN,
-    "TDCNN": TDCNN
-}
-
 def plot_loss_history(h, title):
     plt.plot(h.history['loss'], label = "Train loss")
     plt.plot(h.history['val_loss'], label = "Validation loss")
@@ -49,11 +45,12 @@ def plot_loss_history(h, title):
 def main():
 
     args = get_args()
+    config_path = os.path.abspath(args.config)
     config = configparser.ConfigParser()
     if platform.system().lower() == "windows":
         config.read("./MLP_parameters.ini")
     else:
-        config.read("/clusterdata/uqcche32/MLP_parameters.ini")
+        config.read(config_path)
     traits = config["BASIC"]["traits"].split("#")
     par_path = args.path
     modelling = METHODS[args.method]
@@ -85,7 +82,7 @@ def main():
 
     #["trait","trainSet","validSet","n_features","test_score","valid_score","accuracy","mse"]
     record_columns = ["trait","trainSet","validSet","n_layers","n_units","cnn_layers","in_year_accuracy",
-                      "predict_accuracy","mse"]
+                      "predict_accuracy","mse","runtime"]
     results = []
     record_summary = []
     label_encoder = LabelEncoder()
@@ -149,17 +146,12 @@ def main():
 
         in_train = train_data.dropna(subset=[trait], axis=0)
         in_valid = valid_data.dropna(subset=[trait], axis=0)
-        #in_train.to_csv("{}/train_record.csv".format(record_path),sep="\t")
-        #in_valid.to_csv("{}/valid_record.csv".format(record_path),sep="\t")
+
         train_targets = in_train[trait].values  # Get the target values from train set
         valid_targets = in_valid[trait].values
         train_features = in_train.drop(traits,axis=1)
         valid_features = in_valid.drop(traits,axis=1)
 
-        """
-        train_features = train_data.iloc[:, 2:]
-        valid_features = valid_data.iloc[:, 2:]
-        """
 
         print("currently the training method is: ",args.method)
         if "CNN" in args.method:
@@ -184,8 +176,11 @@ def main():
                       "Meanwhile, the training model will be forced to 1DCNN.")
                 for dataset in [train_features, valid_features]:
                     dataset.drop(keeping,axis=1,inplace=True)
-                    dataset = np.expand_dims(dataset,axis=1)
+
                 print(train_features.columns)
+                train_features = np.expand_dims(train_features,axis=2)
+                valid_features = np.expand_dims(valid_features,axis=2)
+
         #train_features[train_features == 0.01] = 3
         #valid_features[valid_features == 0.01] = 3
 
@@ -213,7 +208,11 @@ def main():
                 accs = []
                 in_year_accs = []
                 round = 0
+                mses = []
+                runtimes = []
                 while round < args.round:
+                    startTime = datetime.now()
+                    print("Start.")
                     print(input_size)
                     model = modelling(n_layers=int(layers),
                                       n_units=int(units), input_shape=input_size,
@@ -232,6 +231,11 @@ def main():
                     # let's just print the final loss
                     print(' - train loss     : ' + str(history.history['loss'][-1]))
                     print(' - validation loss: ' + str(history.history['val_loss'][-1]))
+                    print("Train End.")
+                    endTime = datetime.now()
+                    runtime = str(endTime - startTime)
+                    print("Runtime: ",runtime)
+                    print("Predicting valid set..")
                     length = target_train_val.shape[0]
                     val_length = valid_targets.shape[0]
                     y_pred = np.reshape(model.predict(features_train_val), (length,))
@@ -241,6 +245,7 @@ def main():
                     print("observed: ", target_train_val[:10])
                     accuracy = np.corrcoef(y_pred, target_train_val)[0, 1]
                     accuracy_future = np.corrcoef(y_pred_future, valid_targets)[0, 1]
+                    mse = mean_squared_error(y_pred_future,valid_targets)
                     print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy)
                     print("Future prediction accuracy (measured as Pearson's correlation) is: ", accuracy_future)
                     if args.save is True:
@@ -251,10 +256,12 @@ def main():
                     round += 1
                     accs.append(accuracy_future)
                     in_year_accs.append(accuracy)
-                    results.append([trait,args.train,args.valid,layers,units,'N/A',accuracy,accuracy_future,"N/A"])
+                    runtimes.append(runtime)
+                    mses.append(mse)
+                    results.append([trait,args.train,args.valid,layers,units,'N/A',accuracy,accuracy_future,mse,runtime])
                 print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs))
         #["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy","predict_accuracy", "mse"]
-                record_summary.append([trait,args.train,args.valid,layers,units,'N/A',np.mean(in_year_accs),np.mean(accs),"N/A"])
+                record_summary.append([trait,args.train,args.valid,layers,units,'N/A',np.mean(in_year_accs),np.mean(accs),np.mean(mses),np.mean(runtimes)])
 
     record_train_results(results,record_columns,method=args.method,path = record_path)
     record_train_results(record_summary,record_columns,args.method,path=record_path,extra="_summary")

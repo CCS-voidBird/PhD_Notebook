@@ -11,6 +11,8 @@ from sklearn.datasets import make_regression
 from sklearn.ensemble import RandomForestRegressor
 import configparser
 
+
+
 def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
     lr = float(lr)
     model = Sequential()
@@ -54,6 +56,38 @@ def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
     """
 
     return model
+
+def DeepGS(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
+    lr = float(lr)
+    model = Sequential()
+    model.add(Conv1D(8, kernel_size=18, strides=1, padding='valid', activation='relu',
+                     input_shape=input_shape))
+    model.add(MaxPooling1D(pool_size=4,strides=4))
+    model.add(Dropout(rate=0.2))
+
+    model.add(Flatten())
+    model.add(Dropout(rate=0.1))
+    model.add(Dense(32,activation="relu"))
+    model.add(Dropout(rate=0.05))
+    model.add(Dense(1,activation="linear"))
+
+    try:
+        adm = keras.optimizers.Adam(learning_rate=lr)
+        rms = keras.optimizers.RMSprop(learning_rate=lr)
+        sgd = keras.optimizers.SGD(learning_rate=lr)
+    except:
+        adm = keras.optimizers.Adam(lr=lr)
+        rms = keras.optimizers.RMSprop(lr=lr)
+        sgd = keras.optimizers.SGD(lr=lr)
+
+    optimizers = {"rmsprop":rms,
+                 "Adam": adm,
+                 "SGD": sgd}
+
+    model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
+
+    return model
+
 
 def TDCNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
     n_factors = input_shape[1]
@@ -142,7 +176,12 @@ def RM(config = None,specific=False,n_features = 500,n_estimators = 200):
 
         return model
 
-
+METHODS = {
+    "MLP": MLP,
+    "CNN": CNN,
+    "TDCNN": TDCNN,
+    "DeepGS": DeepGS
+}
 
 def main():
     model = CNN(n_layers=3,n_units=8,input_shape=[26084,4])

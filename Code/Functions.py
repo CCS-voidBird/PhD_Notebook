@@ -170,6 +170,8 @@ def get_args():
                          default=10)
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=False)
+    req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ~/MLP_parameters.ini',
+                         default="~/MLP_parameters.ini")
     args = parser.parse_args()
 
     return args
