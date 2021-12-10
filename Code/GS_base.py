@@ -69,9 +69,9 @@ def main():
         if not os.path.exists(path):
             os.mkdir(path)
 
-    sil_mode = 0
+    sil_mode = 1
     if args.silence == True:
-        sil_mode = 1
+        sil_mode = 0
 
     global PATH
     PATH = locat

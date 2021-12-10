@@ -20,6 +20,7 @@ Current Goals:
 
 + import DeepGS model in a previous study
 
++ Understanding MNV: mean normalized discounted cumulative gain value
   
 
 
