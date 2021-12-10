@@ -9,19 +9,14 @@ Date: 01/Dec/2021 - 31/Dec/2021
 Current Goals:
 
 + Write a report for current results
-
 + import keras API for reading data and making a mixed model
-
 + optimize/solve structural issues described by the **Navigating the pitfalls of applying machine learning in genomics**
-
 + Add runtime record function to programs
-
 + Try fastAI
-
 + import DeepGS model in a previous study
-
 + Understanding MNV: mean normalized discounted cumulative gain value
-  
++ 3D heatmap for convolutional output (markers, clones, channels) （Jan）
++ Export decision tree for marker importance in RF （Jan）
 
 
 
