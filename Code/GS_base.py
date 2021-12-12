@@ -234,6 +234,7 @@ def main():
                     # let's just print the final loss
                     print(' - train loss     : ' + str(history.history['loss'][-1]))
                     print(' - validation loss: ' + str(history.history['val_loss'][-1]))
+                    print(' - loss decrease rate in last 5 epochs: ' + str(np.mean(np.gradient(history.history['val_loss'][-5:]))))
                     print("Train End.")
                     endTime = datetime.now()
                     runtime = endTime - startTime

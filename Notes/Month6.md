@@ -17,6 +17,8 @@ Current Goals:
 + Understanding MNV: mean normalized discounted cumulative gain value
 + 3D heatmap for convolutional output (markers, clones, channels) （Jan）
 + Export decision tree for marker importance in RF （Jan）
++ add earlystopping methods (DONE)
++ Add a increase rate recording function for CNNs (instead 500 epoch)
 
 
 
