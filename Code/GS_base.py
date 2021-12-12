@@ -223,10 +223,11 @@ def main():
                         print(model.summary())
                     except:
                         print("It is a sklean-Random-forest model.")
+                    callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
                     history = model.fit(
                         features_train, target_train,
                         epochs=args.epoch,
-                        validation_data=(features_val_val, target_val_val), verbose=sil_mode)
+                        validation_data=(features_val_val, target_val_val), verbose=sil_mode,callbacks=[callback])
                     if args.plot is True:
                         plot_loss_history(history, trait)
 
