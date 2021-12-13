@@ -57,7 +57,8 @@ def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     return model
 
-def DeepGS(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
+def DeepGS(input_shape,n_layers=0,n_units=32,optimizer="SGD",lr=0.01):
+    print("If need to specify MLP parameters for DeepGS model, modify MODEL file instead.")
     lr = float(lr)
     model = Sequential()
     model.add(Conv1D(8, kernel_size=18, strides=1, padding='valid', activation='relu',
