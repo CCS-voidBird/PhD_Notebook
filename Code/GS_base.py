@@ -27,6 +27,8 @@ import configparser
 ##Output format: an table with mean accuracy for each para set; A density plot for each accuracy##########
 #################################################################
 
+CNNs = ["CNN","TDCNN","DeepGS"]
+
 """
 GENO_PATH = "E:\learning resource\PhD\geno_data1.csv"
 PHENO_PATH = "E:\learning resource\PhD\phenotypes.csv"
@@ -156,7 +158,7 @@ def main():
 
 
         print("currently the training method is: ",args.method)
-        if "CNN" in args.method:
+        if args.method in CNNs:
             print(train_features.columns)
             print("USE CNN MODEL as training method")
             if args.onehot == 1:
@@ -254,9 +256,9 @@ def main():
                     print("Future prediction accuracy (measured as Pearson's correlation) is: ", accuracy_future)
                     if args.save is True:
                         json = model.to_json()
-                        with open("{}{}_{}_model.json".format(model_path, trait, args.optimizer), "w") as file:
+                        with open("{}{}_{}_model.json".format(model_path, trait, args.method), "w") as file:
                             file.write(json)
-                        model.save_weights("{}{}_{}_model.json.h5".format(model_path, trait, args.optimizer))
+                        model.save_weights("{}{}_{}_model.json.h5".format(model_path, trait, args.method))
                     round += 1
                     accs.append(accuracy_future)
                     in_year_accs.append(accuracy)
