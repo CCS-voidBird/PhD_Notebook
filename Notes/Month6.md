@@ -52,6 +52,6 @@ New 1D CNN: OHE on
 
 ![1DCNN_onehot.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/2013to15vs2017/1DCNN_onehot.png?raw=true)
 
-Accuracy comparison by various decision trees:
+Accuracy comparison by various decision trees: max 1000 features per tree
 
 ![RF_n_tree.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/RF_n_tree.png?raw=true)
