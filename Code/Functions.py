@@ -162,7 +162,7 @@ def get_args():
     req_grp.add_argument('-oh', '--onehot', type=int, help="One Hot encoder switch", default=1)
     req_grp.add_argument('-opt', '--optimizer', type=str, help='select optimizer: Adam, SGD, rmsprop',
                          default="rmsprop")
-    req_grp.add_argument('-plot', '--plot', type=bool, help="give plot?",
+    req_grp.add_argument('-plot', '--plot', type=bool, help="show plot?",
                          default=False)
     req_grp.add_argument('-sli', '--silence', type=bool, help="silent mode",
                          default=True)

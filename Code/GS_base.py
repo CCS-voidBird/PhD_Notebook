@@ -49,15 +49,19 @@ def main():
 
     args = get_args()
     config_path = os.path.abspath(args.config)
-    print("Get config file path: ",config_path)
+    print("Get config file path from: ",config_path)
     config = configparser.ConfigParser()
     if platform.system().lower() == "windows":
         config.read("./MLP_parameters.ini")
     else:
         config.read(config_path)
     traits = config["BASIC"]["traits"].split("#")
-    par_path = args.path
-    modelling = METHODS[args.method]
+    selected_model = config["BASIC"]["method"]
+    modelling = METHODS[selected_model]
+
+    """
+    Create folders from given output path
+    """
     if args.output[0] == "/":
         locat = '/' + args.output.strip('/') + '/'
     else:
@@ -71,18 +75,25 @@ def main():
         if not os.path.exists(path):
             os.mkdir(path)
 
+    """
+    select silence mode
+    """
+
     sil_mode = 1
     if args.silence == True:
         sil_mode = 0
 
     global PATH
     PATH = locat
+
+    """
+    backup year-select codes
     train_year = get_years(args.train)
     valid_year = get_years(args.valid)
-    if args.sample != "all":
-        sample_size = "_" + args.sample
-    else:
-        sample_size = "_" + args.sample
+    """
+
+    train_year = get_years(config["BASIC"]["train"])
+    valid_year = get_years(config["BASIC"]["valid"])
 
     #["trait","trainSet","validSet","n_features","test_score","valid_score","accuracy","mse"]
     record_columns = ["trait","trainSet","validSet","n_layers","n_units","cnn_layers","in_year_accuracy",
@@ -107,9 +118,11 @@ def main():
         except:
             print("No valid path found.")
             exit()
-
+    """
+    Have manually removed sampling index.
     print("Removing sampling index...")
     geno_data.drop(geno_data.columns[0], axis=1, inplace=True)
+    """
     print(geno_data.columns)
     geno_data = decoding(geno_data)
 
@@ -131,13 +144,6 @@ def main():
     for trait in traits:
 
         """
-        train_path = [par_path + year + "_" + trait + sample_size + ".csv" for year in train_year]
-        train_data = pd.concat([pd.read_csv(path, sep="\t") for path in train_path],axis=0)  # .drop(columns="Region")
-        valid_path = [par_path + year + "_" + trait + sample_size + ".csv" for year in valid_year]
-        valid_data = pd.concat([pd.read_csv(path, sep="\t") for path in valid_path],axis=0)  # .drop(columns="Region") The final valid data
-        """
-
-        """
         Drop sampling index 
         """
 
@@ -157,18 +163,18 @@ def main():
         valid_features = in_valid.drop(traits,axis=1)
 
 
-        print("currently the training method is: ",args.method)
-        if args.method in CNNs:
+        print("currently the training method is: ",selected_model)
+        if selected_model in CNNs:
             print(train_features.columns)
             print("USE CNN MODEL as training method")
-            if args.onehot == 1:
+            if config["BASIC"]["OneHot"] == 1:
                 print("Import One-hot encoding method.")
                 train_features.replace(0.01, 3, inplace=True)
                 valid_features.replace(0.01, 3, inplace=True)
                 for dataset in [train_features, valid_features]:
                     for factor in keeping:
                         dataset[factor] = label_encoder.fit_transform(dataset[factor])
-                if args.method == "TDCNN":
+                if selected_model == "TDCNN":
                     print("Using a 2D CNN.")
                     train_features = factor_extender(train_features, keeping)
                     valid_features = factor_extender(valid_features, keeping)
@@ -206,21 +212,21 @@ def main():
                                                                                                   test_size=0.5)
         print("The input shape:",n_features)
         input_size = n_features
-        for layers in config[args.method]["n_layers"].split(","):
-            for units in config[args.method]["n_units"].split(","):
+        for layers in config[selected_model]["n_layers"].split(","):
+            for units in config[selected_model]["n_units"].split(","):
                 print(layers,units)
                 accs = []
                 in_year_accs = []
                 round = 0
                 mses = []
                 runtimes = []
-                while round < args.round:
+                while round < int(config["BASIC"]["replicate"]):
                     startTime = datetime.now()
                     print("Start.")
                     print(input_size)
                     model = modelling(n_layers=int(layers),
                                       n_units=int(units), input_shape=input_size,
-                                      lr=float(config[args.method]["lr"]))
+                                      lr=float(config[selected_model]["lr"]))
                     try:
                         print(model.summary())
                     except:
@@ -228,7 +234,7 @@ def main():
                     callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
                     history = model.fit(
                         features_train, target_train,
-                        epochs=args.epoch,
+                        epochs=config["BASIC"]["Epoch"],
                         validation_data=(features_val_val, target_val_val), verbose=sil_mode,callbacks=[callback])
                     if args.plot is True:
                         plot_loss_history(history, trait)
@@ -256,21 +262,21 @@ def main():
                     print("Future prediction accuracy (measured as Pearson's correlation) is: ", accuracy_future)
                     if args.save is True:
                         json = model.to_json()
-                        with open("{}{}_{}_model.json".format(model_path, trait, args.method), "w") as file:
+                        with open("{}{}_{}_model.json".format(model_path, trait, selected_model), "w") as file:
                             file.write(json)
-                        model.save_weights("{}{}_{}_model.json.h5".format(model_path, trait, args.method))
+                        model.save_weights("{}{}_{}_model.json.h5".format(model_path, trait, selected_model))
                     round += 1
                     accs.append(accuracy_future)
                     in_year_accs.append(accuracy)
                     runtimes.append(runtime)
                     mses.append(mse)
-                    results.append([trait,args.train,args.valid,layers,units,'N/A',accuracy,accuracy_future,mse,runtime.seconds/60])
+                    results.append([trait,config["BASIC"]["train"],config["BASIC"]["valid"],layers,units,'N/A',accuracy,accuracy_future,mse,runtime.seconds/60])
                 print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs))
         #["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy","predict_accuracy", "mse"]
-                record_summary.append([trait,args.train,args.valid,layers,units,'N/A',np.mean(in_year_accs),np.mean(accs),np.mean(mses),np.mean(runtimes).seconds/60])
+                record_summary.append([trait,config["BASIC"]["train"],config["BASIC"]["valid"],layers,units,'N/A',np.mean(in_year_accs),np.mean(accs),np.mean(mses),np.mean(runtimes).seconds/60])
 
-    record_train_results(results,record_columns,method=args.method,path = record_path)
-    record_train_results(record_summary,record_columns,args.method,path=record_path,extra="_summary")
+    record_train_results(results,record_columns,method=selected_model,path = record_path)
+    record_train_results(record_summary,record_columns,selected_model,path=record_path,extra="_summary")
     """
     in_year_record = open(record_path+"in_year_train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
     record = open(record_path+"train_record_{}_vs_{}.csv".format("_".join(train_year),"_".join(valid_year)),"w")
