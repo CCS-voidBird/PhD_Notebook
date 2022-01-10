@@ -4,9 +4,11 @@ select_by = Series
 non_genetic_factor = Region
 OneHot = 1
 DatasetSelection = 1
-method = DeepGS
+method = CNN
 train = 2013-2015
 valid = 2017
+replicate = 10
+Epoch = 200
 
 [PATH]
 phenotype = /scratch/qaafi/uqcche32/phenotypes.csv

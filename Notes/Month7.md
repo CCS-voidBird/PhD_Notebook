@@ -17,3 +17,11 @@ Goal:
 
 
 
+Sort ML knowledge:
+
+
+
+decision tree ==> random forest
+
+multilayer precrpton ==> convolutional nerual network
+
