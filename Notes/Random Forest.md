@@ -4,7 +4,7 @@ Notes:
 
 The Random Forest algorithm is a typical technical instance of the Bootstrap aggregating in ML fields.
 
-
+https://scikit-learn.org/stable/modules/ensemble.html#id6
 
 The computational theory of decision tree:
 

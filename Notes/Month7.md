@@ -17,11 +17,18 @@ Goal:
 
 
 
+read list:
+
++ Breiman, L. Random Forests. *Machine Learning* **45,** 5–32 (2001). https://doi.org/10.1023/A:1010933404324
++ G. Louppe, “Understanding Random Forests: From Theory to Practice”, PhD Thesis, U. of Liege, 2014.
+
++ Zeiler, Matthew D., and Rob Fergus. "Visualizing and understanding convolutional networks." *European conference on computer vision*. Springer, Cham, 2014.
+
 Sort ML knowledge:
 
 
 
-decision tree ==> random forest
+decision tree ==> random forest==> feature importance evaluation 
 
-multilayer precrpton ==> convolutional nerual network
+multilayer perceptron ==> convolutional neural network
 
