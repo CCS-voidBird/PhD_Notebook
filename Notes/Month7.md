@@ -32,3 +32,10 @@ decision tree ==> random forest==> feature importance evaluation
 
 multilayer perceptron ==> convolutional neural network
 
+mean normalized discounted cumulative gain value (MNV)
+
+![image-20220114172238179](E:\learning resource\PhD\PHD_Notebook\Notes\MNV.png)
+
+where $d(i)=1/(log_2i+1)$ is a monotonically decreasing discount function at position *i*; *y*(*i*, *Y*) is the *i*th value of observed phenotypic values *Y* sorted in descending order, here *y*(1, *Y*) ≥y(2,Y)≥…y(n,Y);y(i,X)≥y(2,Y)≥…y(n,Y);y(i,X) is the corresponding value of *Y* in the score pairs (*X*, *Y*) for the *i*th value of predicted scores *X* sorted in descending order. Thus, MNV has a range of 0 to 1 when all the observed phenotypic values are larger than zero; a higher MNV(*k, X, Y*) indicates a better performance of the GS model to select the top-ranked *k* (*α* = *k*/2000, 1 ≤ *k* ≤ 2000, 1% ≤ *α* ≤ 100%) individuals with high phenotypic values.
+
+The entire tenfold cross-validation experiment was repeated ten 
