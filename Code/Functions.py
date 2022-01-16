@@ -29,6 +29,15 @@ def mid_merge(x,genos):
 
     return merged
 
+def create_subset(data:pd.DataFrame,factor_value,factor_name="Region"):
+    if factor_name == "Region":
+        subset = data.query('Region is @factor_value')
+        subset.drop(factor_name,axis=1)
+    else:
+        print("currently cannot resolve domain without region tag./")
+        return pd.DataFrame()
+    return subset
+
 def read_pipes(genotype, phenotypes, years):
     """
     :param genotype: an overall genotype dataframe contains all clones; Format: raw = records, col = QTL names
@@ -150,9 +159,9 @@ def factor_extender(data,factors):
 def get_args():
     parser = argparse.ArgumentParser()
     req_grp = parser.add_argument_group(title='Required')
-    req_grp.add_argument('-p', '--path', type=str, help="Input path.", required=True)
-    req_grp.add_argument('-1', '--train', type=str, help="Input train year.", required=True)
-    req_grp.add_argument('-2', '--valid', type=str, help="Input valid year.", required=True)
+    #req_grp.add_argument('-p', '--path', type=str, help="Input path.", required=True)
+    #req_grp.add_argument('-1', '--train', type=str, help="Input train year.", required=True)
+    #req_grp.add_argument('-2', '--valid', type=str, help="Input valid year.", required=True)
     req_grp.add_argument('-m', '--method', type=str, help="Select training method (CNN/MLP).", default="CNN")
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
     req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
@@ -171,7 +180,7 @@ def get_args():
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=False)
     req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ~/MLP_parameters.ini',
-                         default="~/MLP_parameters.ini")
+                         default="~/MLP_parameters.ini",required=True)
     args = parser.parse_args()
 
     return args
