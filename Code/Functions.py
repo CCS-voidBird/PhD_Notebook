@@ -163,7 +163,7 @@ def get_args():
     #req_grp.add_argument('-1', '--train', type=str, help="Input train year.", required=True)
     #req_grp.add_argument('-2', '--valid', type=str, help="Input valid year.", required=True)
     req_grp.add_argument('-m', '--method', type=str, help="Select training method (CNN/MLP).", default="CNN")
-    req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
+    req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
     req_grp.add_argument('-a', '--region', type=bool, help="add regions (T/F)", default=False)
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)

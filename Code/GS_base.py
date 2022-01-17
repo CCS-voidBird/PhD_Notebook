@@ -291,10 +291,10 @@ def main():
     """
     Create folders from given output path
     """
-    if args.output[0] == "/":
-        locat = '/' + args.output.strip('/') + '/'
+    if config["OUTPUT"]["output"][0] == "/":
+        locat = '/' + config["OUTPUT"]["output"].strip('/') + '/'
     else:
-        locat = args.output.strip('/') + '/'
+        locat = config["OUTPUT"]["output"].strip('/') + '/'
     if not os.path.exists(locat):
         os.mkdir(locat)
     locat = locat + "{}_vs_{}/".format(config["BASIC"]["train"], config["BASIC"]["valid"])
