@@ -118,10 +118,10 @@ class ML_composer:
 
         if self.config["BASIC"]["sub_selection"] == '1' and factor_value != 'all':
             print("Creating subsets by non_genetic_factors..")
-            in_train = self.train_data.dropna(subset=[trait], axis=0).query('Region is @factor_value').drop(
+            in_train = self.train_data.dropna(subset=[trait], axis=0).query('Region == @factor_value').drop(
                 self.keeping,axis=1
             )
-            in_valid = self.valid_data.dropna(subset=[trait], axis=0).query('Region is @factor_value').drop(
+            in_valid = self.valid_data.dropna(subset=[trait], axis=0).query('Region == @factor_value').drop(
                 self.keeping,axis=1
             )
 
