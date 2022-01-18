@@ -6,6 +6,12 @@ The Random Forest algorithm is a typical technical instance of the Bootstrap agg
 
 https://scikit-learn.org/stable/modules/ensemble.html#id6
 
+feature importance estimator:
+
+1.Permutation importance
+
+2.Random forest Feature Importance (MDI)
+
 The computational theory of decision tree:
 
 

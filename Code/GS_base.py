@@ -144,13 +144,16 @@ class ML_composer:
                 print("Import One-hot encoding method.")
                 train_features.replace(0.01, 3, inplace=True)
                 valid_features.replace(0.01, 3, inplace=True)
-                for dataset in [train_features, valid_features]:
-                    for factor in self.keeping:
-                        dataset[factor] = label_encoder.fit_transform(dataset[factor])
-                if self.method == "TDCNN":
-                    print("Using a 2D CNN.")
-                    train_features = factor_extender(train_features, self.keeping)
-                    valid_features = factor_extender(valid_features, self.keeping)
+                if self.config["BASIC"]["sub_selection"] == '0':
+                    print("Transfer non-genetic factors: {} into features.",format(self.keeping))
+                    for dataset in [train_features, valid_features]:
+                        for factor in self.keeping:
+                            dataset[factor] = label_encoder.fit_transform(dataset[factor])
+                    if self.method == "TDCNN":
+                        print("Using a 2D CNN.")
+                        train_features = factor_extender(train_features, self.keeping)
+                        valid_features = factor_extender(valid_features, self.keeping)
+
 
                 train_features = to_categorical(train_features)
                 valid_features = to_categorical(valid_features)
@@ -158,7 +161,9 @@ class ML_composer:
                 print("Currently cannot solve non-genetic factors without OneHot functions.",
                       "Meanwhile, the training model will be forced to 1DCNN.")
                 for dataset in [train_features, valid_features]:
-                    dataset.drop(self.keeping, axis=1, inplace=True)
+                    if self.config["BASIC"]["sub_selection"] == '0':
+                        dataset.drop(self.keeping, axis=1, inplace=True)
+
 
                 print(train_features.columns)
                 train_features = np.expand_dims(train_features, axis=2)
