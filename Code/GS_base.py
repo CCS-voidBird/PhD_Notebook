@@ -81,6 +81,7 @@ class ML_composer:
         except:
             try:
                 print("Using backup path (for trouble shooting)")
+                print(config["BACKUP_PATH"]["genotype"])
                 geno_data = pd.read_csv(config["BACKUP_PATH"]["genotype"],
                                         sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
                 pheno_data = pd.read_csv(config["BACKUP_PATH"]["phenotype"],
@@ -90,7 +91,8 @@ class ML_composer:
                 exit()
 
         print(geno_data.columns)
-        non_genetic_factors = [x for x in pheno_data.columns if x not in self.traits]
+        non_genetic_factors = [x for x in pheno_data.columns if x not in self.traits] + ["Sample"]
+        print("Detected non-genetic factors from phenotype file: ",non_genetic_factors)
 
         geno_data = decoding(geno_data)
 
@@ -98,14 +100,14 @@ class ML_composer:
 
         if self.config["BASIC"]["sub_selection"] == '1':
             print("The sub_selection is enabled, thus switch to pure genetic prediction mode.")
-            self.subset_index = pheno_data.Region.unique()
+            self.subset_index = pheno_data.Region.unique()  # Record subselection index (e.g. for region:N, B..
         else:
             print("The sub_selection is disabled..")
             print("Below factors will be fed into models: ")
-            print(self.keeping)
+            print(self.keeping) # Useful non_genetic factors e.g.   Series, Region and other..
 
         dropout = [x for x in non_genetic_factors if
-                   x not in self.keeping and x != "Series"] + ["Sample"]  # config["BASIC"]["drop"].split("#") + ['Sample']
+                   x not in self.keeping and x != "Series"]  # config["BASIC"]["drop"].split("#") + ['Sample']
         print("Removing useless non-genetic factors: {}".format(dropout))
         filtered_data.drop(dropout, axis=1, inplace=True)
 
@@ -118,6 +120,7 @@ class ML_composer:
 
         if self.config["BASIC"]["sub_selection"] == '1' and factor_value != 'all':
             print("Creating subsets by non_genetic_factors..")
+            print("The reference factor index: {} in {}".format(factor_value,other_factor))
             in_train = self.train_data.dropna(subset=[trait], axis=0).query('Region == @factor_value').drop(
                 self.keeping,axis=1
             )
@@ -289,7 +292,8 @@ def main():
     print("Get config file path from: ",config_path)
     config = configparser.ConfigParser()
     if platform.system().lower() == "windows":
-        config.read("./MLP_parameters.ini")
+        print(config_path)
+        config.read(config_path)
     else:
         config.read(config_path)
 
