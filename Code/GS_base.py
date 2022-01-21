@@ -58,7 +58,7 @@ class ML_composer:
         self.traits = None
         self.records = None
         self.subset_index = None
-        self.config = config
+        self.config = None
         self.save = True
         self.plot = False
 
@@ -76,22 +76,22 @@ class ML_composer:
         print("Getting data from config file path..")
 
         try:
-            geno_data = pd.read_csv(config["PATH"]["genotype"], sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
-            pheno_data = pd.read_csv(config["PATH"]["phenotype"], sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
+            geno_data = pd.read_csv(self.config["PATH"]["genotype"], sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
+            pheno_data = pd.read_csv(self.config["PATH"]["phenotype"], sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
         except:
             try:
                 print("Using backup path (for trouble shooting)")
-                print(config["BACKUP_PATH"]["genotype"])
-                geno_data = pd.read_csv(config["BACKUP_PATH"]["genotype"],
+                print(self.config["BACKUP_PATH"]["genotype"])
+                geno_data = pd.read_csv(self.config["BACKUP_PATH"]["genotype"],
                                         sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
-                pheno_data = pd.read_csv(config["BACKUP_PATH"]["phenotype"],
+                pheno_data = pd.read_csv(self.config["BACKUP_PATH"]["phenotype"],
                                          sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
             except:
                 print("No valid path found.")
                 exit()
 
         print(geno_data.columns)
-        non_genetic_factors = [x for x in pheno_data.columns if x not in self.traits] + ["Sample"]
+        non_genetic_factors = [x for x in pheno_data.columns if x not in self.traits]
         print("Detected non-genetic factors from phenotype file: ",non_genetic_factors)
 
         geno_data = decoding(geno_data)
@@ -107,7 +107,7 @@ class ML_composer:
             print(self.keeping) # Useful non_genetic factors e.g.   Series, Region and other..
 
         dropout = [x for x in non_genetic_factors if
-                   x not in self.keeping and x != "Series"]  # config["BASIC"]["drop"].split("#") + ['Sample']
+                   x not in self.keeping and x != "Series"] + ["Sample"] # config["BASIC"]["drop"].split("#") + ['Sample']
         print("Removing useless non-genetic factors: {}".format(dropout))
         filtered_data.drop(dropout, axis=1, inplace=True)
 
@@ -294,6 +294,7 @@ def main():
     if platform.system().lower() == "windows":
         print(config_path)
         config.read(config_path)
+        #print(config["BACKUP_PATH"]["genotype"])
     else:
         config.read(config_path)
 

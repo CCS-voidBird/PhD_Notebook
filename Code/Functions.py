@@ -13,13 +13,13 @@ This python file is for building functions that can associate with main model;
         
     2. Move/merge plot/model_save functions to this file.
 """
-
+"""
 config = configparser.ConfigParser()
 if platform.system().lower() == "windows":
     config.read("./MLP_parameters.ini")
 else:
     config.read("/clusterdata/uqcche32/MLP_parameters.ini")
-
+"""
 
 def mid_merge(x,genos):
 
