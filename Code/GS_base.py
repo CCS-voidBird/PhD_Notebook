@@ -147,10 +147,11 @@ class ML_composer:
                 print("Import One-hot encoding method.")
                 train_features.replace(0.01, 3, inplace=True)
                 valid_features.replace(0.01, 3, inplace=True)
-                if self.config["BASIC"]["sub_selection"] == '0':
+                if self.config["BASIC"]["sub_selection"] == '0' or factor_value != 'all':
                     print("Transfer non-genetic factors: {} into features.",format(self.keeping))
                     for dataset in [train_features, valid_features]:
                         for factor in self.keeping:
+                            print(factor)
                             dataset[factor] = label_encoder.fit_transform(dataset[factor])
                     if self.method == "TDCNN":
                         print("Using a 2D CNN.")
@@ -163,9 +164,10 @@ class ML_composer:
             else:
                 print("Currently cannot solve non-genetic factors without OneHot functions.",
                       "Meanwhile, the training model will be forced to 1DCNN.")
+                print(train_features.columns)
+                self.method = "CNN"
                 for dataset in [train_features, valid_features]:
-                    if self.config["BASIC"]["sub_selection"] == '0':
-                        dataset.drop(self.keeping, axis=1, inplace=True)
+                    dataset.drop(self.keeping, axis=1, inplace=True)
 
 
                 print(train_features.columns)
