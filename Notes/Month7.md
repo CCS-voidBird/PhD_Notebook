@@ -66,3 +66,8 @@ pure_genos[pure_genos == 2] <- 1
 g.d <- A.mat(pure_genos,)
 ```
 
+
+
+complexity of CNN:
+
+![[公式]](https://www.zhihu.com/equation?tex=%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad+%5Ctextbf%7BSpace%7D+%5Csim+O%5CBigg%28%5Csum_%7Bl%3D1%7D%5E%7BD%7D+K_l%5E2+%5Ccdot+C_%7Bl-1%7D+%5Ccdot+C_%7Bl%7D+%2B+%5Csum_%7Bl%3D1%7D%5E%7BD%7D+M%5E2+%5Ccdot+C_l+%5CBigg%29+%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad)
