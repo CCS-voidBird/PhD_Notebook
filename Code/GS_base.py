@@ -167,7 +167,8 @@ class ML_composer:
                 print(train_features.columns)
                 self.method = "CNN"
                 for dataset in [train_features, valid_features]:
-                    dataset.drop(self.keeping, axis=1, inplace=True)
+                    if self.config["BASIC"]["sub_selection"] != '1' or factor_value == 'all':
+                        dataset.drop(self.keeping, axis=1, inplace=True)
 
 
                 print(train_features.columns)
@@ -183,12 +184,12 @@ class ML_composer:
         results = []
         record_summary = []
 
-        dataset = ["all"]
+        dataset_index = ["all"]
         for trait in self.traits:
             print("training trait: ", trait)
             if self.sub_selection == '1':
-                dataset = self.subset_index.tolist() + dataset
-            for setting in dataset:
+                dataset_index = self.subset_index.tolist() + dataset_index
+            for setting in dataset_index:
                 train_features,train_targets,valid_features,valid_targets = self.prepare_training(trait,factor_value=setting)
                 n_features = train_features.shape[1:]
                 print("The shape of data:", train_features.shape)
@@ -207,6 +208,7 @@ class ML_composer:
                                                                                                           target_val,
                                                                                                           test_size=0.5)
                 print("The input shape:", n_features)
+                #print("A preview of features: ",features_train.head(1))
                 input_size = n_features
                 for layers in self.config[self.method]["n_layers"].split(","):
                     for units in self.config[self.method]["n_units"].split(","):
@@ -220,6 +222,7 @@ class ML_composer:
                             startTime = datetime.now()
                             print("Start.")
                             print(input_size)
+                            print("Sample size: ",train_targets.shape[0]," from {} subset.".format(setting))
                             model = self.modelling(n_layers=int(layers),
                                               n_units=int(units), input_shape=input_size,
                                               lr=float(self.config[self.method]["lr"]))
@@ -233,6 +236,7 @@ class ML_composer:
                                 epochs=int(self.config["BASIC"]["Epoch"]),
                                 validation_data=(features_val_val, target_val_val), verbose=int(self.silence_mode),
                                 callbacks=[callback])
+
                             if self.plot is True:
                                 plot_loss_history(history, trait)
 
@@ -250,8 +254,8 @@ class ML_composer:
                             val_length = valid_targets.shape[0]
                             y_pred = np.reshape(model.predict(features_train_val), (length,))
                             y_pred_future = np.reshape(model.predict(valid_features), (val_length,))
-
-                            print("Predicted: ", y_pred[:10])
+                            print("Testing prediction:")
+                            print("Predicted: ", y_pred_future[:10])
                             print("observed: ", target_train_val[:10])
                             accuracy = np.corrcoef(y_pred, target_train_val)[0, 1]
                             accuracy_future = np.corrcoef(y_pred_future, valid_targets)[0, 1]
@@ -269,11 +273,12 @@ class ML_composer:
                             in_year_accs.append(accuracy)
                             runtimes.append(runtime)
                             mses.append(mse)
-                            results.append(
-                                [trait, self.config["BASIC"]["train"], self.config["BASIC"]["valid"], layers, units, 'N/A',
+                            training_record = [trait, self.config["BASIC"]["train"], self.config["BASIC"]["valid"], layers, units, 'N/A',
                                  accuracy,
-                                 accuracy_future, mse, runtime.seconds / 60, setting])
-                        print("The Mean accuracy of {} model is: ".format(trait), np.mean(accs))
+                                 accuracy_future, mse, runtime.seconds / 60, setting]
+                            print(training_record)
+                            results.append(training_record)
+                        print("The Mean accuracy of {} model for {} sample is: ".format(trait,setting), np.mean(accs))
                         # ["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy","predict_accuracy", "mse"]
                         record_summary.append(
                             [trait, self.config["BASIC"]["train"], self.config["BASIC"]["valid"], layers, units, 'N/A',
