@@ -28,9 +28,24 @@ def CNN_importance(model,features):
     :param features:
     :return:
     """
-    
-
     pass
+
+
+def select_subset(config,geno,pheno,select_by):
+    traits = config["BASIC"]["traits"]
+    train_year = config["BASIC"]["train"]
+    valid_year = config["BASIC"]["valid"]
+    non_genetic_factors = [x for x in pheno.columns if x not in traits]
+    print("Detected non-genetic factors from phenotype file: ", non_genetic_factors)
+    filtered_data = read_pipes(geno, pheno, train_year + valid_year)
+    dropout = [x for x in non_genetic_factors if
+               x not in ["Region", "Series"]] + ["Sample"]  # config["BASIC"]["drop"].split("#") + ['Sample']
+    print("Removing useless non-genetic factors: {}".format(dropout))
+    filtered_data.drop(dropout, axis=1, inplace=True)
+
+    select_data = filtered_data.query('Region == @select_by').drop(["Region"],axis=1)
+
+    return select_data
 
 def mid_merge(x,genos):
 
