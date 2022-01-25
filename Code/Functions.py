@@ -21,6 +21,17 @@ else:
     config.read("/clusterdata/uqcche32/MLP_parameters.ini")
 """
 
+def CNN_importance(model,features):
+    """
+    This function export the feature importances of the best trained models.
+    :param model:
+    :param features:
+    :return:
+    """
+    
+
+    pass
+
 def mid_merge(x,genos):
 
     merged = (genos

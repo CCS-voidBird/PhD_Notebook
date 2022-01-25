@@ -175,6 +175,31 @@ class ML_composer:
                 train_features = np.expand_dims(train_features, axis=2)
                 valid_features = np.expand_dims(valid_features, axis=2)
 
+        elif self.method == "MLP":
+            print(train_features.columns)
+            print("USE MLP MODEL as training method")
+            if self.config["BASIC"]["OneHot"] == '1':
+                print("Import One-hot encoding method.")
+                train_features.replace(0.01, 3, inplace=True)
+                valid_features.replace(0.01, 3, inplace=True)
+                if self.config["BASIC"]["sub_selection"] == '0' or factor_value == 'all':
+                    print("Transfer non-genetic factors: {} into features.", format(self.keeping))
+                    for dataset in [train_features, valid_features]:
+                        for factor in self.keeping:
+                            print(factor)
+                            dataset[factor] = label_encoder.fit_transform(dataset[factor])
+                train_features = to_categorical(train_features)
+                valid_features = to_categorical(valid_features)
+            else:
+                print("Currently cannot solve non-genetic factors without OneHot functions.",
+                      "Meanwhile, the non-genetic factors will be excluded from dataset.")
+                for dataset in [train_features, valid_features]:
+                    if self.config["BASIC"]["sub_selection"] != '1' or factor_value == 'all':
+                        dataset.drop(self.keeping, axis=1, inplace=True)
+                print(train_features.columns)
+                #train_features = np.expand_dims(train_features, axis=2)
+                #valid_features = np.expand_dims(valid_features, axis=2)
+
         return train_features,train_targets,valid_features,valid_targets
 
     def trainning(self,model_path,record_path):
@@ -210,8 +235,10 @@ class ML_composer:
                 print("The input shape:", n_features)
                 #print("A preview of features: ",features_train.head(1))
                 input_size = n_features
+                accuracy_records = [0, None]
                 for layers in self.config[self.method]["n_layers"].split(","):
                     for units in self.config[self.method]["n_units"].split(","):
+
                         print(layers, units)
                         accs = []
                         in_year_accs = []
@@ -263,11 +290,11 @@ class ML_composer:
                             print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy)
                             print("Future prediction accuracy (measured as Pearson's correlation) is: ",
                                   accuracy_future)
-                            if self.save is True:
-                                json = model.to_json()
-                                with open("{}{}_{}_{}_model.json".format(model_path, trait, self.method,setting), "w") as file:
-                                    file.write(json)
-                                model.save_weights("{}{}_{}_{}_model.json.h5".format(model_path, trait, self.method,setting))
+
+                            if accuracy_future > accuracy_records[0]:
+                                print("Find a better model: ",accuracy_future)
+                                accuracy_records = [accuracy_future,model]
+
                             round += 1
                             accs.append(accuracy_future)
                             in_year_accs.append(accuracy)
@@ -278,12 +305,19 @@ class ML_composer:
                                  accuracy_future, mse, runtime.seconds / 60, setting]
                             print(training_record)
                             results.append(training_record)
+
                         print("The Mean accuracy of {} model for {} sample is: ".format(trait,setting), np.mean(accs))
                         # ["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy","predict_accuracy", "mse"]
                         record_summary.append(
                             [trait, self.config["BASIC"]["train"], self.config["BASIC"]["valid"], layers, units, 'N/A',
                              np.mean(in_year_accs), np.mean(accs), np.mean(mses), np.mean(runtimes).seconds / 60, setting])
-
+                if self.save is True:
+                    saved_json = accuracy_records[1].to_json()
+                    with open("{}{}_{}_{}_model.json".format(model_path, trait, self.method, setting),
+                              "w") as file:
+                        file.write(saved_json)
+                    accuracy_records[1].save_weights(
+                        "{}{}_{}_{}_model.json.h5".format(model_path, trait, self.method, setting))
             record_train_results(results, record_columns, method=self.method, path=record_path)
             record_train_results(record_summary, record_columns, self.method, path=record_path, extra="_summary")
             check_usage()

@@ -137,7 +137,7 @@ def TDCNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
     model = Sequential()
     model.add(Dense(n_units, activation="elu",input_shape=input_shape))
-    for layers in range(n_layers):
+    for layers in range(n_layers-1):
         model.add(Dense(n_units, activation="elu"))
     #model.add(Dropout(0.2))
 
