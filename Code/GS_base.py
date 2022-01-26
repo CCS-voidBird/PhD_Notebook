@@ -318,9 +318,10 @@ class ML_composer:
                         file.write(saved_json)
                     accuracy_records[1].save_weights(
                         "{}{}_{}_{}_model.json.h5".format(model_path, trait, self.method, setting))
-            record_train_results(results, record_columns, method=self.method, path=record_path)
-            record_train_results(record_summary, record_columns, self.method, path=record_path, extra="_summary")
             check_usage()
+        record_train_results(results, record_columns, method=self.method, path=record_path)
+        record_train_results(record_summary, record_columns, self.method, path=record_path, extra="_summary")
+
 
 
 
