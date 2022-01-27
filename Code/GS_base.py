@@ -162,12 +162,8 @@ class ML_composer:
                 train_features = to_categorical(train_features)
                 valid_features = to_categorical(valid_features)
             else:
-                """
-                if test == True and self.config["BASIC"]["sub_selection"] == '1' and factor_value != "all":
-                    train_features = snp_extend(train_features)
-                """
                 print("Currently cannot solve non-genetic factors without OneHot functions.",
-                      "Meanwhile, the training model will be forced to 1DCNN.")
+                      "Meanwhile, the non-genetic factors will be excluded.")
                 print(train_features.columns)
                 self.method = "CNN"
                 for dataset in [train_features, valid_features]:
