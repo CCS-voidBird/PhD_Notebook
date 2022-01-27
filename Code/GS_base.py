@@ -116,7 +116,7 @@ class ML_composer:
 
         return
 
-    def prepare_training(self,trait,other_factor = 'Region',factor_value = 'all'):
+    def prepare_training(self,trait,other_factor = 'Region',factor_value = 'all',test=True):
 
         if self.config["BASIC"]["sub_selection"] == '1' and factor_value != 'all':
             print("Creating subsets by non_genetic_factors..")
@@ -162,6 +162,10 @@ class ML_composer:
                 train_features = to_categorical(train_features)
                 valid_features = to_categorical(valid_features)
             else:
+                """
+                if test == True and self.config["BASIC"]["sub_selection"] == '1' and factor_value != "all":
+                    train_features = snp_extend(train_features)
+                """
                 print("Currently cannot solve non-genetic factors without OneHot functions.",
                       "Meanwhile, the training model will be forced to 1DCNN.")
                 print(train_features.columns)

@@ -64,6 +64,21 @@ def create_subset(data:pd.DataFrame,factor_value,factor_name="Region"):
         return pd.DataFrame()
     return subset
 
+def snp_extend(genotypes):
+
+    print("START transfer")
+    n_sample = genotypes.shape[0]
+    l = int(np.ceil(np.sqrt(genotypes.shape[1])))
+    extend = l**2 - genotypes.shape[1]
+    print(extend)
+    snps = np.pad(np.array(genotypes),((0,0),(0,extend)),'constant',constant_values = (0.01,0.01))
+
+    snps_2d = np.reshape(snps,(n_sample,l,l))
+    print(snps_2d.shape)
+
+    return snps_2d
+
+
 def read_pipes(genotype, phenotypes, years):
     """
     :param genotype: an overall genotype dataframe contains all clones; Format: raw = records, col = QTL names

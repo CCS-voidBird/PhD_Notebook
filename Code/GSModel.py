@@ -11,7 +11,51 @@ from sklearn.datasets import make_regression
 from sklearn.ensemble import RandomForestRegressor
 import configparser
 
+def testCNN(first_channels,second_channels,input_shape,config_path = "./configs/testCNN.ini",optimizer="rmsprop",lr=0.00001):
+    lr = float(lr)
+    model = Sequential()
+    """
+    Convolutional Layers
+    """
+    testconfig = configparser.ConfigParser()
+    testconfig.read(config_path)
+    model.add(Conv1D(first_channels, kernel_size=5, strides=3, padding='valid', activation='elu',
+                     input_shape=input_shape))
+    model.add(MaxPooling1D(pool_size=2))
 
+    model.add(Conv1D(second_channels, kernel_size=3, strides=3, padding='valid', activation='elu'))
+    model.add(MaxPooling1D(pool_size=2))
+
+    # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
+    model.add(Dropout(rate=0.2))
+
+    model.add(Flatten())
+
+    # Full connected layers, classic multilayer perceptron (MLP)
+    for layers in range(4):
+        model.add(Dense(8, activation="elu"))
+    model.add(Dropout(0.2))
+    model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
+    try:
+        adm = keras.optimizers.Adam(learning_rate=lr)
+        rms = keras.optimizers.RMSprop(learning_rate=lr)
+        sgd = keras.optimizers.SGD(learning_rate=lr)
+    except:
+        adm = keras.optimizers.Adam(lr=lr)
+        rms = keras.optimizers.RMSprop(lr=lr)
+        sgd = keras.optimizers.SGD(lr=lr)
+
+    optimizers = {"rmsprop": rms,
+                  "Adam": adm,
+                  "SGD": sgd}
+
+    model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+    """
+    Optimizers: Adam, RMSProp, SGD 
+    """
+
+    return model
 
 def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
     lr = float(lr)

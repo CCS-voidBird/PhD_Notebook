@@ -23,8 +23,8 @@ read list:
 
 + Breiman, L. Random Forests. *Machine Learning* **45,** 5–32 (2001). https://doi.org/10.1023/A:1010933404324
 + G. Louppe, “Understanding Random Forests: From Theory to Practice”, PhD Thesis, U. of Liege, 2014.
-
 + Zeiler, Matthew D., and Rob Fergus. "Visualizing and understanding convolutional networks." *European conference on computer vision*. Springer, Cham, 2014.
++ https://link.springer.com/content/pdf/10.1007%2F978-3-030-89010-0.pdf
 
 Sort ML knowledge:
 
@@ -71,3 +71,9 @@ g.d <- A.mat(pure_genos,)
 complexity of CNN:
 
 ![[公式]](https://www.zhihu.com/equation?tex=%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad+%5Ctextbf%7BSpace%7D+%5Csim+O%5CBigg%28%5Csum_%7Bl%3D1%7D%5E%7BD%7D+K_l%5E2+%5Ccdot+C_%7Bl-1%7D+%5Ccdot+C_%7Bl%7D+%2B+%5Csum_%7Bl%3D1%7D%5E%7BD%7D+M%5E2+%5Ccdot+C_l+%5CBigg%29+%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad%5Cquad)
+
+
+
+Considering Convolutional Layers optimizing - decrease channels
+
+![preview](https://pic3.zhimg.com/v2-fa9848abb41f45ffb1781f9761f73a82_r.jpg)
