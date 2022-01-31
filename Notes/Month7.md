@@ -77,3 +77,7 @@ complexity of CNN:
 Considering Convolutional Layers optimizing - decrease channels
 
 ![preview](https://pic3.zhimg.com/v2-fa9848abb41f45ffb1781f9761f73a82_r.jpg)
+
+preform CNN to region-separated data
+
+4 areas and all regions(receive region information as categorical values.)

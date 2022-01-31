@@ -1,13 +1,7 @@
-import glob     #for checking dir content
-import os       #for dir creation
+
 from Functions import *
 from GSModel import *
 import pandas as pd
-import keras
-from keras.models import Sequential
-from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
-from keras.layers import Dropout
-import keras.metrics
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
@@ -200,7 +194,79 @@ class ML_composer:
                 #train_features = np.expand_dims(train_features, axis=2)
                 #valid_features = np.expand_dims(valid_features, axis=2)
 
+        elif self.method == "RF":
+            print("Currently only support RF training with numeric values, thus, the data will exclude non-genetic factos.")
+            try:
+                print("Removing non-genetic factors: ",self.keeping)
+                train_features.drop(self.keeping,axis=1,inplace=True)
+                valid_features.drop(self.keeping,axis=1,inplace=True)
+            except:
+                print("These non_genetic factors are already removed: ",self.keeping)
+                print(train_features.columns)
+
+            print("The selected region is: ",self.subset_index)
+
         return train_features,train_targets,valid_features,valid_targets
+    """
+    def make_forest(self,model_path,record_path):
+        record_cols = ["trait", "trainSet", "validSet", "n_features", "test_score", "valid_score", "accuracy", "mse","setting"]
+        accs = []  # pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
+        records = []
+        paraList = []
+        
+        max_feature_list = [int(x) for x in self.config["RM"]["max_features"].split(",")]
+
+        for n_features in max_feature_list:
+            print("Now training by {} feature per tree.".format(n_features))
+            for trait in self.traits:
+                print(trait)
+                avg_acc = []
+                avg_score = []
+                acg_same_score = []
+                avg_mse = []
+                r = 0
+                
+                train_features, train_targets, valid_features, valid_targets = self.prepare_training(trait,factor_value=setting)
+
+                print(xtrain)
+                while r < 10:
+                    model = RM(specific=True, n_features=n_features)
+
+                    model.fit(xtrain, ytrain)
+
+                    same_score = model.score(xtest, ytest)  # Calculating accuracy in the same year
+
+                    n_predict = model.predict(in_valid)
+                    score = model.score(in_valid, valid_target)
+                    # print(valid_target.shape)
+                    # print(n_predict.shape)
+                    obversed = np.squeeze(valid_target)
+                    print(obversed.shape)
+                    accuracy = np.corrcoef(n_predict, obversed)[0, 1]
+                    mse = mean_squared_error(obversed, n_predict)
+                    print("The accuracy for {} in RM is: {}".format(trait, accuracy))
+                    print("The mse for {} in RM is: {}".format(trait, mse))
+                    print("The variance for predicted {} is: ".format(trait, np.var(n_predict)))
+                    print("A bite of output:")
+                    print("observe: ", obversed[:50])
+                    print("predicted: ", n_predict[:50])
+                    save_df = pd.DataFrame({"obv": obversed, "pred": n_predict})
+                    save_df.to_csv("~/saved_outcomes.csv", sep="\t")
+
+                    avg_acc.append(accuracy)
+                    avg_score.append(score)
+                    acg_same_score.append(same_score)
+                    avg_mse.append(mse)
+                    r += 1
+                    records.append([trait, "2013-15", "2017", n_features, same_score, score, accuracy, mse])
+                accs.append([trait, "2013-15", "2017", n_features, np.mean(acg_same_score), np.mean(avg_score),
+                             np.mean(avg_acc), np.mean(avg_mse)])
+
+        record_train_results(accs, cols=record_cols, method="RM", path="~", para="max_features")
+        record_train_results(records, cols=record_cols, method="RM", path="~", para="max_feature_raw")
+
+        pass
+    """
 
     def trainning(self,model_path,record_path):
 
