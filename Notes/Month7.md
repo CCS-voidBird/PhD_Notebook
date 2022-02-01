@@ -81,3 +81,14 @@ Considering Convolutional Layers optimizing - decrease channels
 preform CNN to region-separated data
 
 4 areas and all regions(receive region information as categorical values.)
+
+
+
+2.1 2022 Lab meeting note:
+
+create distribution plot for conv signals
+
+sort and create GRM plot and subplot by regions
+
+RF by regions
+
