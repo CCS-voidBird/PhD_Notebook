@@ -3,10 +3,13 @@ from Functions import *
 from GSModel import *
 import pandas as pd
 import matplotlib.pyplot as plt
-import tensorflow as tf
+try:
+    import tensorflow as tf
+    from keras.utils import to_categorical
+except:
+    print("This a CPU-only platform.")
 import numpy as np
 from sklearn.model_selection import train_test_split
-from keras.utils import to_categorical
 import argparse
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
@@ -14,7 +17,6 @@ import platform
 from datetime import datetime
 from sklearn.metrics import mean_squared_error
 import configparser
-import itertools
 
 ##############################################################
 ##########Training requirement################################
