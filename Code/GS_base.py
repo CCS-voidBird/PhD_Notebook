@@ -14,6 +14,7 @@ import platform
 from datetime import datetime
 from sklearn.metrics import mean_squared_error
 import configparser
+import itertools
 
 ##############################################################
 ##########Training requirement################################
@@ -207,66 +208,99 @@ class ML_composer:
             print("The selected region is: ",self.subset_index)
 
         return train_features,train_targets,valid_features,valid_targets
-    """
+
+    def make_hp_set(self):
+        hps = [hp for hp in self.config[self.method]]
+        hp_sets = list(combi([v.split(",") for k,v in dict(self.config[self.method]).items()]))
+        print("The hyper-parameter is: \n","\t".join(hps))
+        for content in hp_sets:
+            print("\t".join(content))
+        return hps,hp_sets
+
     def make_forest(self,model_path,record_path):
-        record_cols = ["trait", "trainSet", "validSet", "n_features", "test_score", "valid_score", "accuracy", "mse","setting"]
+        hps, hp_sets = self.make_hp_set()
+        record_cols = ["trait", "trainSet", "validSet"]+hps+["test_score", "valid_score", "accuracy", "mse","Region", "Runtime"]
         accs = []  # pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
         records = []
         paraList = []
         
         max_feature_list = [int(x) for x in self.config["RM"]["max_features"].split(",")]
+        """
+        A tuple of RF model hp: 1st: max_features, 2nd: n_trees, 3..4.. 
+        """
 
-        for n_features in max_feature_list:
-            print("Now training by {} feature per tree.".format(n_features))
+        for hp_set in hp_sets:
+            print("Modified hyper-parameter names: \n","\t".join(hps))
+            print("Now training by the following hyper_parameters: ".format(hp_set))
             for trait in self.traits:
                 print(trait)
                 avg_acc = []
                 avg_score = []
                 acg_same_score = []
                 avg_mse = []
+                avg_runtime = []
                 r = 0
                 
-                train_features, train_targets, valid_features, valid_targets = self.prepare_training(trait,factor_value=setting)
+                for region in self.subset_index:
 
-                print(xtrain)
-                while r < 10:
-                    model = RM(specific=True, n_features=n_features)
+                    while r < int(self.config["BASIC"]["replicate"]):
+                        startTime = datetime.now()
 
-                    model.fit(xtrain, ytrain)
+                        train_features, train_targets, valid_features, valid_targets = self.prepare_training(trait,
+                                                                                                             factor_value=region)
 
-                    same_score = model.score(xtest, ytest)  # Calculating accuracy in the same year
+                        features_train, features_val, target_train, target_val = train_test_split(train_features,
+                                                                                                  train_targets,
+                                                                                                  test_size=0.2)
 
-                    n_predict = model.predict(in_valid)
-                    score = model.score(in_valid, valid_target)
-                    # print(valid_target.shape)
-                    # print(n_predict.shape)
-                    obversed = np.squeeze(valid_target)
-                    print(obversed.shape)
-                    accuracy = np.corrcoef(n_predict, obversed)[0, 1]
-                    mse = mean_squared_error(obversed, n_predict)
-                    print("The accuracy for {} in RM is: {}".format(trait, accuracy))
-                    print("The mse for {} in RM is: {}".format(trait, mse))
-                    print("The variance for predicted {} is: ".format(trait, np.var(n_predict)))
-                    print("A bite of output:")
-                    print("observe: ", obversed[:50])
-                    print("predicted: ", n_predict[:50])
-                    save_df = pd.DataFrame({"obv": obversed, "pred": n_predict})
-                    save_df.to_csv("~/saved_outcomes.csv", sep="\t")
+                        features_train_val, features_val_val, target_train_val, target_val_val = train_test_split(
+                            features_val,
+                            target_val,
+                            test_size=0.5)
+                        print(features_train)
 
-                    avg_acc.append(accuracy)
-                    avg_score.append(score)
-                    acg_same_score.append(same_score)
-                    avg_mse.append(mse)
-                    r += 1
-                    records.append([trait, "2013-15", "2017", n_features, same_score, score, accuracy, mse])
-                accs.append([trait, "2013-15", "2017", n_features, np.mean(acg_same_score), np.mean(avg_score),
-                             np.mean(avg_acc), np.mean(avg_mse)])
+                        model = RM(specific=True,n_estimators=int(hp_set[0]), n_features=int(hp_set[1]))
 
-        record_train_results(accs, cols=record_cols, method="RM", path="~", para="max_features")
-        record_train_results(records, cols=record_cols, method="RM", path="~", para="max_feature_raw")
+                        model.fit(features_train, target_train)
+                        endTime = datetime.now()
+                        runtime = endTime - startTime
+                        print("Runtime: ", runtime.seconds / 60, " min")
+                        same_score = model.score(features_train_val, target_train_val)  # Calculating accuracy in the same year
 
-        pass
-    """
+                        n_predict = model.predict(valid_features)
+                        score = model.score(n_predict, valid_targets)
+                        # print(valid_target.shape)
+                        # print(n_predict.shape)
+                        obversed = np.squeeze(valid_targets)
+                        print(obversed.shape)
+                        accuracy = np.corrcoef(n_predict, obversed)[0, 1]
+                        mse = mean_squared_error(obversed, n_predict)
+                        print("The accuracy for {} in RM is: {}".format(trait, accuracy))
+                        print("The mse for {} in RM is: {}".format(trait, mse))
+                        print("The variance for predicted {} is: ".format(trait, np.var(n_predict)))
+                        print("A bite of output:")
+                        print("observe: ", obversed[:50])
+                        print("predicted: ", n_predict[:50])
+                        save_df = pd.DataFrame({"obv": obversed, "pred": n_predict})
+                        save_df.to_csv("~/saved_outcomes.csv", sep="\t")
+
+                        avg_acc.append(accuracy)
+                        avg_score.append(score)
+                        acg_same_score.append(same_score)
+                        avg_mse.append(mse)
+                        avg_runtime.append(runtime)
+                        r += 1
+                        records.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], same_score, score, accuracy, mse, region,runtime.seconds / 60])
+                    accs.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], np.mean(acg_same_score), np.mean(avg_score),
+                                 np.mean(avg_acc), np.mean(avg_mse),region,np.mean(avg_runtime).seconds / 60])
+            check_usage()
+        record_train_results(records, record_cols, method=self.method, path=record_path)
+        record_train_results(accs, record_cols, self.method, path=record_path, extra="_summary")
+
+        #record_train_results(accs, cols=record_cols, method="RM", path="~", para="max_features")
+        #record_train_results(records, cols=record_cols, method="RM", path="~", para="max_feature_raw")
+
+
 
     def trainning(self,model_path,record_path):
 
@@ -424,7 +458,10 @@ def main():
 
     composer = ML_composer()
     composer.get_data(config)
-    composer.trainning(model_path=model_path,record_path=record_path)
+    if config["BASIC"]["method "] in CNNs:
+        composer.trainning(model_path=model_path,record_path=record_path)
+    elif config["BASIC"]["method "] == "RF":
+        composer.make_forest(model_path=model_path,record_path=record_path)
 
 if __name__ == "__main__":
     main()

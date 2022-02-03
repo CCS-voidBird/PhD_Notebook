@@ -64,6 +64,18 @@ def create_subset(data:pd.DataFrame,factor_value,factor_name="Region"):
         return pd.DataFrame()
     return subset
 
+def combi(seq):
+    """
+    :param seq: hyper-parameter settings from config file
+    :return: a list of hp sets
+    """
+    if not seq:
+        yield []
+    else:
+        for element in seq[0]:
+            for rest in combi(seq[1:]):
+                yield [element] + rest
+
 def snp_extend(genotypes):
 
     print("START transfer")
