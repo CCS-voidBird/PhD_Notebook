@@ -13,13 +13,39 @@ This python file is for building functions that can associate with main model;
         
     2. Move/merge plot/model_save functions to this file.
 """
-
+"""
 config = configparser.ConfigParser()
 if platform.system().lower() == "windows":
     config.read("./MLP_parameters.ini")
 else:
     config.read("/clusterdata/uqcche32/MLP_parameters.ini")
+"""
 
+def CNN_importance(model,features):
+    """
+    This function export the feature importances of the best trained models.
+    :param model:
+    :param features:
+    :return:
+    """
+    pass
+
+
+def select_subset(config,geno,pheno,select_by):
+    traits = config["BASIC"]["traits"]
+    train_year = config["BASIC"]["train"]
+    valid_year = config["BASIC"]["valid"]
+    non_genetic_factors = [x for x in pheno.columns if x not in traits]
+    print("Detected non-genetic factors from phenotype file: ", non_genetic_factors)
+    filtered_data = read_pipes(geno, pheno, train_year + valid_year)
+    dropout = [x for x in non_genetic_factors if
+               x not in ["Region", "Series"]] + ["Sample"]  # config["BASIC"]["drop"].split("#") + ['Sample']
+    print("Removing useless non-genetic factors: {}".format(dropout))
+    filtered_data.drop(dropout, axis=1, inplace=True)
+
+    select_data = filtered_data.query('Region == @select_by').drop(["Region"],axis=1)
+
+    return select_data
 
 def mid_merge(x,genos):
 
@@ -28,6 +54,42 @@ def mid_merge(x,genos):
            .pipe((pd.merge,'right'),left=x,left_on="Clone",right_on="Sample"))
 
     return merged
+
+def create_subset(data:pd.DataFrame,factor_value,factor_name="Region"):
+    if factor_name == "Region":
+        subset = data.query('Region is @factor_value')
+        subset.drop(factor_name,axis=1)
+    else:
+        print("currently cannot resolve domain without region tag./")
+        return pd.DataFrame()
+    return subset
+
+def combi(seq):
+    """
+    :param seq: hyper-parameter settings from config file
+    :return: a list of hp sets
+    """
+    if not seq:
+        yield []
+    else:
+        for element in seq[0]:
+            for rest in combi(seq[1:]):
+                yield [element] + rest
+
+def snp_extend(genotypes):
+
+    print("START transfer")
+    n_sample = genotypes.shape[0]
+    l = int(np.ceil(np.sqrt(genotypes.shape[1])))
+    extend = l**2 - genotypes.shape[1]
+    print(extend)
+    snps = np.pad(np.array(genotypes),((0,0),(0,extend)),'constant',constant_values = (0.01,0.01))
+
+    snps_2d = np.reshape(snps,(n_sample,l,l))
+    print(snps_2d.shape)
+
+    return snps_2d
+
 
 def read_pipes(genotype, phenotypes, years):
     """
@@ -150,11 +212,11 @@ def factor_extender(data,factors):
 def get_args():
     parser = argparse.ArgumentParser()
     req_grp = parser.add_argument_group(title='Required')
-    req_grp.add_argument('-p', '--path', type=str, help="Input path.", required=True)
-    req_grp.add_argument('-1', '--train', type=str, help="Input train year.", required=True)
-    req_grp.add_argument('-2', '--valid', type=str, help="Input valid year.", required=True)
+    #req_grp.add_argument('-p', '--path', type=str, help="Input path.", required=True)
+    #req_grp.add_argument('-1', '--train', type=str, help="Input train year.", required=True)
+    #req_grp.add_argument('-2', '--valid', type=str, help="Input valid year.", required=True)
     req_grp.add_argument('-m', '--method', type=str, help="Select training method (CNN/MLP).", default="CNN")
-    req_grp.add_argument('-o', '--output', type=str, help="Input output dir.", required=True)
+    req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-s', '--sample', type=str, help="number of sample", default="all")
     req_grp.add_argument('-a', '--region', type=bool, help="add regions (T/F)", default=False)
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
@@ -162,7 +224,7 @@ def get_args():
     req_grp.add_argument('-oh', '--onehot', type=int, help="One Hot encoder switch", default=1)
     req_grp.add_argument('-opt', '--optimizer', type=str, help='select optimizer: Adam, SGD, rmsprop',
                          default="rmsprop")
-    req_grp.add_argument('-plot', '--plot', type=bool, help="give plot?",
+    req_grp.add_argument('-plot', '--plot', type=bool, help="show plot?",
                          default=False)
     req_grp.add_argument('-sli', '--silence', type=bool, help="silent mode",
                          default=True)
@@ -171,7 +233,7 @@ def get_args():
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=False)
     req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ~/MLP_parameters.ini',
-                         default="~/MLP_parameters.ini")
+                         default="~/MLP_parameters.ini",required=True)
     args = parser.parse_args()
 
     return args

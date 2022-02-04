@@ -16,7 +16,7 @@ Current Goals:
 + import DeepGS model in a previous study
 + Understanding MNV: mean normalized discounted cumulative gain value
 + 3D heatmap for convolutional output (markers, clones, channels) （Jan）
-+ Export decision tree for marker importance in RF （Jan）
++ Export decision tree for marker importance in RF （Jan）https://towardsdatascience.com/4-ways-to-visualize-individual-decision-trees-in-a-random-forest-7a9beda1d1b7
 + add earlystopping methods (DONE)
 + Add a increase rate recording function for CNNs (instead 500 epoch)
 
@@ -52,3 +52,6 @@ New 1D CNN: OHE on
 
 ![1DCNN_onehot.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/2013to15vs2017/1DCNN_onehot.png?raw=true)
 
+Accuracy comparison by various decision trees: max 1000 features per tree
+
+![RF_n_tree.png](https://github.com/CCS-voidBird/PhD_Notebook/blob/main/pic/RF_n_tree.png?raw=true)
