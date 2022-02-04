@@ -17,6 +17,8 @@ Goal:
 + RF training by regions
 + AI - Sugarcane draft
 
+Read list:
++ https://www.biorxiv.org/content/10.1101/2020.09.15.276121v1.full (h2 description)
 
 
 Import picard as RF save function 
