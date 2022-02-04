@@ -270,7 +270,7 @@ class ML_composer:
                         same_score = model.score(features_train_val, target_train_val)  # Calculating accuracy in the same year
 
                         n_predict = model.predict(valid_features)
-                        score = model.score(n_predict, valid_targets)
+                        score = model.score(valid_features, valid_targets)
                         # print(valid_target.shape)
                         # print(n_predict.shape)
                         obversed = np.squeeze(valid_targets)
