@@ -222,6 +222,7 @@ def RF(config = None,specific=True,n_features = 500,n_estimators = 200):
         return model
 
 METHODS = {
+    "RF": RF,
     "MLP": MLP,
     "CNN": CNN,
     "TDCNN": TDCNN,

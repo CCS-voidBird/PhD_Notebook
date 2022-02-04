@@ -16,3 +16,14 @@ Goal:
 
 + RF training by regions
 + AI - Sugarcane draft
+
+
+
+Import picard as RF save function 
+
+Using Eric's R script to regenrate the GRM and sub-GRM
+
+Identify reasons of different accuracy in region separated predictions 
+
+	+ family (genomic corrlation) - maybe less family cluster(relationship) in Central subgroup
+	+ 
