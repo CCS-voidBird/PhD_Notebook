@@ -228,7 +228,7 @@ class ML_composer:
         records = []
         paraList = []
         
-        max_feature_list = [int(x) for x in self.config["RM"]["max_features"].split(",")]
+        #max_feature_list = [int(x) for x in self.config["RM"]["max_features"].split(",")]
         """
         A tuple of RF model hp: 1st: max_features, 2nd: n_trees, 3..4.. 
         """
