@@ -204,7 +204,7 @@ def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     return model
 
-def RM(config = None,specific=False,n_features = 500,n_estimators = 200):
+def RF(config = None,specific=True,n_features = 500,n_estimators = 200):
     if specific == True:
         model = RandomForestRegressor(n_jobs=-1, random_state=0, criterion="mse", oob_score=False, verbose=1,max_features=n_features,
                                       n_estimators=n_estimators)
@@ -222,6 +222,7 @@ def RM(config = None,specific=False,n_features = 500,n_estimators = 200):
         return model
 
 METHODS = {
+    "RF": RF,
     "MLP": MLP,
     "CNN": CNN,
     "TDCNN": TDCNN,
