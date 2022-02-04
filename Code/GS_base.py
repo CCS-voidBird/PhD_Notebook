@@ -8,6 +8,8 @@ try:
     from keras.utils import to_categorical
 except:
     print("This a CPU-only platform.")
+import pickle
+
 import numpy as np
 from sklearn.model_selection import train_test_split
 import argparse
@@ -230,21 +232,19 @@ class ML_composer:
         """
         A tuple of RF model hp: 1st: max_features, 2nd: n_trees, 3..4.. 
         """
-
-        for hp_set in hp_sets:
-            print("Modified hyper-parameter names: \n","\t".join(hps))
-            print("Now training by the following hyper_parameters: ".format(hp_set))
-            for trait in self.traits:
+        for trait in self.traits:
+            for region in self.subset_index:
                 print(trait)
                 avg_acc = []
                 avg_score = []
                 acg_same_score = []
                 avg_mse = []
                 avg_runtime = []
-                r = 0
-                
-                for region in self.subset_index:
-
+                best_model = [0,None]
+                for hp_set in hp_sets:
+                    print("Modified hyper-parameter names: \n", "\t".join(hps))
+                    print("Now training by the following hyper_parameters: ".format(hp_set))
+                    r = 0
                     while r < int(self.config["BASIC"]["replicate"]):
                         startTime = datetime.now()
 
@@ -261,7 +261,7 @@ class ML_composer:
                             test_size=0.5)
                         print(features_train)
 
-                        model = RM(specific=True,n_estimators=int(hp_set[0]), n_features=int(hp_set[1]))
+                        model = RF(specific=True,n_estimators=int(hp_set[0]), n_features=int(hp_set[1]))
 
                         model.fit(features_train, target_train)
                         endTime = datetime.now()
@@ -291,8 +291,13 @@ class ML_composer:
                         acg_same_score.append(same_score)
                         avg_mse.append(mse)
                         avg_runtime.append(runtime)
+                        if accuracy > best_model[0]:
+                            best_model = [accuracy, model]
                         r += 1
                         records.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], same_score, score, accuracy, mse, region,runtime.seconds / 60])
+                    if self.save is True:
+                        saved_rf_model_fn = "{}{}_{}_{}_model.json".format(model_path, trait, self.method, region)
+                        pickle.dump(best_model[1], open(saved_rf_model_fn, "wb"))
                     accs.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], np.mean(acg_same_score), np.mean(avg_score),
                                  np.mean(avg_acc), np.mean(avg_mse),region,np.mean(avg_runtime).seconds / 60])
             check_usage()
