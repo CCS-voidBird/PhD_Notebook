@@ -301,8 +301,8 @@ class ML_composer:
                     accs.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], np.mean(acg_same_score), np.mean(avg_score),
                                  np.mean(avg_acc), np.mean(avg_mse),region,np.mean(avg_runtime).seconds / 60])
             check_usage()
-        record_train_results(records, record_cols, method=self.method, path=record_path)
-        record_train_results(accs, record_cols, self.method, path=record_path, extra="_summary")
+            record_train_results(records, record_cols, method=self.method, path=record_path)
+            record_train_results(accs, record_cols, self.method, path=record_path, extra="_summary")
 
         #record_train_results(accs, cols=record_cols, method="RM", path="~", para="max_features")
         #record_train_results(records, cols=record_cols, method="RM", path="~", para="max_feature_raw")
