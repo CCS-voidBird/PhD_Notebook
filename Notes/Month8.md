@@ -29,3 +29,7 @@ Identify reasons of different accuracy in region separated predictions
 
 	+ family (genomic corrlation) - maybe less family cluster(relationship) in Central subgroup
 	+ 
+
+perform region~ RF test (need over 36h)
+
+(3 traits, 4 regions, 4*6 para sets, 10 rounds per set)
