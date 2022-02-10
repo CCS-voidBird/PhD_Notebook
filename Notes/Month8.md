@@ -19,6 +19,7 @@ Goal:
 
 Read list:
 + https://www.biorxiv.org/content/10.1101/2020.09.15.276121v1.full (h2 description)
++ https://academic.oup.com/bfg/article/9/2/166/216335
 
 
 Import picard as RF save function 
