@@ -71,6 +71,7 @@ trained_model.load_weights(weights_path)
 from keras import models
 
 layer_outputs = [layer.output for layer in trained_model.layers[:3]]
+sample_convs = [[],[],[],[]]
 activation_model = models.Model(inputs=trained_model.input, outputs=layer_outputs)
 for layer in trained_model.layers:
     print(layer)
@@ -81,5 +82,7 @@ for i in range(X.shape[0]//100):
     if i*100 > X.shape[0]:
         end = X.shape[0]
     activations = activation_model.predict(X[i*100:end])
-    first_layer_activation = activations[2]
-    print(first_layer_activation.shape)
+    for l in range(len(activations)):
+        layer_activation = activations[l]
+        print(layer_activation.shape)
+        sample_convs[l].extend(layer_activation)
