@@ -24,8 +24,7 @@ Read list:
 + https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9244164 (CNN feature importance)
 + Visualizing and Understanding Convolutional Networks **[ arXiv:1311.2901](https://arxiv.org/abs/1311.2901)**
   + Jason Yosinski, Jeff Clune, Anh Nguyen, Thomas Fuchs, and Hod Lipson. [Understanding neural networks through deep visualization](http://arxiv.org/abs/1506.06579). Presented at the Deep Learning Workshop, International Conference on Machine Learning (ICML), 2015.
-
-
++ https://github.com/yosinski/deep-visualization-toolbox
 
 Import picard as RF save function 
 

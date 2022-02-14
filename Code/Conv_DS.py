@@ -1,18 +1,11 @@
 
 from Functions import *
-from GSModel import *
 import pandas as pd
-import keras
-from keras.models import Sequential
-from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
-from keras.layers import Dropout
 import keras.metrics
 
 import numpy as np
-
+import matplotlib.pyplot as plt
 import platform
-from datetime import datetime
-from sklearn.metrics import mean_squared_error
 import configparser
 import tensorflow as tf
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -50,14 +43,30 @@ except:
         print("No valid path found.")
         exit()
 geno_data = decoding(geno_data)
-samples = geno_data.Sample
-SNPs = geno_data.drop(["Sample"], axis=1)
+trait = "TCHBlup"
+sorted_phenos = pheno_data.sort_values(by=["TCHBlup"],ascending=False)[:100]
+sorted_samples = sorted_phenos.Clone.tolist()
+sorted_traits = sorted_phenos[trait].tolist()
+
+# sort genotypes by Sample and sorted_phenos_clone
+# give a list of sample, sort geno_data by given index
+# return a list of genotypes
+def sort_geno(sorted_samples, geno_data):
+    geno_data = geno_data.sort_values(by=["Sample"], ascending=True)
+    geno_data = geno_data.set_index("Sample")
+    geno_data = geno_data.loc[sorted_samples]
+    geno_data = geno_data.values
+    return geno_data
+geno_data = geno_data.set_index("Sample")
+SNPs = geno_data.loc[sorted_samples]
+#SNPs = sorted_genos.drop(["Sample"], axis=1)
+
+print(SNPs.shape)
 
 path = "E:/learning resource/PhD/HPC_Results/CNN/backup/2013-2015_vs_2017/models/"
-trait_name = "TCHBlup"
 region = "all"
 method = "CNN"
-model_path = path + "{}_{}_{}_model.json".format(trait_name,method,region)
+model_path = path + "{}_{}_{}_model.json".format(trait,method,region)
 weights_path = model_path + ".h5"
 print(weights_path)
 #region_index = "all"
@@ -71,12 +80,44 @@ trained_model.load_weights(weights_path)
 from keras import models
 
 layer_outputs = [layer.output for layer in trained_model.layers[:3]]
-sample_convs = [[],[],[],[]]
+sample_convs = []
 activation_model = models.Model(inputs=trained_model.input, outputs=layer_outputs)
 for layer in trained_model.layers:
     print(layer)
 activation_model.summary()
 X = np.expand_dims(SNPs,axis=2)
+activations = activation_model.predict(X)
+conv = 2
+layer_activation = activations[conv]
+print(layer_activation.shape)
+
+
+"""
+# Plot conv feature maps by channels
+for c in range(layer_activation.shape[-1]):
+    plt.matshow(layer_activation[:,:,c], cmap='viridis')
+    plt.savefig("E:/learning resource/PhD/HPC_Results/CNN/backup/activation_maps/{}_{}_{}_activation_map_{}.png".format(trait,method,region,c))
+"""
+
+#reshape the feature maps by channels
+img_data = np.expand_dims(layer_activation,axis=0)
+print(img_data.shape)
+o,n,m,c = img_data.shape
+reshape_img_data = img_data.reshape((o,c,m,n))
+reshaped_img = np.where((0 < reshape_img_data), reshape_img_data, 0)
+snp_importance = reshaped_img.sum(axis=1)
+snp_importance = np.reshape(snp_importance,[n,m])
+print(snp_importance.shape)
+fig_imp = plt.figure()
+axe_imp = fig_imp.add_subplot(111)
+
+sample_index= 0
+img_imp = axe_imp.bar(x=range(m),height=snp_importance[sample_index])
+axe_imp.set_xlabel("SNP")
+axe_imp.set_ylabel("Importance")
+plt.savefig("E:/learning resource/PhD/HPC_Results/CNN/backup/importance_maps/{}_{}_{}_conv{}_importance.png".format(trait,method,region,conv))
+
+"""
 for i in range(X.shape[0]//100):
     end = i*100+100
     if i*100 > X.shape[0]:
@@ -86,3 +127,4 @@ for i in range(X.shape[0]//100):
         layer_activation = activations[l]
         print(layer_activation.shape)
         sample_convs[l].extend(layer_activation)
+"""
