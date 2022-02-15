@@ -56,7 +56,7 @@ class ML_composer:
         self.keeping = None
         self.traits = None
         self.records = None
-        self.subset_index = None
+        self.subset_index = []
         self.config = None
         self.save = True
         self.plot = False
@@ -209,7 +209,7 @@ class ML_composer:
                 print("These non_genetic factors are already removed: ",self.keeping)
                 print(train_features.columns)
 
-            print("The selected region is: ",self.subset_index)
+            print("The selected region is: ",factor_value)
 
         return train_features,train_targets,valid_features,valid_targets
 
@@ -233,7 +233,7 @@ class ML_composer:
         A tuple of RF model hp: 1st: max_features, 2nd: n_trees, 3..4.. 
         """
         for trait in self.traits:
-            for region in self.subset_index:
+            for region in self.subset_index+["all"]:
                 print(trait)
                 avg_acc = []
                 avg_score = []
