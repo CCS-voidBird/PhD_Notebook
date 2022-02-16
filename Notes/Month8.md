@@ -51,3 +51,9 @@ method 1:
 		1. sort the genotype map by the ranked index
 		1. export the convoluted feature maps (multi-channels)
 		1. save them separated by trait, channels, conv layer
+
+
+
+A framework for CNN
+
+![image-20220216153118905](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20220216153118905.png)
