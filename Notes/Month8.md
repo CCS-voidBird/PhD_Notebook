@@ -11,11 +11,12 @@ Date: 01/Feb/2021 - 28/Feb/2021
 Goal:
 
 + create distribution plot for conv signals
-
 + sort and create GRM plot and subplot by regions
-
 + RF training by regions
 + AI - Sugarcane draft
++ VGG net
++ Res net
++ Boosting 
 
 Read list:
 + https://www.biorxiv.org/content/10.1101/2020.09.15.276121v1.full (h2 description)
@@ -25,6 +26,7 @@ Read list:
 + Visualizing and Understanding Convolutional Networks **[ arXiv:1311.2901](https://arxiv.org/abs/1311.2901)**
   + Jason Yosinski, Jeff Clune, Anh Nguyen, Thomas Fuchs, and Hod Lipson. [Understanding neural networks through deep visualization](http://arxiv.org/abs/1506.06579). Presented at the Deep Learning Workshop, International Conference on Machine Learning (ICML), 2015.
 + https://github.com/yosinski/deep-visualization-toolbox
++ https://www.business-science.io/r/2022/02/22/my-4-most-important-explainable-ai-visualizations-modelstudio.html?utm_content=bufferb31e4 （visual method)
 
 Import picard as RF save function 
 
