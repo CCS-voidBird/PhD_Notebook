@@ -419,6 +419,9 @@ class ML_composer:
                             [trait, self.config["BASIC"]["train"], self.config["BASIC"]["valid"], layers, units, 'N/A',
                              np.mean(in_year_accs), np.mean(accs), np.mean(mses), np.mean(runtimes).seconds / 60, setting])
                 if self.save is True:
+                    """
+                    Save the model with the best accuracy in a h-parameter queue.
+                    """
                     saved_json = accuracy_records[1].to_json()
                     with open("{}{}_{}_{}_model.json".format(model_path, trait, self.method, setting),
                               "w") as file:
