@@ -23,7 +23,7 @@ imputed_geno <- g.d$imputed
 NA %in% imputed_geno
 #Remove cols with NA values
 library(dplyr)
-imputed_geno <- as.data.frame(imputed_geno) %>% select_if(~any(is.na(.)))
+imputed_geno <- as.data.frame(imputed_geno) %>% select_if(~any(!is.na(.)))
 #Check changes inside the filtered genos
 dim(imputed_geno)[2] == dim(pure_genos)[2]
 #True
