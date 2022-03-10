@@ -11,6 +11,11 @@ Goal:
 + Edit sugarcane draft
 + Milestone 1 draft
 
+Reading
+
++ http://www.seas.ucla.edu/~vandenbe/133B/lectures/psd.pdf semi-positive definite
++ https://pbgworks.org/sites/pbgworks.org/files/Introduction%20to%20Genomic%20Selection%20in%20R.pdf rrBLUP usage
+
 
 
 GBLUP - GRM parameter:
