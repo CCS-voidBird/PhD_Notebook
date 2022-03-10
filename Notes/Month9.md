@@ -10,6 +10,7 @@ Goal:
 + Cor map for RF importance and rr-BLUP marker effects
 + Edit sugarcane draft
 + Milestone 1 draft
++ solve bug in rrblup - https://github.com/cran/rrBLUP/blob/master/R/mixed.solve.R
 
 Reading
 
