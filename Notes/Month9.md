@@ -55,3 +55,7 @@ the RMS error = $n^{-1}||A_t = A_{t-1}||_2 < tol$
 
 Shrinkage estimation can improve the accuracy of genome-wide marker-assisted selection, partic-
 ularly at low marker density (Endelman and Jannink 2012)
+
+**rrBLUP bug record:**
+
+K should be semi-positive definite 
