@@ -11,6 +11,7 @@ Goal:
 + Edit sugarcane draft
 + Milestone 1 draft
 + solve bug in rrblup - https://github.com/cran/rrBLUP/blob/master/R/mixed.solve.R
++ VGG, RNN, GRU, LSTM model (structure)
 
 Reading
 
@@ -59,3 +60,19 @@ ularly at low marker density (Endelman and Jannink 2012)
 **rrBLUP bug record:**
 
 K should be semi-positive definite 
+
+
+
+
+
+Conv1 -> env1 = hidden 1
+
+Conv1 -> conv2 -> env2 = hidden 2
+
+(hidden1 + hidden2) -> env3 
+
+
+
+env layer : {e1,e2,e3...et} vector
+
+e: 
