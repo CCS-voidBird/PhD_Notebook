@@ -76,3 +76,11 @@ Conv1 -> conv2 -> env2 = hidden 2
 env layer : {e1,e2,e3...et} vector
 
 e: 
+
+
+
+RF importance vs rrBLUP marker effects
+
+1.SNPeffect^2 * freq_snp * (1-freq_snp) * 2 = Var_snp
+
+2.Var_snp vs RF_importance 
