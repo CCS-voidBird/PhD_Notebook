@@ -17,6 +17,7 @@ Reading
 
 + http://www.seas.ucla.edu/~vandenbe/133B/lectures/psd.pdf semi-positive definite
 + https://pbgworks.org/sites/pbgworks.org/files/Introduction%20to%20Genomic%20Selection%20in%20R.pdf rrBLUP usage
++ Statistical methods for SNP heritability estimation and partition: A review https://doi.org/10.1016/j.csbj.2020.06.011
 
 Check list:
 
