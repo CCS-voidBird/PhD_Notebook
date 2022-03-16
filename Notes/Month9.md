@@ -96,3 +96,42 @@ RF importance vs rrBLUP marker effects
 1.SNPeffect^2 * freq_snp * (1-freq_snp) * 2 = Var_snp
 
 2.Var_snp vs RF_importance 
+
+TCH:
+
+![image-20220316231556089](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20220316231556089.png)
+
+rrBLUP error solution * 
+
+add diag pusedo value
+
+
+
+create gcta required files:
+
+```R
+map <- data.frame(c(rep(0,dim(genos)[2]-1)))
+map[,2] <- 1:(dim(genos)[2]-1)
+map[,3:4] <- c(rep(0,dim(genos)[2]-1),rep(0,dim(genos)[2]-1))
+write.table(as.matrix(map),file="./sugarcane.map",sep = "\t",col.names = F,row.names = F)
+
+
+selected_set = train_set
+sample = selected_set$Clone
+size = dim(selected_set)
+ped = data.frame(sample,sample,rep(0,size[1]),rep(0,size[1]),rep(0,size[1]),selected_set$TCHBlup)
+dim(ped)
+write.table(as.matrix(ped),file="./sugarcane.fam",sep = "\t",col.names = F,row.names = F)
+
+phen = ped[,c(1,2,6)]
+write.table(as.matrix(ped),file="./sugarcane.phen",sep = "\t",col.names = F,row.names = F)
+```
+
+
+
+gcta rrBLUP like code:
+
+```Shell
+gcta64 --bfile test --blup-snp test.indi.blp --out test
+```
+
