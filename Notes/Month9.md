@@ -94,9 +94,13 @@ e:
 
 RF importance vs rrBLUP marker effects
 
-1.SNPeffect^2 * freq_snp * (1-freq_snp) * 2 = Var_snp
+1.SNPeffect^2 * freq_snp * (1-freq_snp) * 2 = Var_snps
 
 2.Var_snp vs RF_importance 
+
+PVE formula:
+
+![img](https://pic3.zhimg.com/80/v2-a35e65ce1941e3de36f7239edb5632fa_720w.jpg)
 
 TCH:
 
@@ -134,5 +138,11 @@ gcta rrBLUP like code:
 
 ```Shell
 gcta64 --bfile test --blup-snp test.indi.blp --out test
+```
+
+```bash
+gcta64 --bfile sugarcane_tch --make-grm --out sugarcane_tch
+gcta64 --reml --grm sugarcane_tch --pheno sugarcane_tch.phen --gxe s--reml-pred-rand --out sugarcane_tch
+gcta64 --bfile sugarcane_tch --blup-snp sugarcane_tch.indi.blp --out test
 ```
 
