@@ -146,3 +146,14 @@ gcta64 --reml --grm sugarcane_tch --pheno sugarcane_tch.phen --gxe s--reml-pred-
 gcta64 --bfile sugarcane_tch --blup-snp sugarcane_tch.indi.blp --out test
 ```
 
+![image-20220319195530421](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20220319195530421.png)
+
+Currently using the alternative option "--reml-bendV" 
+
+```bash
+gcta64 --reml --grm sugarcane_tch --pheno sugarcane_tch.phen --reml-bendV --reml-pred-rand --out sugarcane_tch --thread-num 24
+```
+
+ML/REML solve example
+
+https://rh8liuqy.github.io/Example_Linear_mixed_model.html
