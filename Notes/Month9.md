@@ -136,23 +136,81 @@ write.table(as.matrix(ped),file="./sugarcane.phen",sep = "\t",col.names = F,row.
 
 gcta rrBLUP like code:
 
-```Shell
-gcta64 --bfile test --blup-snp test.indi.blp --out test
+data preprocess:
+
+train: 2013-2015, overall 22834 individuals, 1827 Clones
+
+```R
+dim(train_set) #22834 individual records
+dim(raw_genos) #1827 Clones
+library(dplyr)
+
+#make plink required file
+selected_set = train_set
+sample = selected_set$Clone
+size = dim(selected_set)
+
+data.frame(
+    sample,sample,rep(0,size[1]),rep(0,size[1]),rep(0,size[1]),selected_set$TCHBlup
+)
+# save as fam file 
+write.table(ped,file="./sugarcane.fam",sep = "\t",col.names = F,row.names = F,quote = F)
+
+# create phenotype file from fam variable
+phen = ped[,c(1,2,6)]
+dim(phen)
+phen = cbind(phen,train_set$CCSBlup,train_set$FibreBlup)
+write.table(phen,file="./sugarcane.phen",sep = "\t",col.names = F,row.names = F,quote = F)
+
+# replicate Clone genotype data for ped file
+colnames(ped)[2] = "Clone"
+ped = left_join(ped,raw_genos,by="Clone")
+save(ped,raw_genos,file="./tch_ped.RData")
+dim(ped) # (22834,22086)
+write.table(ped,file="./sugarcane.ped",sep = "\t",col.names = F,row.names = F,quote = F)
+
 ```
 
+Plink codes:
+
 ```bash
-gcta64 --bfile sugarcane_tch --make-grm --out sugarcane_tch
-gcta64 --reml --grm sugarcane_tch --pheno sugarcane_tch.phen --gxe s--reml-pred-rand --out sugarcane_tch
+plink --file sugarcane --geno 0.5 --out sugarcane_qc
+```
+
+gcta TCH REML
+
+```bash
+gcta64 --bfile sugarcane_qc --make-grm --out sugarcane_qc
+gcta64 --reml --grm sugarcane_qc --pheno sugarcane.phen --mpheno 1 --reml-pred-rand --out sugarcane_tch
 gcta64 --bfile sugarcane_tch --blup-snp sugarcane_tch.indi.blp --out test
 ```
 
 ![image-20220319195530421](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20220319195530421.png)
 
+> The GREML method uses REML for variance estimation (please see [Yang et al. 2010 AJHG](http://www.cell.com/ajhg/abstract/S0002-9297(10)00598-7) for details), which requires the inverse of the variance-covariance matrix **V**. If **V** is not positive definite, the inverse of **V** does not exist. We therefore could not estimate the variance component. This usually happens when one (or more) of the variance components are negative or constrained at zero. It might also indicate there is something wrong with the GRM or the data which you might need to check carefully.
+>
+> Unfortunately, there has not been an ultimate solution. Tricks such as adding a small number of to the diagonal elements of **V** also do not guarantee the modified **V** being invertible. In some cases, you might be able to get around the problem by using alternative REML algorithms e.g. the Fisher scoring approach (--reml-alg 1).
+>
+> We have implemented the "bending" approach ([Hayes and Hill 1981 Biometrics](http://www.jstor.org/stable/2530561?seq=1#page_scan_tab_contents)) in GCTA to invert **V** if **V** is not positive definite (you could add the --reml-bendV option to a REML or MLMA analysis to activate this approach). The "bending" approach guarantees to get an approximate of **V-1** but it does not guarantee the REML analysis being converged.
+>
+> **Note that the --reml-bendV option only provides an approximate inverse of \**V\** and has not been tested extensively. The results from analyses using this option might not be reliable.**
+
+
+
 Currently using the alternative option "--reml-bendV" 
 
 ```bash
-gcta64 --reml --grm sugarcane_tch --pheno sugarcane_tch.phen --reml-bendV --reml-pred-rand --out sugarcane_tch --thread-num 24
+gcta64 --reml --grm sugarcane_qc --pheno sugarcane.phen --mpheno 1 --reml-bendV --reml-pred-rand --out sugarcane_tch --thread-num 24
 ```
+REML with no constrain mode
+
+```bash
+gcta64 --reml --grm sugarcane_qc --pheno sugarcane_multi.phen --mpheno 1 --reml-no-constrain --reml-pred-rand --out sugarcane_tch --thread-num 24
+```
+
+
+
+
 
 ML/REML solve example
 
