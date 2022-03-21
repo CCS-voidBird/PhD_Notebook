@@ -150,7 +150,7 @@ selected_set = train_set
 sample = selected_set$Clone
 size = dim(selected_set)
 
-data.frame(
+pdata.frame(
     sample,sample,rep(0,size[1]),rep(0,size[1]),rep(0,size[1]),selected_set$TCHBlup
 )
 # save as fam file 
@@ -206,6 +206,12 @@ REML with no constrain mode
 
 ```bash
 gcta64 --reml --grm sugarcane_qc --pheno sugarcane_multi.phen --mpheno 1 --reml-no-constrain --reml-pred-rand --out sugarcane_tch --thread-num 24
+```
+
+REML with multiple parameter flags:
+
+```bash
+gcta64 --reml --reml-alg 1 --grm sugarcane_qc --pheno sugarcane_multi.phen --mpheno 1 --reml-no-constrain --reml-est-fix --reml-no-lrt --reml-pred-rand --out sugarcane_tch --thread-num 18
 ```
 
 
