@@ -86,3 +86,15 @@ Month 4 19 Oct
 + MAS vs GS
 
 > The key difference between the two approaches is that MAS concentrates on a small number of QTLs that are tagged by markers with well-verified associations, whereas genomic selection uses a genome-wide panel of dense markers so that all QTLs are in LD with at least one marker. 
+
+
+
+
+
+TAGC
+
+[][]
+
+TA[]GC
+
+[][]TAC
