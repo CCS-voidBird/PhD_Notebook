@@ -225,3 +225,12 @@ https://rh8liuqy.github.io/Example_Linear_mixed_model.html
 **An alternative way to perfrom rrBLUP in gcta by treat large population (in different region/trial/crop) to Clone-based mean traits**
 
 Sugarcane_mean sugarcane_mean_qc
+
+Manipulating GRM gz file
+
+```bash
+gunzip sugarcane_qc.grm.gz
+gawk sugarcane_qc.grm '{if ($1 == $2) print $1,$2,$3,$4+0.05 }' | gzip > sugarcane_qc_diag.grm.gz
+
+```
+
