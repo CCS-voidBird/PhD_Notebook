@@ -221,3 +221,7 @@ gcta64 --reml --reml-alg 1 --grm sugarcane_qc --pheno sugarcane_multi.phen --mph
 ML/REML solve example
 
 https://rh8liuqy.github.io/Example_Linear_mixed_model.html
+
+**An alternative way to perfrom rrBLUP in gcta by treat large population (in different region/trial/crop) to Clone-based mean traits**
+
+Sugarcane_mean sugarcane_mean_qc
