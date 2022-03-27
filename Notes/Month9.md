@@ -234,3 +234,32 @@ gawk sugarcane_qc.grm '{if ($1 == $2) print $1,$2,$3,$4+0.05 }' | gzip > sugarca
 
 ```
 
+#The genomic relationship matrix (GRM) is the covariance matrix calculated from the SNP infor- mation of the individuals, i.e., from the minor allele counts
+
+rrBlup-make-grm:
+
+$Var(X) = \sum(X_i - \bar{X})^2 / N $
+
+$Cov(X,Y) = \sum(X_i-\bar{X})(Y_i - \bar{Y})/N$
+
+Variance-Covariance Matrix:
+
+$$V = \begin{bmatrix}\sum x_1^2/N & \sum x_1x_2/N & ... &\sum x_1x_c/N\\
+\sum x_2^2/N & \sum x_2x_2/N & ... &\sum x_2x_c/N\\
+... & ... & ...  & ...\\
+\sum x_3^2/N & \sum x_3x_2/N & ... &\sum x_3x_c/N
+\end{bmatrix}$$
+
+```R
+one <- matrix(1, n, 1)
+markers <- which((MAF >= min.MAF)&(frac.missing <= max.missing)) 
+freq <- apply(X + 1, 2, function(x) {mean(x, na.rm = missing)})/2
+freq.mat <- tcrossprod(one, matrix(freq[markers], m, 1))
+W <- X[, markers] + 1 - 2 *freq.mat 
+A <- tcrossprod(W)/var.A/m
+
+##rrblup
+offset <- sqrt(n)
+Hb <- tcrossprod(Z,Z) + offset*diag(n)
+```
+
