@@ -18,6 +18,7 @@ Reading
 + http://www.seas.ucla.edu/~vandenbe/133B/lectures/psd.pdf semi-positive definite
 + https://pbgworks.org/sites/pbgworks.org/files/Introduction%20to%20Genomic%20Selection%20in%20R.pdf rrBLUP usage
 + Statistical methods for SNP heritability estimation and partition: A review https://doi.org/10.1016/j.csbj.2020.06.011
++ Finding treasure (epistatic interactions) in a dark random forest
 
 Check list:
 
@@ -263,3 +264,26 @@ offset <- sqrt(n)
 Hb <- tcrossprod(Z,Z) + offset*diag(n)
 ```
 
+**gcta_fibre_diag3.pbs on HPC**
+
+```bash
+
+module load gcta
+
+cd /scratch/user/s4563146/sugarcane/GCTAs/sugarcane_tch/
+locat=`pwd`
+gcta64 --bfile sugarcane_qc --make-grm-gz --out sugarcane_qc
+gunzip sugarcane_qc.grm.gz
+gawk '{if ($1 == $2) print $1,$2,$3,$4+1; else print $1,$2,$3,$4 }' sugarcane_qc.grm | gzip > sugarcane_qc_diag3.grm.gz
+cp sugarcane_qc.grm.id sugarcane_qc_diag3.grm.id
+gcta64 --reml --grm-gz sugarcane_qc_diag3 --pheno sugarcane_multi.phen --reml-alg 1 --mpheno 3 --reml-no-constrain --reml-pred-rand --reml-maxit 30 --out sugarcane_fibre_diag3 --thread-num 8
+gcta64 --bfile sugarcane_qc --blup-snp sugarcane_fibre_diag3.indi.blp --out sugarcane_fibre_diag3 --thread-num 8
+```
+
+11:20:16  Chensong Chen 对 所有人:
+	ICQG6
+11:24:29  Ben Hayes 对 所有人:
+	Predicting wheat yield from genotypes and environmental data using four machine learning approaches
+	Dr Hawlader Abdullah Al-Mamun
+11:25:19  Owen Powell 对 所有人:
+	Finding treasure (epistatic interactions) in a dark random forest
