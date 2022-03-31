@@ -27,15 +27,15 @@ Reading
 
 Check list:
 
-UQ winter semester
+UQ winter semester DONE
 
-AU summer semester (OPTIONAL)
+AU summer semester (OPTIONAL) cancel
 
-gcta RMEL (rrBLUP)
+gcta RMEL (rrBLUP) problem shooting
 
-Var SNP importance (Mark effects)
+Var SNP importance (Mark effects)   DONE
 
-
+RF scripts
 
 
 
@@ -76,6 +76,8 @@ the RMS error = $n^{-1}||A_t = A_{t-1}||_2 < tol$
 Shrinkage estimation can improve the accuracy of genome-wide marker-assisted selection, partic-
 ularly at low marker density (Endelman and Jannink 2012)
 
+
+
 **rrBLUP bug record:**
 
 K should be semi-positive definite 
@@ -93,8 +95,6 @@ Conv1 -> conv2 -> env2 = hidden 2
 
 
 env layer : {e1,e2,e3...et} vector
-
-e: 
 
 
 
@@ -140,7 +140,7 @@ write.table(as.matrix(ped),file="./sugarcane.phen",sep = "\t",col.names = F,row.
 
 
 
-gcta rrBLUP like code:
+gcta rrBLUP (REML-snp) code:
 
 data preprocess:
 
