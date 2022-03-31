@@ -1,0 +1,13 @@
+method = CNN
+output = ./test_log/
+sample = all
+region = False
+round = 20
+epoch = 50
+onehot = 1
+optimizer = rmsprop
+plot = False
+silence = True
+loss = 10
+save = False
+config = ./config.ini

@@ -16,9 +16,14 @@ Goal:
 Reading
 
 + http://www.seas.ucla.edu/~vandenbe/133B/lectures/psd.pdf semi-positive definite
+
 + https://pbgworks.org/sites/pbgworks.org/files/Introduction%20to%20Genomic%20Selection%20in%20R.pdf rrBLUP usage
+
 + Statistical methods for SNP heritability estimation and partition: A review https://doi.org/10.1016/j.csbj.2020.06.011
+
 + Finding treasure (epistatic interactions) in a dark random forest
+
++  Detection of epistatic interactions with Random Forest https://www.biorxiv.org/content/10.1101/353193v1.full
 
 Check list:
 
@@ -287,3 +292,21 @@ gcta64 --bfile sugarcane_qc --blup-snp sugarcane_fibre_diag3.indi.blp --out suga
 	Dr Hawlader Abdullah Al-Mamun
 11:25:19  Owen Powell 对 所有人:
 	Finding treasure (epistatic interactions) in a dark random forest
+
+
+
+GCTA efficiency
+
+~4.8 GB for making GRM based on 3925 individuals 293K SNPs 
+
+> ### Efficiency of GCTA Computing Algorithm
+>
+> GCTA implements the REML method based on the variance-covariance matrix **V** and the projection matrix **P**. In some of the mixed model analysis packages, such as ASREML,[35](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3014363/#bib35) to avoid the inversion of the *n* × *n* **V** matrix, people usually use Gaussian elimination of the mixed model equations (MME) to obtain the **AI** matrix based on sparse matrix techniques. The SNP-derived GRM matrix, however, is typically dense, so the sparse matrix technique will bring an extra cost of memory and CPU time. Moreover, the dimension of MME depends on the number of random effects in the model, whereas the **V** matrix does not. For example, when fitting the 22 chromosomes simultaneously in the model, the dimension of MME is 22*n* × 22*n* (ignoring the fixed effects), whereas the dimension of **V** matrix is still *n* × *n*. We compared the computational efficiency of GCTA and ASREML. When the sample size is small, e.g., n < 3000, both GCTA and ASREML take a few minutes to run. When the sample size is large, e.g., n > 10,000, especially when fitting multiple GRMs, it takes days for ASREML to finish the analysis, whereas GCTA needs only a few hours.
+
+
+
+>**Detection of epistatic interactions with Random Forest**
+>
+>+ Paired selection frequency
+>+ split asymmetry (SplitA)
+>+ selection asymmetry (SelectionA)
