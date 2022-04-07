@@ -25,3 +25,4 @@ gcta64 --reml --grm-gz sugarcane_mean_qc_diag --out test_piror --reml-pred-rand 
 
 
 
+![image-20220407183140670](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20220407183140670.png)

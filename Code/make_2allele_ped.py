@@ -24,7 +24,7 @@ df.insert(0, 'Clone', sample_col)
 
 phenos = pd.read_csv("./phenotypes.csv", sep='\t')
 phenos = phenos.query('Series in ["2013","2014","2015"]')
-
+phenos = phenos.query('Series in ["2017"]')
 length = phenos.shape[0]
 
 ped = pd.DataFrame(columns=['Clone','Clone1',"x1","x2","x3","TCHBlup"])
