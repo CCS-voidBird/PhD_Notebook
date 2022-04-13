@@ -13,6 +13,7 @@ To DO List:
 
 + add stat methods and detail to sugarcane draft
 + milestone1 draft and checklist  
++ Draft edit: Comparison of STAT methods with valid set with best-test ML model 
 
 
 
