@@ -26,3 +26,12 @@ gcta64 --reml --grm-gz sugarcane_mean_qc_diag --out test_piror --reml-pred-rand 
 
 
 ![image-20220407183140670](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20220407183140670.png)
+
+
+
+Make Genotype data for valid set by plink - 
+
+```bash
+plink --file sugarcane_17 --recodeA --geno 0.5 --allow-no-sex --out sugarcane_17_a --thread-num 4
+```
+
