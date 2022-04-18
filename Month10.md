@@ -7,7 +7,7 @@ reading list:
 
 Yang, Jian et al. “GCTA: a tool for genome-wide complex trait analysis.” *American journal of human genetics* vol. 88,1 (2011): 76-82. doi:10.1016/j.ajhg.2010.11.011
 
-
+https://scikit-learn.org/stable/modules/tree.html#tree
 
 To DO List:
 
