@@ -153,9 +153,6 @@ class ML_composer:
                         train_features = factor_extender(train_features, self.keeping)
                         valid_features = factor_extender(valid_features, self.keeping)
 
-
-                train_features = to_categorical(train_features)
-                valid_features = to_categorical(valid_features)
             else:
                 print("Currently cannot solve non-genetic factors without OneHot functions.",
                       "Meanwhile, the non-genetic factors will be excluded.")
@@ -183,8 +180,6 @@ class ML_composer:
                         for factor in self.keeping:
                             print(factor)
                             dataset[factor] = label_encoder.fit_transform(dataset[factor])
-                train_features = to_categorical(train_features)
-                valid_features = to_categorical(valid_features)
             else:
                 print("Currently cannot solve non-genetic factors without OneHot functions.",
                       "Meanwhile, the non-genetic factors will be excluded from dataset.")
@@ -219,7 +214,7 @@ class ML_composer:
 
     def make_forest(self,model_path,record_path):
         hps, hp_sets = self.make_hp_set()
-        record_cols = ["trait", "trainSet", "validSet"]+hps+["test_score", "valid_score", "accuracy", "mse","Region", "Runtime"]
+        record_cols = ["trait", "trainSet", "validSet"]+hps+["test_score", "valid_score", "test_accuracy","accuracy", "mse","Region", "Runtime"]
         accs = []  # pd.DataFrame(columns=["trait","trainSet","validSet","score","cov"])
         records = []
         paraList = []
@@ -236,6 +231,7 @@ class ML_composer:
                 acg_same_score = []
                 avg_mse = []
                 avg_runtime = []
+                avg_test_acc = []
                 best_model = [0,None]
                 for hp_set in hp_sets:
                     print("Modified hyper-parameter names: \n", "\t".join(hps))
@@ -265,7 +261,8 @@ class ML_composer:
                         print("Runtime: ", runtime.seconds / 60, " min")
                         same_score = model.score(features_train_val, target_train_val)  # Calculating accuracy in the same year
 
-                        train_predict = model.predict(features_train)
+                        test_predict = model.predict(valid_features)
+                        test_accuracy = np.corrcoef(test_predict, valid_targets)[0, 1]
                         n_predict = model.predict(valid_features)
                         score = model.score(valid_features, valid_targets)
                         # print(valid_target.shape)
@@ -288,10 +285,11 @@ class ML_composer:
                         acg_same_score.append(same_score)
                         avg_mse.append(mse)
                         avg_runtime.append(runtime)
+                        avg_test_acc.append(test_accuracy)
                         if accuracy > best_model[0]:
                             best_model = [accuracy, model]
                         r += 1
-                        records.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], same_score, score, accuracy, mse, region,runtime.seconds / 60])
+                        records.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], same_score, score,test_accuracy,accuracy, mse, region,runtime.seconds / 60])
                     if self.save is True:
                         saved_rf_model_fn = "{}{}_{}_{}_model.json".format(model_path, trait, self.method, region)
                         pickle.dump(best_model[1], open(saved_rf_model_fn, "wb"))
@@ -303,134 +301,6 @@ class ML_composer:
 
         #record_train_results(accs, cols=record_cols, method="RM", path="~", para="max_features")
         #record_train_results(records, cols=record_cols, method="RM", path="~", para="max_feature_raw")
-
-
-
-    def trainning(self,model_path,record_path):
-
-        record_columns = ["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy",
-                          "predict_accuracy", "mse", "runtime","Region"]
-        results = []
-        record_summary = []
-
-        dataset_index = ["all"]
-        for trait in self.traits:
-            print("training trait: ", trait)
-            if self.sub_selection == '1':
-                dataset_index = self.subset_index.tolist() + dataset_index
-            for setting in dataset_index:
-                train_features,train_targets,valid_features,valid_targets = self.prepare_training(trait,factor_value=setting)
-                n_features = train_features.shape[1:]
-                print("The shape of data:", train_features.shape)
-
-                # train_features = np.expand_dims(train_features, axis=3)
-
-                # valid_features = ohe.transform(valid_features) # hot encode region data
-
-                # valid_features = np.expand_dims(valid_features, axis=3)
-
-                # split train data into 2 part - train and test
-                features_train, features_val, target_train, target_val = train_test_split(train_features, train_targets,
-                                                                                          test_size=0.2)
-
-                features_train_val, features_val_val, target_train_val, target_val_val = train_test_split(features_val,
-                                                                                                          target_val,
-                                                                                                          test_size=0.5)
-                print("The input shape:", n_features)
-                #print("A preview of features: ",features_train.head(1))
-                input_size = n_features
-                accuracy_records = [0, None]
-                for layers in self.config[self.method]["n_layers"].split(","):
-                    for units in self.config[self.method]["n_units"].split(","):
-
-                        print(layers, units)
-                        accs = []
-                        in_year_accs = []
-                        round = 0
-                        mses = []
-                        runtimes = []
-                        while round < int(self.config["BASIC"]["replicate"]):
-                            startTime = datetime.now()
-                            print("Start.")
-                            print(input_size)
-                            print("Sample size: ",train_targets.shape[0]," from {} subset.".format(setting))
-                            model = self.modelling(n_layers=int(layers),
-                                              n_units=int(units), input_shape=input_size,
-                                              lr=float(self.config[self.method]["lr"]))
-                            try:
-                                print(model.summary())
-                            except:
-                                print("It is a sklean-Random-forest model.")
-                            callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
-                            history = model.fit(
-                                features_train, target_train,
-                                epochs=int(self.config["BASIC"]["Epoch"]),
-                                validation_data=(features_val_val, target_val_val), verbose=int(self.silence_mode),
-                                callbacks=[callback])
-
-                            if self.plot is True:
-                                plot_loss_history(history, trait)
-
-                            # let's just print the final loss
-                            print(' - train loss     : ' + str(history.history['loss'][-1]))
-                            print(' - validation loss: ' + str(history.history['val_loss'][-1]))
-                            print(' - loss decrease rate in last 5 epochs: ' + str(
-                                np.mean(np.gradient(history.history['val_loss'][-5:]))))
-                            print("Train End.")
-                            endTime = datetime.now()
-                            runtime = endTime - startTime
-                            print("Runtime: ", runtime.seconds / 60, " min")
-                            print("Predicting valid set..")
-                            length = target_train_val.shape[0]
-                            val_length = valid_targets.shape[0]
-                            y_pred = np.reshape(model.predict(features_train_val), (length,))
-                            y_pred_future = np.reshape(model.predict(valid_features), (val_length,))
-                            print("Testing prediction:")
-                            print("Predicted: ", y_pred_future[:10])
-                            print("observed: ", target_train_val[:10])
-                            accuracy = np.corrcoef(y_pred, target_train_val)[0, 1]
-                            accuracy_future = np.corrcoef(y_pred_future, valid_targets)[0, 1]
-                            mse = mean_squared_error(y_pred_future, valid_targets)
-                            print("In-year accuracy (measured as Pearson's correlation) is: ", accuracy)
-                            print("Future prediction accuracy (measured as Pearson's correlation) is: ",
-                                  accuracy_future)
-
-                            if accuracy_future > accuracy_records[0]:
-                                print("Find a better model: ",accuracy_future)
-                                accuracy_records = [accuracy_future,model]
-
-                            round += 1
-                            accs.append(accuracy_future)
-                            in_year_accs.append(accuracy)
-                            runtimes.append(runtime)
-                            mses.append(mse)
-                            training_record = [trait, self.config["BASIC"]["train"], self.config["BASIC"]["valid"], layers, units, 'N/A',
-                                 accuracy,
-                                 accuracy_future, mse, runtime.seconds / 60, setting]
-                            print(training_record)
-                            results.append(training_record)
-
-                        print("The Mean accuracy of {} model for {} sample is: ".format(trait,setting), np.mean(accs))
-                        # ["trait", "trainSet", "validSet", "n_layers", "n_units", "cnn_layers", "in_year_accuracy","predict_accuracy", "mse"]
-                        record_summary.append(
-                            [trait, self.config["BASIC"]["train"], self.config["BASIC"]["valid"], layers, units, 'N/A',
-                             np.mean(in_year_accs), np.mean(accs), np.mean(mses), np.mean(runtimes).seconds / 60, setting])
-                if self.save is True:
-                    """
-                    Save the model with the best accuracy in a h-parameter queue.
-                    """
-                    saved_json = accuracy_records[1].to_json()
-                    with open("{}{}_{}_{}_model.json".format(model_path, trait, self.method, setting),
-                              "w") as file:
-                        file.write(saved_json)
-                    accuracy_records[1].save_weights(
-                        "{}{}_{}_{}_model.json.h5".format(model_path, trait, self.method, setting))
-            check_usage()
-        record_train_results(results, record_columns, method=self.method, path=record_path)
-        record_train_results(record_summary, record_columns, self.method, path=record_path, extra="_summary")
-
-
-
 
 
 
@@ -466,7 +336,7 @@ def main():
     composer = ML_composer()
     composer.get_data(config)
     if config["BASIC"]["method"] in CNNs:
-        composer.trainning(model_path=model_path,record_path=record_path)
+        print("Use GS_base_CNN.py instead.")
     elif config["BASIC"]["method"] == "RF":
         composer.make_forest(model_path=model_path,record_path=record_path)
 
