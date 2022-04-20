@@ -30,6 +30,10 @@ gcta64 --reml --grm-gz sugarcane_mean_qc_diag --out test_piror --reml-pred-rand 
 
 
 
+Question: Lasso or ridge in GREML
+
+
+
 Make Genotype data for valid set by plink - 
 
 ```bash
