@@ -95,7 +95,7 @@ class ML_composer:
 
         if self.config["BASIC"]["sub_selection"] == '1':
             print("The sub_selection is enabled, thus switch to pure genetic prediction mode.")
-            self.subset_index = pheno_data.Region.unique()  # Record subselection index (e.g. for region:N, B..
+            self.subset_index = pheno_data.Region.unique().tolist()  # Record subselection index (e.g. for region:N, B..
         else:
             print("The sub_selection is disabled..")
             print("Below factors will be fed into models: ")
@@ -133,64 +133,9 @@ class ML_composer:
         valid_targets = in_valid[trait].values
         train_features = in_train.drop(self.traits, axis=1)
         valid_features = in_valid.drop(self.traits, axis=1)
-
+        print("The subset index contains: ", self.subset_index)
         print("currently the training method is: ", self.method)
-        if self.method in CNNs:
-            print(train_features.columns)
-            print("USE CNN MODEL as training method")
-            if self.config["BASIC"]["OneHot"] == '1':
-                print("Import One-hot encoding method.")
-                train_features.replace(0.01, 3, inplace=True)
-                valid_features.replace(0.01, 3, inplace=True)
-                if self.config["BASIC"]["sub_selection"] == '0' or factor_value != 'all':
-                    print("Transfer non-genetic factors: {} into features.",format(self.keeping))
-                    for dataset in [train_features, valid_features]:
-                        for factor in self.keeping:
-                            print(factor)
-                            dataset[factor] = label_encoder.fit_transform(dataset[factor])
-                    if self.method == "TDCNN":
-                        print("Using a 2D CNN.")
-                        train_features = factor_extender(train_features, self.keeping)
-                        valid_features = factor_extender(valid_features, self.keeping)
-
-            else:
-                print("Currently cannot solve non-genetic factors without OneHot functions.",
-                      "Meanwhile, the non-genetic factors will be excluded.")
-                print(train_features.columns)
-                self.method = "CNN"
-                for dataset in [train_features, valid_features]:
-                    if self.config["BASIC"]["sub_selection"] != '1' or factor_value == 'all':
-                        dataset.drop(self.keeping, axis=1, inplace=True)
-
-
-                print(train_features.columns)
-                train_features = np.expand_dims(train_features, axis=2)
-                valid_features = np.expand_dims(valid_features, axis=2)
-
-        elif self.method == "MLP":
-            print(train_features.columns)
-            print("USE MLP MODEL as training method")
-            if self.config["BASIC"]["OneHot"] == '1':
-                print("Import One-hot encoding method.")
-                train_features.replace(0.01, 3, inplace=True)
-                valid_features.replace(0.01, 3, inplace=True)
-                if self.config["BASIC"]["sub_selection"] == '0' or factor_value == 'all':
-                    print("Transfer non-genetic factors: {} into features.", format(self.keeping))
-                    for dataset in [train_features, valid_features]:
-                        for factor in self.keeping:
-                            print(factor)
-                            dataset[factor] = label_encoder.fit_transform(dataset[factor])
-            else:
-                print("Currently cannot solve non-genetic factors without OneHot functions.",
-                      "Meanwhile, the non-genetic factors will be excluded from dataset.")
-                for dataset in [train_features, valid_features]:
-                    if self.config["BASIC"]["sub_selection"] != '1' or factor_value == 'all':
-                        dataset.drop(self.keeping, axis=1, inplace=True)
-                print(train_features.columns)
-                #train_features = np.expand_dims(train_features, axis=2)
-                #valid_features = np.expand_dims(valid_features, axis=2)
-
-        elif self.method == "RF":
+        if self.method == "RF":
             print("Currently only support RF training with numeric values, thus, the data will exclude non-genetic factos.")
             try:
                 print("Removing non-genetic factors: ",self.keeping)
@@ -223,6 +168,8 @@ class ML_composer:
         """
         A tuple of RF model hp: 1st: max_features, 2nd: n_trees, 3..4.. 
         """
+        print("The subset index contains: ",self.subset_index)
+        print(self.subset_index+["all"])
         for trait in self.traits:
             for region in self.subset_index+["all"]:
                 print(trait)
@@ -236,6 +183,7 @@ class ML_composer:
                 for hp_set in hp_sets:
                     print("Modified hyper-parameter names: \n", "\t".join(hps))
                     print("Now training by the following hyper_parameters: ".format(hp_set))
+                    print("Now training by region: {}".format(region))
                     r = 0
                     while r < int(self.config["BASIC"]["replicate"]):
                         startTime = datetime.now()
