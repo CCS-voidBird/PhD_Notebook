@@ -241,7 +241,7 @@ class ML_composer:
                     if self.save is True:
                         saved_rf_model_fn = "{}{}_{}_{}_model.json".format(model_path, trait, self.method, region)
                         pickle.dump(best_model[1], open(saved_rf_model_fn, "wb"))
-                    accs.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], np.mean(acg_same_score), np.mean(avg_score),
+                    accs.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], np.mean(acg_same_score), np.mean(avg_score),np.mean(avg_test_acc),
                                  np.mean(avg_acc), np.mean(avg_mse),region,np.mean(avg_runtime).seconds / 60])
             check_usage()
             record_train_results(records, record_cols, method=self.method, path=record_path)
