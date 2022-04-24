@@ -191,43 +191,47 @@ class ML_composer:
                         train_features, train_targets, valid_features, valid_targets = self.prepare_training(trait,
                                                                                                              factor_value=region)
 
-                        features_train, features_val, target_train, target_val = train_test_split(train_features,
+                        features_train, features_test, target_train, target_test = train_test_split(train_features,
                                                                                                   train_targets,
                                                                                                   test_size=0.2)
 
+                        """'
+                        # testing set spilt part particularly for CNN model
                         features_train_val, features_val_val, target_train_val, target_val_val = train_test_split(
-                            features_val,
-                            target_val,
+                            features_test,
+                            target_test,
                             test_size=0.5)
                         print(features_train)
-
+                        """
                         model = RF(specific=True,n_estimators=int(hp_set[0]), n_features=int(hp_set[1]))
 
                         model.fit(features_train, target_train)
                         endTime = datetime.now()
                         runtime = endTime - startTime
                         print("Runtime: ", runtime.seconds / 60, " min")
-                        same_score = model.score(features_train_val, target_train_val)  # Calculating accuracy in the same year
-
-                        test_predict = model.predict(valid_features)
-                        test_accuracy = np.corrcoef(test_predict, valid_targets)[0, 1]
-                        n_predict = model.predict(valid_features)
+                        same_score = model.score(features_test, target_test)  # Calculating accuracy in the same year
                         score = model.score(valid_features, valid_targets)
-                        # print(valid_target.shape)
-                        # print(n_predict.shape)
+
+                        test_predict = model.predict(features_test) # Testing at the end of the training
+                        test_accuracy = np.corrcoef(test_predict, target_test)[0, 1]
+
+                        n_predict = model.predict(valid_features) # Testing with the valid set - outside the training
                         obversed = np.squeeze(valid_targets)
-                        print(obversed.shape)
+
                         accuracy = np.corrcoef(n_predict, obversed)[0, 1]
                         mse = mean_squared_error(obversed, n_predict)
                         print("The accuracy for {} in RM is: {}".format(trait, accuracy))
                         print("The mse for {} in RM is: {}".format(trait, mse))
                         print("The variance for predicted {} is: ".format(trait, np.var(n_predict)))
+                        """
+                        # Looking at the distribution of the predicted values
                         print("A bite of output:")
                         print("observe: ", obversed[:50])
                         print("predicted: ", n_predict[:50])
+                        
                         save_df = pd.DataFrame({"obv": obversed, "pred": n_predict})
                         save_df.to_csv("~/saved_outcomes.csv", sep="\t")
-
+                        """
                         avg_acc.append(accuracy)
                         avg_score.append(score)
                         acg_same_score.append(same_score)
@@ -243,6 +247,7 @@ class ML_composer:
                         pickle.dump(best_model[1], open(saved_rf_model_fn, "wb"))
                     accs.append([trait, "2013-15", "2017", hp_set[0],hp_set[1], np.mean(acg_same_score), np.mean(avg_score),np.mean(avg_test_acc),
                                  np.mean(avg_acc), np.mean(avg_mse),region,np.mean(avg_runtime).seconds / 60])
+                    record_train_results(records, record_cols, method=self.method, path=record_path)
             check_usage()
             record_train_results(records, record_cols, method=self.method, path=record_path)
             record_train_results(accs, record_cols, self.method, path=record_path, extra="_summary")
