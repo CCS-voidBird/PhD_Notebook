@@ -16,20 +16,26 @@ Goal:
 Reading
 
 + http://www.seas.ucla.edu/~vandenbe/133B/lectures/psd.pdf semi-positive definite
+
 + https://pbgworks.org/sites/pbgworks.org/files/Introduction%20to%20Genomic%20Selection%20in%20R.pdf rrBLUP usage
+
 + Statistical methods for SNP heritability estimation and partition: A review https://doi.org/10.1016/j.csbj.2020.06.011
+
++ Finding treasure (epistatic interactions) in a dark random forest
+
++  Detection of epistatic interactions with Random Forest https://www.biorxiv.org/content/10.1101/353193v1.full
 
 Check list:
 
-UQ winter semester
+UQ winter semester DONE
 
-AU summer semester (OPTIONAL)
+AU summer semester (OPTIONAL) cancel
 
-gcta RMEL (rrBLUP)
+gcta RMEL (rrBLUP) problem shooting
 
-Var SNP importance (Mark effects)
+Var SNP importance (Mark effects)   DONE
 
-
+RF scripts
 
 
 
@@ -70,6 +76,8 @@ the RMS error = $n^{-1}||A_t = A_{t-1}||_2 < tol$
 Shrinkage estimation can improve the accuracy of genome-wide marker-assisted selection, partic-
 ularly at low marker density (Endelman and Jannink 2012)
 
+
+
 **rrBLUP bug record:**
 
 K should be semi-positive definite 
@@ -87,8 +95,6 @@ Conv1 -> conv2 -> env2 = hidden 2
 
 
 env layer : {e1,e2,e3...et} vector
-
-e: 
 
 
 
@@ -134,7 +140,7 @@ write.table(as.matrix(ped),file="./sugarcane.phen",sep = "\t",col.names = F,row.
 
 
 
-gcta rrBLUP like code:
+gcta rrBLUP (REML-snp) code:
 
 data preprocess:
 
@@ -150,7 +156,7 @@ selected_set = train_set
 sample = selected_set$Clone
 size = dim(selected_set)
 
-data.frame(
+pdata.frame(
     sample,sample,rep(0,size[1]),rep(0,size[1]),rep(0,size[1]),selected_set$TCHBlup
 )
 # save as fam file 
@@ -170,6 +176,59 @@ dim(ped) # (22834,22086)
 write.table(ped,file="./sugarcane.ped",sep = "\t",col.names = F,row.names = F,quote = F)
 
 ```
+
+
+
+make 2-allele ped file
+
+```python
+import pandas as pd
+file_path = "E:/learning resource/PhD/genomic data/Sugarcane/genotypes.csv"
+raw_data = pd.read_csv(file_path, sep='\t')
+
+#Remove and save the sample column
+sample_col = raw_data.pop('Sample')
+print(raw_data.shape)
+# make each row as listlenm
+raw_data.replace(to_replace='--', value='00', inplace=True)
+df_list = raw_data.values.tolist()
+for x in range(len(df_list)):
+    df_list[x] = [" ".join(list(i)) for i in df_list[x]]
+#df_list = [" ".join(list("".join(x).replace("-","0"))) for x in df_list]
+
+# convert to dataframe
+df = pd.DataFrame(df_list)
+
+print(df.shape)
+#add the sample column back to the first column, rename first column to 'Clone'
+df.insert(0, 'Clone', sample_col)
+#df.rename(columns={df.columns[0]: 'Clone'}, inplace=True)
+
+phenos = pd.read_csv("./phenotypes.csv", sep='\t')
+phenos = phenos.query('Series in ["2013","2014","2015"]')
+
+length = phenos.shape[0]
+
+ped = pd.DataFrame(columns=['Clone','Clone1',"x1","x2","x3","TCHBlup"])
+ped.Clone = phenos.Clone.tolist()
+ped.Clone1 = range(1,length+1)
+ped.x1 = [0]*length
+ped.x2 = [0]*length
+ped.x3 = [0]*length
+ped.TCHBlup = phenos.TCHBlup.tolist()
+
+ped = ped.merge(df, left_on='Clone', right_on='Clone',how='left')
+ped.Clone = range(1,length+1)
+
+ped.to_csv("./GCTAs/sugarcane_tch/sugarcane_tch.ped", sep='\t', index=False, header=False, na_rep='NA')
+#save the dataframe to a new tab csv file
+df.to_csv('E:/learning resource/PhD/genomic data/Sugarcane/genotypes_2allele.csv', sep='\t', index=False)
+print(df[1:10,1:10])
+```
+
+
+
+
 
 Plink codes:
 
@@ -212,6 +271,12 @@ REML with no constrain mode
 gcta64 --reml --grm sugarcane_qc --pheno sugarcane_multi.phen --mpheno 1 --reml-no-constrain --reml-pred-rand --out sugarcane_tch --thread-num 24
 ```
 
+REML with multiple parameter flags:
+
+```bash
+gcta64 --reml --reml-alg 1 --grm sugarcane_qc --pheno sugarcane_multi.phen --mpheno 1 --reml-no-constrain --reml-est-fix --reml-no-lrt --reml-pred-rand --out sugarcane_tch --thread-num 18
+```
+
 
 
 
@@ -223,6 +288,7 @@ https://rh8liuqy.github.io/Example_Linear_mixed_model.html
 **An alternative way to perfrom rrBLUP in gcta by treat large population (in different region/trial/crop) to Clone-based mean traits**
 
 Sugarcane_mean sugarcane_mean_qc
+
 
 
 
@@ -241,4 +307,86 @@ Sugarcane_mean sugarcane_mean_qc
 ```bash
 gawk '{ if ($1 == $2); print $1,$2,$3=0.05; else print $1,$2,$3}' > sugarcane_qc_grm.grm
 ```
+
+
+Manipulating GRM gz file
+
+```bash
+gunzip sugarcane_qc.grm.gz
+gawk sugarcane_qc.grm '{if ($1 == $2) print $1,$2,$3,$4+0.05 }' | gzip > sugarcane_qc_diag.grm.gz
+
+```
+
+#The genomic relationship matrix (GRM) is the covariance matrix calculated from the SNP infor- mation of the individuals, i.e., from the minor allele counts
+
+rrBlup-make-grm:
+
+$Var(X) = \sum(X_i - \bar{X})^2 / N $
+
+$Cov(X,Y) = \sum(X_i-\bar{X})(Y_i - \bar{Y})/N$
+
+Variance-Covariance Matrix:
+
+$$V = \begin{bmatrix}\sum x_1^2/N & \sum x_1x_2/N & ... &\sum x_1x_c/N\\
+\sum x_2^2/N & \sum x_2x_2/N & ... &\sum x_2x_c/N\\
+... & ... & ...  & ...\\
+\sum x_3^2/N & \sum x_3x_2/N & ... &\sum x_3x_c/N
+\end{bmatrix}$$
+
+```R
+one <- matrix(1, n, 1)
+markers <- which((MAF >= min.MAF)&(frac.missing <= max.missing)) 
+freq <- apply(X + 1, 2, function(x) {mean(x, na.rm = missing)})/2
+freq.mat <- tcrossprod(one, matrix(freq[markers], m, 1))
+W <- X[, markers] + 1 - 2 *freq.mat 
+A <- tcrossprod(W)/var.A/m
+
+##rrblup
+offset <- sqrt(n)
+Hb <- tcrossprod(Z,Z) + offset*diag(n)
+```
+
+**gcta_fibre_diag3.pbs on HPC**
+
+```bash
+
+module load gcta
+
+cd /scratch/user/s4563146/sugarcane/GCTAs/sugarcane_tch/
+locat=`pwd`
+gcta64 --bfile sugarcane_qc --make-grm-gz --out sugarcane_qc
+gunzip sugarcane_qc.grm.gz
+gawk '{if ($1 == $2) print $1,$2,$3,$4+1; else print $1,$2,$3,$4 }' sugarcane_qc.grm | gzip > sugarcane_qc_diag3.grm.gz
+cp sugarcane_qc.grm.id sugarcane_qc_diag3.grm.id
+gcta64 --reml --grm-gz sugarcane_qc_diag3 --pheno sugarcane_multi.phen --reml-alg 1 --mpheno 3 --reml-no-constrain --reml-pred-rand --reml-maxit 30 --out sugarcane_fibre_diag3 --thread-num 8
+gcta64 --bfile sugarcane_qc --blup-snp sugarcane_fibre_diag3.indi.blp --out sugarcane_fibre_diag3 --thread-num 8
+```
+
+11:20:16  Chensong Chen 对 所有人:
+	ICQG6
+11:24:29  Ben Hayes 对 所有人:
+	Predicting wheat yield from genotypes and environmental data using four machine learning approaches
+	Dr Hawlader Abdullah Al-Mamun
+11:25:19  Owen Powell 对 所有人:
+	Finding treasure (epistatic interactions) in a dark random forest
+
+
+
+GCTA efficiency
+
+~4.8 GB for making GRM based on 3925 individuals 293K SNPs 
+
+> ### Efficiency of GCTA Computing Algorithm
+>
+> GCTA implements the REML method based on the variance-covariance matrix **V** and the projection matrix **P**. In some of the mixed model analysis packages, such as ASREML,[35](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3014363/#bib35) to avoid the inversion of the *n* × *n* **V** matrix, people usually use Gaussian elimination of the mixed model equations (MME) to obtain the **AI** matrix based on sparse matrix techniques. The SNP-derived GRM matrix, however, is typically dense, so the sparse matrix technique will bring an extra cost of memory and CPU time. Moreover, the dimension of MME depends on the number of random effects in the model, whereas the **V** matrix does not. For example, when fitting the 22 chromosomes simultaneously in the model, the dimension of MME is 22*n* × 22*n* (ignoring the fixed effects), whereas the dimension of **V** matrix is still *n* × *n*. We compared the computational efficiency of GCTA and ASREML. When the sample size is small, e.g., n < 3000, both GCTA and ASREML take a few minutes to run. When the sample size is large, e.g., n > 10,000, especially when fitting multiple GRMs, it takes days for ASREML to finish the analysis, whereas GCTA needs only a few hours.
+
+
+
+>**Detection of epistatic interactions with Random Forest**
+>
+>+ Paired selection frequency
+>+ split asymmetry (SplitA)
+>+ selection asymmetry (SelectionA)
+
+
 

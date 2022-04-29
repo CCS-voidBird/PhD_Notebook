@@ -269,6 +269,7 @@ class ML_composer:
                         print("Runtime: ", runtime.seconds / 60, " min")
                         same_score = model.score(features_train_val, target_train_val)  # Calculating accuracy in the same year
 
+                        train_predict = model.predict(features_train)
                         n_predict = model.predict(valid_features)
                         score = model.score(valid_features, valid_targets)
                         # print(valid_target.shape)
