@@ -202,6 +202,10 @@ Currently using the alternative option "--reml-bendV"
 ```bash
 gcta64 --reml --grm sugarcane_qc --pheno sugarcane.phen --mpheno 1 --reml-bendV --reml-pred-rand --out sugarcane_tch --thread-num 24
 ```
+
+
+
+
 REML with no constrain mode
 
 ```bash
@@ -219,3 +223,22 @@ https://rh8liuqy.github.io/Example_Linear_mixed_model.html
 **An alternative way to perfrom rrBLUP in gcta by treat large population (in different region/trial/crop) to Clone-based mean traits**
 
 Sugarcane_mean sugarcane_mean_qc
+
+
+
+ Solution of V invert problem:
+
+​	adjust grm for 22k lines - duplicated Clones
+
+​	use --make-grm-gz to genrate non-binary grm file
+
+​	add a small value to diagonal (0.05)
+
+​	compress nre grm and rerun the reml method
+
+
+
+```bash
+gawk '{ if ($1 == $2); print $1,$2,$3=0.05; else print $1,$2,$3}' > sugarcane_qc_grm.grm
+```
+

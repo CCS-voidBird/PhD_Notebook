@@ -166,8 +166,6 @@ datat.to_csv("../fitted_genos.csv",sep="\t")
 
 
 
-
-
 Prediction example code trunk:
 
 ```bash
