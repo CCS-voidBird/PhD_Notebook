@@ -3,7 +3,9 @@ Month 11 Notebook
 
 Date: 01/May/2022 - 31/May/2022
 
+literature:
 
+Using Local Convolutional Neural Networks for Genomic Prediction
 
 #DeepLearning bootcamp
 
