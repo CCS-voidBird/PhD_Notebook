@@ -13,3 +13,10 @@ Genomic simulation program:
 MoBPS : Pook, T., Schlather, M., and Simianer, H. (2020). MoBPS - modular breeding program simulator. *G3* 10, 1915–1918. doi: 10.1534/g3.120.401193
 
 **REVIEW GAN network and RNN network** 
+
+
+
+Running task：
+
++ CNN_2015_vs_2017 == log: CNN_17_all_4L.out [2022/6/2]
+
