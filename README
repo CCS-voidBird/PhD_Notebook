@@ -1,0 +1,64 @@
+Deep Learning & Random Forest for Genotyping data
+
+FOR neural network tasks: 
+  Using GS_base.py
+ 
+FOR Random forest tasks:
+  USing GS_RF_base.py
+
+Single step command:
+
+    python GS_base.py --config PATH/your_train_config.ini
+
+
+Currently using a single config file for all parameters:
+##########################CONFIG FORMAT##########################
+[BASIC]
+traits = FibreBlup#TCHBlup#CCSBlup    \\ trait names seperated by #
+sub_selection = 0        \\ switch for seperating data by certain catagorical feature e.g. Region. 1:ENABLE, 0:DISABLE
+non_genetic_factors = Region     \\ specific non-genetic feature (currently only support 1 )
+OneHot = 0   \\  Switch of onehot encoding - 1:ENABLE, 0:DISABLE
+DatasetSelection = 1
+method = RF  \\ specify main training method: RF,CNN,MLP
+train = 2013-2015 \\ train year
+valid = 2017  \\ valid year
+replicate = 10  \\ replicate for getting mean accuracy
+Epoch = 50  \\ training round per training
+silence = 0 \\ 1: DISABLE training information
+
+[PATH]
+phenotype = /scratch/user/s4563146/sugarcane/phenotypes.csv
+genotype = /scratch/user/s4563146/sugarcane/qc_genotypes.csv
+
+[BACKUP_PATH]
+phenotype = E:\learning resource\PhD\genomic data\Sugarcane\subset_sg.csv
+genotype = E:\learning resource\PhD\genomic data\Sugarcane\qc_genotypes.csv
+
+[OUTPUT]
+output = /scratch/user/s4563146/sugarcane/RF_region_all/
+
+[CNN]
+lr = 0.0001  \\ learning rate
+n_layers = 8
+n_units = 5,10,15,25
+
+[TDCNN]
+lr = 0.0001
+n_layers = 8
+n_units = 5,10,15,25
+
+[MLP]
+lr = 0.0001
+n_layers = 4,8,16
+n_units = 10,15,25,45
+
+[RF]
+n_estimators = 50,100,200,500
+max_features = 50,100,500,1000,2000,5000
+
+[DeepGS]
+lr = 0.01
+n_layers = 4
+n_units = 32
+optimizer = SGD
+#####################################################################
