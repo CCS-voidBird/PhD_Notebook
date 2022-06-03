@@ -14,6 +14,8 @@ MoBPS : Pook, T., Schlather, M., and Simianer, H. (2020). MoBPS - modular breedi
 
 SVM review:
 Applications of Support Vector Machine in Genomic Prediction in Pig and Maize Populations  https://doi.org/10.3389/fgene.2020.598318
+Learning Interpretable SVMs for Biological Sequence Classification
+
 
 **REVIEW GAN network and RNN network** 
 
