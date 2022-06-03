@@ -12,6 +12,9 @@ Genomic simulation program:
 
 MoBPS : Pook, T., Schlather, M., and Simianer, H. (2020). MoBPS - modular breeding program simulator. *G3* 10, 1915–1918. doi: 10.1534/g3.120.401193
 
+SVM review:
+Applications of Support Vector Machine in Genomic Prediction in Pig and Maize Populations  https://doi.org/10.3389/fgene.2020.598318
+
 **REVIEW GAN network and RNN network** 
 
 
