@@ -14,7 +14,7 @@ MoBPS : Pook, T., Schlather, M., and Simianer, H. (2020). MoBPS - modular breedi
 
 **REVIEW GAN network and RNN network** 
 
-
+http://dprogrammer.org/rnn-lstm-gru
 
 Running task：
 
