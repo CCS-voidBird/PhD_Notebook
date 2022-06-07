@@ -25,3 +25,8 @@ Running task：
 
 + CNN_2015_vs_2017 == log: CNN_17_all_4L.out [2022/6/2]
 
+
+
+U-Net 1D keras:
+
+https://www.kaggle.com/code/kmat2019/u-net-1d-cnn-with-keras/notebook
