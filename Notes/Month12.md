@@ -8,6 +8,10 @@ literature review:
 
 Application of Bayesian genomic prediction methods to genome-wide association analyses | Genetics Selection Evolution https://gsejournal.biomedcentral.com/articles/10.1186/s12711-022-00724-8
 
+Abdollahi-Arpanahi, R., Gianola, D. & Peñagaricano, F. Deep learning versus parametric and ensemble methods for genomic prediction of complex phenotypes. *Genet Sel Evol* **52,** 12 (2020). https://doi.org/10.1186/s12711-020-00531-z
+
+Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strategies for complex traits using high-density genetic markers. J Dairy Sci. 2012 Aug;95(8):4646-56. doi: 10.3168/jds.2011-5289. 
+
 Genomic simulation program:
 
 MoBPS : Pook, T., Schlather, M., and Simianer, H. (2020). MoBPS - modular breeding program simulator. *G3* 10, 1915–1918. doi: 10.1534/g3.120.401193
