@@ -34,3 +34,22 @@ Running task：
 U-Net 1D keras:
 
 https://www.kaggle.com/code/kmat2019/u-net-1d-cnn-with-keras/notebook
+
+
+
+Literature review 
+
+A brief history of AI and machine learning (3-4 pages) 
+
+- Why    it was developed, etc  
+- Overview     of approaches – RF, NN 
+
+Machine applied to crop and animal breeding 
+
+- Gianola     etc.  
+
+Most prospective applications of machine learning in crop and livestock breeding 
+
+- Large     non-additive variation 
+- Very     complex multi-trait interactions 
+- Segment     stacking (Kemper et al. 2012).  
