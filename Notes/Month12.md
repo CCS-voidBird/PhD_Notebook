@@ -12,6 +12,8 @@ Abdollahi-Arpanahi, R., Gianola, D. & Peñagaricano, F. Deep learning versus par
 
 Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strategies for complex traits using high-density genetic markers. J Dairy Sci. 2012 Aug;95(8):4646-56. doi: 10.3168/jds.2011-5289. 
 
+Dasari, C.M., Bhukya, R. Explainable deep neural networks for novel viral genome prediction. Appl Intell 52, 3002–3017 (2022). https://doi.org/10.1007/s10489-021-02572-3
+
 Genomic simulation program:
 
 MoBPS : Pook, T., Schlather, M., and Simianer, H. (2020). MoBPS - modular breeding program simulator. *G3* 10, 1915–1918. doi: 10.1534/g3.120.401193
