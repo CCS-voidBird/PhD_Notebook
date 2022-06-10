@@ -55,10 +55,9 @@ Most prospective applications of machine learning in crop and livestock breeding
 
 - Large     non-additive variation 
 - Very     complex multi-trait interactions 
-- Segment     stacking (Kemper et al. 2012). 
-
-
-
+- Segment     stacking (Kemper et al. 2012).  
+=======
 Workshop of quantative genetics
 
 R.A Fisher - a large amount of mendelian genes 
+>>>>>>> Stashed changes
