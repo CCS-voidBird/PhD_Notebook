@@ -14,6 +14,8 @@ Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strate
 
 Dasari, C.M., Bhukya, R. Explainable deep neural networks for novel viral genome prediction. Appl Intell 52, 3002–3017 (2022). https://doi.org/10.1007/s10489-021-02572-3
 
+CNN for saliency detection with low-level feature integration https://doi.org/10.1016/j.neucom.2016.11.056
+
 Genomic simulation program:
 
 MoBPS : Pook, T., Schlather, M., and Simianer, H. (2020). MoBPS - modular breeding program simulator. *G3* 10, 1915–1918. doi: 10.1534/g3.120.401193
