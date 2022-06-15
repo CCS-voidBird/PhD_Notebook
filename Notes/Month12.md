@@ -1,5 +1,12 @@
 
 
+todo list:
+
++ finish literature review
++ finish sugarcane ML draft editing 
+
+
+
 literature review: 
 
 [Genomic   predictions for enteric methane production are improved by metabolome and   microbiome data in sheep (Ovis aries). ](https://pubmed.ncbi.nlm.nih.gov/32815548/)  Ross EM, Hayes BJ, Tucker D, Bond J, Denman SE, Oddy VH.  J Anim Sci. 2020 Oct 1;98(10):skaa262. doi:  10.1093/jas/skaa262.  PMID: 32815548 Free PMC article. 
@@ -64,3 +71,6 @@ Most prospective applications of machine learning in crop and livestock breeding
 Workshop of quantative genetics
 
 R.A Fisher - a large amount of mendelian genes 
+
+
+
