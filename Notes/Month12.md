@@ -74,3 +74,12 @@ R.A Fisher - a large amount of mendelian genes
 
 
 
+Literature of multi-trait prediction
+
+Multi-trait and multi-environment Bayesian analysis to predict the G x E interaction in flood-irrigated rice https://doi.org/10.1371/journal.pone.0259607
+
+Use of multiple traits genomic prediction, genotype by environment interactions and spatial effect to improve prediction accuracy in yield data https://doi.org/10.1371/journal.pone.0232665
+
+Multi-trait Genomic Selection Methods for Crop Improvement https://doi.org/10.1534/genetics.120.303305
+
+Multi-Trait Genomic Prediction Improves Predictive Ability for Dry Matter Yield and Water-Soluble Carbohydrates in Perennial Ryegrass https://doi.org/10.3389/fpls.2020.01197
