@@ -42,6 +42,10 @@ Running task：
 
 
 
+link: a 1D CNN explanation website
+
+https://e2eml.school/convolution_one_d.html
+
 <<<<<<< Updated upstream
 U-Net 1D keras:
 
@@ -83,3 +87,4 @@ Use of multiple traits genomic prediction, genotype by environment interactions 
 Multi-trait Genomic Selection Methods for Crop Improvement https://doi.org/10.1534/genetics.120.303305
 
 Multi-Trait Genomic Prediction Improves Predictive Ability for Dry Matter Yield and Water-Soluble Carbohydrates in Perennial Ryegrass https://doi.org/10.3389/fpls.2020.01197
+
