@@ -54,7 +54,6 @@ CNN
 + padding: add 1(mostly) to edges of previous layers for keep the size of convolutional output 
 + Dropout: randomly/temporally delete hidden layers for avoid over-fitting 
 
-
-
+![](E:\learning resource\PhD\PHD_Notebook\Notes\conv_bias_eq.png)
 
 
