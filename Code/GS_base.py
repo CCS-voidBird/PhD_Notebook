@@ -106,13 +106,17 @@ class ML_composer:
             print(self.keeping) # Useful non_genetic factors e.g.   Series, Region and other..
 
         dropout = [x for x in non_genetic_factors if
-                   x not in self.keeping and x != "Series"] + ["Sample"] # config["BASIC"]["drop"].split("#") + ['Sample']
+                   x not in self.keeping and x != "Series"] + ["Sample"]
         print("Removing useless non-genetic factors: {}".format(dropout))
         filtered_data.drop(dropout, axis=1, inplace=True)
 
         self.train_data = filtered_data.query('Series in @train_year').drop(["Series"], axis=1)
         self.valid_data = filtered_data.query('Series in @valid_year').drop(["Series"], axis=1)
 
+        if self.config["BASIC"]["Strict"] == "1":
+            print("Strict training model detected, remove overlapping in training data..")
+            self.train_data = remove_overlapping(self.train_data,self.valid_data)
+            print("Finished")
         return
 
     def prepare_training(self,trait,other_factor = 'Region',factor_value = 'all',test=True):
