@@ -88,3 +88,23 @@ Multi-trait Genomic Selection Methods for Crop Improvement https://doi.org/10.15
 
 Multi-Trait Genomic Prediction Improves Predictive Ability for Dry Matter Yield and Water-Soluble Carbohydrates in Perennial Ryegrass https://doi.org/10.3389/fpls.2020.01197
 
+GxG Winter school - Review
+
+
+
+GBLUP - SNPs and errors are normal distributed, every SNP contain a small effect to trait ,lead to all the SNP effects become extremely small
+
+Bayesian Alphabet - SNPs contain 0 effect, and large SNP effects are allowed.
+
+								 - calculation cost related to assumption distribution (functions) and need Gibbs sampling
+
+
+
+GWAS - calculate SNP associations as significance 
+
+SBLUP - Summary BLUP. use GWAS summary data and other LD informations
+
+GBLUP/Bayesians with genetic functional annotation information
+
+Non-additive effects - need review
+
