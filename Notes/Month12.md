@@ -1,5 +1,12 @@
 
 
+todo list:
+
++ finish literature review
++ finish sugarcane ML draft editing 
+
+
+
 literature review: 
 
 [Genomic   predictions for enteric methane production are improved by metabolome and   microbiome data in sheep (Ovis aries). ](https://pubmed.ncbi.nlm.nih.gov/32815548/)  Ross EM, Hayes BJ, Tucker D, Bond J, Denman SE, Oddy VH.  J Anim Sci. 2020 Oct 1;98(10):skaa262. doi:  10.1093/jas/skaa262.  PMID: 32815548 Free PMC article. 
@@ -13,6 +20,8 @@ Abdollahi-Arpanahi, R., Gianola, D. & Peñagaricano, F. Deep learning versus par
 Kemper KE, Bowman PJ, Pryce JE, Hayes BJ, Goddard ME. Long-term selection strategies for complex traits using high-density genetic markers. J Dairy Sci. 2012 Aug;95(8):4646-56. doi: 10.3168/jds.2011-5289. 
 
 Dasari, C.M., Bhukya, R. Explainable deep neural networks for novel viral genome prediction. Appl Intell 52, 3002–3017 (2022). https://doi.org/10.1007/s10489-021-02572-3
+
+CNN for saliency detection with low-level feature integration https://doi.org/10.1016/j.neucom.2016.11.056
 
 Genomic simulation program:
 
@@ -32,6 +41,10 @@ Running task：
 + CNN_2015_vs_2017 == log: CNN_17_all_4L.out [2022/6/2]
 
 
+
+link: a 1D CNN explanation website
+
+https://e2eml.school/convolution_one_d.html
 
 <<<<<<< Updated upstream
 U-Net 1D keras:
@@ -62,3 +75,16 @@ Most prospective applications of machine learning in crop and livestock breeding
 Workshop of quantative genetics
 
 R.A Fisher - a large amount of mendelian genes 
+
+
+
+Literature of multi-trait prediction
+
+Multi-trait and multi-environment Bayesian analysis to predict the G x E interaction in flood-irrigated rice https://doi.org/10.1371/journal.pone.0259607
+
+Use of multiple traits genomic prediction, genotype by environment interactions and spatial effect to improve prediction accuracy in yield data https://doi.org/10.1371/journal.pone.0232665
+
+Multi-trait Genomic Selection Methods for Crop Improvement https://doi.org/10.1534/genetics.120.303305
+
+Multi-Trait Genomic Prediction Improves Predictive Ability for Dry Matter Yield and Water-Soluble Carbohydrates in Perennial Ryegrass https://doi.org/10.3389/fpls.2020.01197
+
