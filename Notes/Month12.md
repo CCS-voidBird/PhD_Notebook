@@ -4,6 +4,8 @@ todo list:
 
 + finish literature review
 + finish sugarcane ML draft editing 
++ Review of GxG winter school
++ Search and understand GibbsNet
 
 
 
