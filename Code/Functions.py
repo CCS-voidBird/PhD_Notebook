@@ -47,18 +47,20 @@ def select_subset(config,geno,pheno,select_by):
 
     return select_data
 
-def remove_overlapping(train,valid):
-    overlap_list = train.query("Clone in @valid.Clone").Clone.unique()
+def get_overlapping(data,train,valid):
+    train_clones = data.query("Series in @train").Sample.unique()
+    valid_clones = data.query("Series in @valid").Sample.unique()
+    overlap_list = np.intersect1d(train_clones,valid_clones).index
     print("Find {} overlapped clones".format(len(overlap_list)))
     print("The overlapped clones in train~valid set:")
     print(str(overlap_list))
-    remove_clones(train,sample_list=overlap_list)
-    return
+
+    return overlap_list
 
 
-def remove_clones(train_data,sample_list):
-    l = train_data.shape[0]
-    clean_data = train_data.query("Clone not in @sample_list")
+def remove_clones(data:pd.DataFrame,remove_list):
+    l = data.shape[0]
+    clean_data = data.query("Sample not in @remove_list")
     print("Removed {} records from data.".format(l-clean_data.shape[0]))
 
     return clean_data
