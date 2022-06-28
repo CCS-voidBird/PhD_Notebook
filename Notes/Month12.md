@@ -6,6 +6,8 @@ todo list:
 + finish sugarcane ML draft editing 
 + Review of GxG winter school
 + Search and understand GibbsNet
++ create subset for test -- (csv format and ped format) (randomly 100 Clones, overall 1000 records with 1000 genotypes)
++ Functions to read plink files
 
 
 
