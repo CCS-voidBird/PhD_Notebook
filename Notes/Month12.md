@@ -31,6 +31,10 @@ Genomic simulation program:
 
 MoBPS : Pook, T., Schlather, M., and Simianer, H. (2020). MoBPS - modular breeding program simulator. *G3* 10, 1915–1918. doi: 10.1534/g3.120.401193
 
+Alzubaidi, L., Zhang, J., Humaidi, A.J. *et al.* Review of deep learning: concepts, CNN architectures, challenges, applications, future directions. *J Big Data* **8,** 53 (2021). https://doi.org/10.1186/s40537-021-00444-8
+
+
+
 SVM review:
 Applications of Support Vector Machine in Genomic Prediction in Pig and Maize Populations  https://doi.org/10.3389/fgene.2020.598318
 Learning Interpretable SVMs for Biological Sequence Classification
@@ -50,10 +54,17 @@ link: a 1D CNN explanation website
 
 https://e2eml.school/convolution_one_d.html
 
-<<<<<<< Updated upstream
+
+
 U-Net 1D keras:
 
 https://www.kaggle.com/code/kmat2019/u-net-1d-cnn-with-keras/notebook
+
+
+
+Full equations of CNN backpropagation
+
+https://medium.com/@ngocson2vn/a-gentle-explanation-of-backpropagation-in-convolutional-neural-network-cnn-1a70abff508b
 
 
 
