@@ -50,7 +50,7 @@ def select_subset(config,geno,pheno,select_by):
 def get_overlapping(data,train,valid):
     train_clones = data.query("Series in @train").Sample.unique()
     valid_clones = data.query("Series in @valid").Sample.unique()
-    overlap_list = np.intersect1d(train_clones,valid_clones).index
+    overlap_list = np.intersect1d(train_clones,valid_clones)
     print("Find {} overlapped clones".format(len(overlap_list)))
     print("The overlapped clones in train~valid set:")
     print(str(overlap_list))
