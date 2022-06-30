@@ -39,10 +39,23 @@ SVM review:
 Applications of Support Vector Machine in Genomic Prediction in Pig and Maize Populations  https://doi.org/10.3389/fgene.2020.598318
 Learning Interpretable SVMs for Biological Sequence Classification
 
-
 **REVIEW GAN network and RNN network** 
 
 http://dprogrammer.org/rnn-lstm-gru
+
+
+
+Matrix analysis books:
+
+- Matrix Analysis, Roger A. Horn, Charles R. Johnson
+- Topics in Matrix Analysis, Roger A. Horn, Charles R. Johnson
+- Matrix Analysis (Graduate Texts in Mathematics), Rajendra Bhatia
+- Applied Linear Algebra and Matrix Analysis (Undergraduate Texts in Mathematics), Thomas S. Shores
+- Linear Algebra Through Geometry, Thomas Banchoff and John Wermer
+
+
+
+
 
 Running task：
 
@@ -123,3 +136,14 @@ GBLUP/Bayesians with genetic functional annotation information
 
 Non-additive effects - need review
 
+
+
+Cholesky decomposition - from grm to data matrix 
+
+Bayesian multiple-trait multiple-environment (BMTME) model
+
+
+
+Y=Xβ+Z1b1+Z2b2+E
+
+Pheno = Env(Trait~trait) + sum(genetic) + env(genetic) + residual
