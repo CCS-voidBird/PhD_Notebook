@@ -65,14 +65,18 @@ class ML_composer:
         self.traits = configer["BASIC"]["traits"].split("#")
         self.sub_selection = configer["BASIC"]["sub_selection"]
         self.keeping = configer["BASIC"]["non_genetic_factors"].split("#")
+        if "None" in self.keeping: self.keeping = []
         train_year = get_years(configer["BASIC"]["train"])
         valid_year = get_years(configer["BASIC"]["valid"])
 
         print("Getting data from config file path..")
 
         try:
-            geno_data = pd.read_csv(self.config["PATH"]["genotype"], sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
-            pheno_data = pd.read_csv(self.config["PATH"]["phenotype"], sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
+            geno_data = pd.read_csv(self.config["PATH"]["genotype"],
+                                    sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
+            pheno_data = pd.read_csv(self.config["PATH"]["phenotype"],
+                                     sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
+            blues = pd.read_csv("~/Blue_phenotypes.txt", sep="\t")
         except:
             try:
                 print("Using backup path (for trouble shooting)")
@@ -85,29 +89,64 @@ class ML_composer:
                 print("No valid path found.")
                 exit()
 
-        print(geno_data.columns)
-        non_genetic_factors = [x for x in pheno_data.columns if x not in self.traits]
-        print("Detected non-genetic factors from phenotype file: ",non_genetic_factors)
+        train_sample = pheno_data.query(
+            "Series in @train_year"
+        ).Clone.unique()
+
+        valid_sample = pheno_data.query(
+            "Series in @valid_year"
+        ).Clone.unique()
+
+        print("Train clones: {}, valid clones: {}".format(len(train_sample), len(valid_sample)))
+
+        # The default column name of individual is "Clone"
+
+        non_genetic_factors = [x for x in pheno_data.columns if x not in self.traits and x not in ["Sample", "Clone"]]
+        print("Detected non-genetic factors from phenotype file: ", non_genetic_factors)
 
         geno_data = decoding(geno_data)
-
-        filtered_data = read_pipes(geno_data, pheno_data, train_year + valid_year)
-
+        if self.config["BASIC"]["use_blue"] == '1':
+            print("Use BLUE value as phenotypes")
+            filtered_data = read_pipes(geno_data, pheno_data, train_year + valid_year, blue=blues)
+        else:
+            filtered_data = read_pipes(geno_data, pheno_data, train_year + valid_year)
         if self.config["BASIC"]["sub_selection"] == '1':
             print("The sub_selection is enabled, thus switch to pure genetic prediction mode.")
-            self.subset_index = pheno_data.Region.unique().tolist()  # Record subselection index (e.g. for region:N, B..
+            self.subset_index = pheno_data.Region.unique()  # Record subselection index (e.g. for region:N, B..
         else:
             print("The sub_selection is disabled..")
             print("Below factors will be fed into models: ")
-            print(self.keeping) # Useful non_genetic factors e.g.   Series, Region and other..
+            print(self.keeping)  # Useful non_genetic factors e.g.   Series, Region and other..
+
+        remove_list = []
+        if self.config["BASIC"]["Strict"] == "1":
+            print("Strict training model detected, remove overlapping in training data..")
+            print("Preview of data columns:")
+            print(filtered_data.columns)
+            remove_list = np.intersect1d(train_sample, valid_sample)
+            print("Finished")
 
         dropout = [x for x in non_genetic_factors if
-                   x not in self.keeping and x != "Series"] + ["Sample"] # config["BASIC"]["drop"].split("#") + ['Sample']
+                   x not in self.keeping]
         print("Removing useless non-genetic factors: {}".format(dropout))
-        filtered_data.drop(dropout, axis=1, inplace=True)
 
-        self.train_data = filtered_data.query('Series in @train_year').drop(["Series"], axis=1)
-        self.valid_data = filtered_data.query('Series in @valid_year').drop(["Series"], axis=1)
+        try:
+            filtered_data.drop(dropout, axis=1, inplace=True)
+        except:
+            print(dropout, "already removed.")
+
+        print(filtered_data.columns[1:10])
+        print("Get data shape:", filtered_data.shape)
+        print(filtered_data.iloc[1:10, 1:10])
+
+        self.train_data = filtered_data.query('Sample in @train_sample').query('Sample not in @remove_list').drop(
+            ["Sample", "Clone"], axis=1)
+        self.valid_data = filtered_data.query('Sample in @valid_sample').drop(["Sample", "Clone"], axis=1)
+        print(self.train_data.shape)
+        print(self.valid_data.shape)
+
+        # self.train_data = filtered_data.query('Series in @train_year').query('Sample not in @remove_list').drop(["Series","Sample"], axis=1)
+        # self.valid_data = filtered_data.query('Series in @valid_year').drop(["Series","Sample"], axis=1)
 
         return
 

@@ -23,17 +23,18 @@ df.insert(0, 'Clone', sample_col)
 #df.rename(columns={df.columns[0]: 'Clone'}, inplace=True)
 
 phenos = pd.read_csv("./phenotypes.csv", sep='\t')
-phenos = phenos.query('Series in ["2013","2014","2015"]')
-phenos = phenos.query('Series in ["2017"]')
+train_clones = phenos.query('Series in ["2013","2014","2015","2016"]').Clone.unique()
+valid_clones = phenos.query('Series in ["2017"]').Clone.unique()
 length = phenos.shape[0]
 
-ped = pd.DataFrame(columns=['Clone','Clone1',"x1","x2","x3","TCHBlup"])
-ped.Clone = phenos.Clone.tolist()
-ped.Clone1 = range(1,length+1)
-ped.x1 = [0]*length
-ped.x2 = [0]*length
-ped.x3 = [0]*length
-ped.TCHBlup = phenos.TCHBlup.tolist()
+for dataset in [train_clones,valid_clones]:
+    ped = pd.DataFrame(columns=['Clone','Clone1',"x1","x2","x3","TCHBlup"])
+    ped.Clone = dataset
+    ped.Clone1 = dataset
+    ped.x1 = [0]*length
+    ped.x2 = [0]*length
+    ped.x3 = [0]*length
+    ped.TCHBlup = phenos.TCHBlup.tolist()
 
 ped = ped.merge(df, left_on='Clone', right_on='Clone',how='left')
 ped.Clone = range(1,length+1)

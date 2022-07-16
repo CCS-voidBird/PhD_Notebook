@@ -69,6 +69,7 @@ class ML_composer:
         self.traits = configer["BASIC"]["traits"].split("#")
         self.sub_selection = configer["BASIC"]["sub_selection"]
         self.keeping = configer["BASIC"]["non_genetic_factors"].split("#")
+        if "None" in self.keeping: self.keeping = []
         train_year = get_years(configer["BASIC"]["train"])
         valid_year = get_years(configer["BASIC"]["valid"])
 
@@ -77,6 +78,7 @@ class ML_composer:
         try:
             geno_data = pd.read_csv(self.config["PATH"]["genotype"], sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
             pheno_data = pd.read_csv(self.config["PATH"]["phenotype"], sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
+            blues = pd.read_csv("~/Blue_phenotypes.txt",sep="\t")
         except:
             try:
                 print("Using backup path (for trouble shooting)")
@@ -89,14 +91,28 @@ class ML_composer:
                 print("No valid path found.")
                 exit()
 
-        print(geno_data.columns)
-        non_genetic_factors = [x for x in pheno_data.columns if x not in self.traits]
+        train_sample = pheno_data.query(
+            "Series in @train_year"
+        ).Clone.unique()
+
+        valid_sample = pheno_data.query(
+            "Series in @valid_year"
+        ).Clone.unique()
+
+        print("Train clones: {}, valid clones: {}".format(len(train_sample),len(valid_sample)))
+
+        #The default column name of individual is "Clone"
+
+
+        non_genetic_factors = [x for x in pheno_data.columns if x not in self.traits and x not in ["Sample","Clone"]]
         print("Detected non-genetic factors from phenotype file: ",non_genetic_factors)
 
         geno_data = decoding(geno_data)
-
-        filtered_data = read_pipes(geno_data, pheno_data, train_year + valid_year)
-
+        if self.config["BASIC"]["use_blue"] == '1':
+            print("Use BLUE value as phenotypes")
+            filtered_data = read_pipes(geno_data, pheno_data, train_year + valid_year,blue=blues)
+        else:
+            filtered_data = read_pipes(geno_data, pheno_data, train_year + valid_year)
         if self.config["BASIC"]["sub_selection"] == '1':
             print("The sub_selection is enabled, thus switch to pure genetic prediction mode.")
             self.subset_index = pheno_data.Region.unique()  # Record subselection index (e.g. for region:N, B..
@@ -105,20 +121,37 @@ class ML_composer:
             print("Below factors will be fed into models: ")
             print(self.keeping) # Useful non_genetic factors e.g.   Series, Region and other..
 
+
+        remove_list = []
         if self.config["BASIC"]["Strict"] == "1":
             print("Strict training model detected, remove overlapping in training data..")
             print("Preview of data columns:")
             print(filtered_data.columns)
-            remove_list = get_overlapping(filtered_data,train_year,valid_year)
+            remove_list = np.intersect1d(train_sample,valid_sample)
             print("Finished")
 
         dropout = [x for x in non_genetic_factors if
-                   x not in self.keeping and x != "Series"]
+                   x not in self.keeping]
         print("Removing useless non-genetic factors: {}".format(dropout))
-        filtered_data.drop(dropout, axis=1, inplace=True)
 
-        self.train_data = filtered_data.query('Series in @train_year').query('Sample not in @remove_list').drop(["Series","Sample"], axis=1)
-        self.valid_data = filtered_data.query('Series in @valid_year').drop(["Series","Sample"], axis=1)
+        try:
+            filtered_data.drop(dropout, axis=1, inplace=True)
+        except:
+            print(dropout, "already removed.")
+
+        print(filtered_data.columns[1:10])
+        print("Get data shape:",filtered_data.shape)
+        print(filtered_data.iloc[1:10,1:10])
+
+
+
+        self.train_data = filtered_data.query('Sample in @train_sample').query('Sample not in @remove_list').drop(["Sample","Clone"], axis=1)
+        self.valid_data = filtered_data.query('Sample in @valid_sample').drop(["Sample","Clone"], axis=1)
+        print(self.train_data.shape)
+        print(self.valid_data.shape)
+
+        #self.train_data = filtered_data.query('Series in @train_year').query('Sample not in @remove_list').drop(["Series","Sample"], axis=1)
+        #self.valid_data = filtered_data.query('Series in @valid_year').drop(["Series","Sample"], axis=1)
 
 
         return
@@ -148,7 +181,7 @@ class ML_composer:
 
         print("currently the training method is: ", self.method)
         if self.method in CNNs:
-            print(train_features.columns)
+            #print(train_features.columns)
             print("USE CNN MODEL as training method")
             if self.config["BASIC"]["OneHot"] == '1':
                 print("Import One-hot encoding method.")
@@ -171,24 +204,29 @@ class ML_composer:
             else:
                 print("Currently cannot solve non-genetic factors without OneHot functions.",
                       "Meanwhile, the non-genetic factors will be excluded.")
-                print(train_features.columns)
+                print(train_features.columns[1:10])
+                print(train_features.shape)
                 self.method = "CNN"
                 for dataset in [train_features, valid_features]:
                     if self.config["BASIC"]["sub_selection"] != '1' or factor_value == 'all':
-                        dataset.drop(self.keeping, axis=1, inplace=True)
+                        try:
+                            dataset.drop(self.keeping, axis=1, inplace=True)
+                        except:
+                            print("The {} were already be removed".format(self.keeping))
 
 
-                print(train_features.columns)
+                print(train_features.columns[1:10])
+                print(train_features.shape)
                 train_features = np.expand_dims(train_features, axis=2)
                 valid_features = np.expand_dims(valid_features, axis=2)
 
         elif self.method == "MLP":
-            print(train_features.columns)
+            print(train_features.columns[1:10])
             print("USE MLP MODEL as training method")
             if self.config["BASIC"]["OneHot"] == '1':
                 print("Import One-hot encoding method.")
-                train_features.replace(0.01, 3, inplace=True)
-                valid_features.replace(0.01, 3, inplace=True)
+                train_features.replace(0.01, None, inplace=True)
+                valid_features.replace(0.01, None, inplace=True)
                 if self.config["BASIC"]["sub_selection"] == '0' or factor_value == 'all':
                     print("Transfer non-genetic factors: {} into features.", format(self.keeping))
                     for dataset in [train_features, valid_features]:
@@ -215,7 +253,7 @@ class ML_composer:
                 valid_features.drop(self.keeping,axis=1,inplace=True)
             except:
                 print("These non_genetic factors are already removed: ",self.keeping)
-                print(train_features.columns)
+                print(train_features.columns[1:10])
 
             print("The selected region is: ",factor_value)
 

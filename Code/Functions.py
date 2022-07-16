@@ -109,7 +109,7 @@ def snp_extend(genotypes):
     return snps_2d
 
 
-def read_pipes(genotype, phenotypes, years):
+def read_pipes(genotype, phenotypes, years,blue=None):
     """
     :param genotype: an overall genotype dataframe contains all clones; Format: raw = records, col = QTL names
     :param phenotypes: an overall phenotype dataframe conatins all traits and non-genetic features.
@@ -124,10 +124,16 @@ def read_pipes(genotype, phenotypes, years):
     #merged_data = pd.merge(selected_phenos,selected_genos,left_on="Clone",right_on="sample")
 
     print("Got selected years:",years)
-    goal = (phenotypes
-            .query('Series in @years')
-            .pipe(mid_merge,genos=genotype)
-            )
+    if blue is None:
+        goal = (phenotypes
+                .query('Series in @years')
+                .pipe(mid_merge,genos=genotype)
+                )
+    else:
+        samples = phenotypes.query('Series in @years').Clone.unique()
+        goal = (blue
+                .query('Clone in @samples')
+                .pipe(mid_merge,genos=genotype))
 
     return goal
 
