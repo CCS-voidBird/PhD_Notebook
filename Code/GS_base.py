@@ -515,7 +515,7 @@ def main():
 
     composer = ML_composer()
     composer.get_data(config)
-    if config["BASIC"]["method"] in CNNs:
+    if config["BASIC"]["method"] in CNNs or config["BASIC"]["method"] == "MLP":
         composer.trainning(model_path=model_path,record_path=record_path)
     elif config["BASIC"]["method"] == "RF":
         composer.make_forest(model_path=model_path,record_path=record_path)
