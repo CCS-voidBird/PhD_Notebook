@@ -9,3 +9,13 @@ TODO list:
 extended GBLUP by R (dominance and epistatic effects)
 
 edit sugarcane draft
+
+
+
+raw data prediction using GCTA-MTG2 
+
+ + 15to17
+
+ + 16to17
+
+   

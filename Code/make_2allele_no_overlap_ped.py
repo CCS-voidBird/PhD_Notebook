@@ -14,12 +14,6 @@ raw_data.replace(to_replace=0.01, value='0 0', inplace=True)
 raw_data.replace(to_replace=0, value='T T', inplace=True)
 raw_data.replace(to_replace=1, value='A T', inplace=True)
 raw_data.replace(to_replace=2, value='A A', inplace=True)
-"""
-df_list = raw_data.values.tolist()
-for x in range(len(df_list)):
-    df_list[x] = [" ".join(list(i)) for i in df_list[x]]
-"""
-#df_list = [" ".join(list("".join(x).replace("-","0"))) for x in df_list]
 
 # convert to dataframe
 df = pd.DataFrame(raw_data)
