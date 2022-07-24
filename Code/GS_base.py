@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 try:
     import tensorflow as tf
-    from keras.utils import to_categorical
+    from tensorflow.keras.utils import to_categorical
 except:
     print("This a CPU-only platform.")
 import pickle
@@ -256,6 +256,11 @@ class ML_composer:
                 print(train_features.columns[1:10])
 
             print("The selected region is: ",factor_value)
+
+        train_features = np.asarray(train_features).astype(np.float32)
+        train_targets = np.asarray(train_targets).astype(np.float32)
+        valid_features = np.asarray(valid_features).astype(np.float32)
+        valid_targets = np.asarray(valid_targets).astype(np.float32)
 
         return train_features,train_targets,valid_features,valid_targets
 
@@ -515,7 +520,7 @@ def main():
 
     composer = ML_composer()
     composer.get_data(config)
-    if config["BASIC"]["method"] in CNNs or config["BASIC"]["method"] == "MLP":
+    if config["BASIC"]["method"] in CNNs or  config["BASIC"]["method"] == "MLP":
         composer.trainning(model_path=model_path,record_path=record_path)
     elif config["BASIC"]["method"] == "RF":
         composer.make_forest(model_path=model_path,record_path=record_path)
