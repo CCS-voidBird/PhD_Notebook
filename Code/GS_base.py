@@ -27,7 +27,7 @@ import configparser
 #################################################################
 #Test command (Local): python GS_base.py --config ./test_config
 CNNs = ["CNN","TDCNN","DeepGS"]
-
+PATIENCE = 100
 """
 GENO_PATH = "E:\learning resource\PhD\geno_data1.csv"
 PHENO_PATH = "E:\learning resource\PhD\phenotypes.csv"
@@ -416,7 +416,7 @@ class ML_composer:
                                 print(model.summary())
                             except:
                                 print("It is a sklean-Random-forest model.")
-                            callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
+                            callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=PATIENCE)
                             history = model.fit(
                                 features_train, target_train,
                                 epochs=int(self.config["BASIC"]["Epoch"]),
