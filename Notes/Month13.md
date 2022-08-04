@@ -2,6 +2,10 @@ Z. Li, F. Liu, W. Yang, S. Peng and J. Zhou, "A Survey of Convolutional Neural N
 
 https://docs.google.com/spreadsheets/d/1nETCCVlbJCKp_IsGE9RtAMuCnaN0PV3hUlwmR2bSK2I/edit?usp=sharing
 
+https://wires.onlinelibrary.wiley.com/doi/full/10.1002/widm.1249 A good summary of ensemble learning
+
+
+
 Time table of PhD
 
 TODO list:
