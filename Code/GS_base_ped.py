@@ -35,6 +35,28 @@ PHENO_PATH = "E:\learning resource\PhD\phenotypes.csv"
 TRAIN_PATH = "E:/learning resource/PhD/sugarcane/2015_TCHBlup_2000.csv"
 VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
 """
+def get_args():
+    parser = argparse.ArgumentParser()
+    req_grp = parser.add_argument_group(title='Required')
+    req_grp.add_argument('-g', '--ped', type=str, help="PED-like file name", required=True)
+    req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
+    req_grp.add_argument('-index', '--index', type=str, help="File of train/validate reference", required=True)
+    req_grp.add_argument('-m', '--model', type=str, help="Select training model.", default="CNN")
+    req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
+    req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
+    req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
+    req_grp.add_argument('-plot', '--plot', type=bool, help="show plot?",
+                         default=False)
+    req_grp.add_argument('-sli', '--silence', type=bool, help="silent mode",
+                         default=True)
+    req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
+                         default=False)
+    req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ~/MLP_parameters.ini',
+                         default="~/MLP_parameters.ini",required=True)
+    args = parser.parse_args()
+
+    return args
+
 
 def plot_loss_history(h, title):
     plt.plot(h.history['loss'], label = "Train loss")
@@ -47,27 +69,25 @@ def plot_loss_history(h, title):
 class ML_composer:
 
     def __init__(self,silence=0):
+        self._raw_data = {"GENO":pd.DataFrame(),"PHENO":pd.DataFrame(),"INDEX":pd.DataFrame()}
         self.train_data = None
         self.valid_data = None
+        self._model = {"INIT_MODEL":None,"TRAINED_MODEL":None}
         self.method = None
         self.modelling = None
         self.silence_mode = silence
-        self.sub_selection = None
-        self.keeping = None
-        self.traits = None
-        self.records = None
-        self.subset_index = []
         self.config = None
         self.save = True
         self.plot = False
+        self.args = None
 
-    def get_data(self, configer):
+    def get_data(self,configer,args):
+        self.args = args
         self.config = configer
         self.method = configer["BASIC"]["method"]
         self.silence_mode = configer["BASIC"]["silence"]
         self.modelling = METHODS[self.method]
         self.traits = configer["BASIC"]["traits"].split("#")
-        self.sub_selection = configer["BASIC"]["sub_selection"]
         self.keeping = configer["BASIC"]["non_genetic_factors"].split("#")
         if "None" in self.keeping: self.keeping = []
         #train_year = get_years(configer["BASIC"]["train"])
@@ -75,60 +95,35 @@ class ML_composer:
 
         print("Getting data from config file path..")
 
-        try:
-            geno_data = pd.read_table(self.config["PATH"]["genotype"], sep="\t",header=None)  # require ped file
-            pheno_data = pd.read_table(self.config["PATH"]["phenotype"], sep="\t",header=None)  # require pheno file
-            if self.config["BASIC"]["INDEX"] == "1":
-                data_index = self.config["PATH"]["index"]
-            else:
-                data_index = pd.DataFrame({"id": geno_data.iloc[:,0],"index":1})
-                data_index = pd.concat([data_index,pd.DataFrame({"id": geno_data.iloc[:,0],"index":2})])
-            blues = pd.read_csv("~/Blue_phenotypes.txt",sep="\t")
-        except:
-            try:
-                print("Using backup path (for trouble shooting)")
-                print(self.config["BACKUP_PATH"]["genotype"])
-                geno_data = pd.read_csv(self.config["BACKUP_PATH"]["genotype"],
-                                        sep="\t")  # pd.read_csv("../fitted_genos.csv",sep="\t")
-                pheno_data = pd.read_csv(self.config["BACKUP_PATH"]["phenotype"],
-                                         sep="\t")  # pd.read_csv("../phenotypes.csv",sep="\t")
-            except:
-                print("No valid path found.")
-                exit()
-
-        train_sample = data_index.query(
+        self._raw_data["GENO"] = pd.read_table(args.ped,sep="\t",header=None)
+        self._raw_data["PHENO"] = pd.read_table(args.pheno, sep="\t", header=None)
+        self._raw_data["INDEX"] = pd.read_table(args.index,sep="\t", header=None)
+        train_sample = self._raw_data["INDEX"].query(
             "index == 1"
         ).id.unique()
 
-        valid_sample = data_index.query(
-            "index == 2"
+        valid_sample = self._raw_data["INDEX"].query(
+            "index is not 1"
         ).id.unique()
 
         print("Train clones: {}, valid clones: {}".format(len(train_sample),len(valid_sample)))
 
-        ped_info = geno_data.iloc[:,0:6]
-
-        geno_data = decoding(geno_data)
+        self._raw_data["INFO"] = self._raw_data["GENO"].iloc[:,0:6]
 
 
         remove_list = []
-        if self.config["BASIC"]["Strict"] == "1":
-            print("Strict training model detected, detecting overlapping in training data..")
-            remove_list = np.intersect1d(train_sample,valid_sample)
-            #train_sample.query("id not in @remove_list")
-            #valid_sample.query("id not in @remove_list")
-            print("Finished")
+        print("Strict training model detected, detecting overlapping in training data..")
+        remove_list = np.intersect1d(train_sample,valid_sample)
+        #train_sample.query("id not in @remove_list")
+        #valid_sample.query("id not in @remove_list")
+        print("Finished")
+
+        print("Get genotype shape:",self._raw_data["GENO"].iloc[:,6:].shape)
+        print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
 
 
-
-        filtered_data = geno_data.iloc[:,[0,1]:]
-        filtered_data.rename(index=ped_info.iloc[:,0])
-        print("Get data shape:",filtered_data.shape)
-        print(filtered_data.iloc[1:10,1:10])
-
-
-        self.train_data = filtered_data.iloc.query('X.1 in @train_sample').query('X.1 not in @remove_list').drop(filtered_data.columns[0:2], axis=1)
-        self.valid_data = filtered_data.query('X.1 in @valid_sample').drop(filtered_data.columns[0:2], axis=1)
+        self.train_data = self._raw_data["GENO"].query('X.1 in @train_sample').query('X.1 not in @remove_list').iloc[:,6:]
+        self.valid_data = self._raw_data["GENO"].query('X.1 in @valid_sample').iloc[:,6:]
         print(self.train_data.shape)
         print(self.valid_data.shape)
 
