@@ -42,6 +42,7 @@ def get_args():
     req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
     req_grp.add_argument('-index', '--index', type=str, help="File of train/validate reference", required=True)
     req_grp.add_argument('-m', '--model', type=str, help="Select training model.", required=True)
+    req_grp.add_argument('-l', '--load', type=str, help="load model from file.", default=None)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
@@ -114,7 +115,15 @@ class ML_composer:
 
         return
 
-    def init_model(self):
+    def prepare_model(self):
+
+        if self.args.load is not None:
+            self._model["INIT_MODEL"] = init_model()
+        else:
+            self._model["INIT_MODEL"] = load_model()
+
+        # get data requirements - dimension, annotations, etc
+        return
 
     def prepare_training(self,train_index:list,valid_index:list):
 
