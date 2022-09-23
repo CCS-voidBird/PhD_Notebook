@@ -3,6 +3,7 @@ try:
     from keras.models import Sequential
     from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
     from keras.layers import Dropout
+    from tensorflow.keras.utils import to_categorical
     import tensorflow as tf
     import keras.metrics
 except:
@@ -16,53 +17,124 @@ except:
         print("This is not a GPU env.")
 from sklearn.datasets import make_regression
 from sklearn.ensemble import RandomForestRegressor
+import numpy as np
 import configparser
+from Functions import *
 
+class NCNN():
 
+    def __init__(self):
+        self.name = "Numeric CNN"
 
-def CNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
-    lr = float(lr)
-    model = Sequential()
-    """
-    Convolutional Layers
-    """
-    model.add(Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu',
-                     input_shape=input_shape))
-    model.add(MaxPooling1D(pool_size=2))
+    def data_transform(self,geno,pheno,anno=None):
+        print("USE Numeric CNN MODEL as training method")
+        geno = decoding(geno)
+        geno = np.expand_dims(geno, axis=2)
+        print("The transformed SNP shape:", geno.shape)
 
-    model.add(Conv1D(128, kernel_size=3, strides=3, padding='valid', activation='elu'))
-    model.add(MaxPooling1D(pool_size=2))
+        return geno
 
-    # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
-    model.add(Dropout(rate = 0.2))
+    def model(self,n_layers, n_units, input_shape, optimizer="rmsprop", lr=0.00001):
+        lr = float(lr)
+        model = Sequential()
+        """
+        Convolutional Layers
+        """
+        model.add(Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu',
+                         input_shape=input_shape))
+        model.add(MaxPooling1D(pool_size=2))
 
-    model.add(Flatten())
+        model.add(Conv1D(128, kernel_size=3, strides=3, padding='valid', activation='elu'))
+        model.add(MaxPooling1D(pool_size=2))
 
-    # Full connected layers, classic multilayer perceptron (MLP)
-    for layers in range(n_layers):
-        model.add(Dense(n_units,activation="elu"))
-    model.add(Dropout(0.2))
-    model.add(Dense(1, activation="linear")) # The output layer uses a linear function to predict traits.
-    try:
-        adm = keras.optimizers.Adam(learning_rate=lr)
-        rms = keras.optimizers.RMSprop(learning_rate=lr)
-        sgd = keras.optimizers.SGD(learning_rate=lr)
-    except:
-        adm = keras.optimizers.Adam(lr=lr)
-        rms = keras.optimizers.RMSprop(lr=lr)
-        sgd = keras.optimizers.SGD(lr=lr)
+        # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
+        model.add(Dropout(rate=0.2))
 
-    optimizers = {"rmsprop":rms,
-                 "Adam": adm,
-                 "SGD": sgd}
+        model.add(Flatten())
 
-    model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
+        # Full connected layers, classic multilayer perceptron (MLP)
+        for layers in range(n_layers):
+            model.add(Dense(n_units, activation="elu"))
+        model.add(Dropout(0.2))
+        model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
 
-    """
-    Optimizers: Adam, RMSProp, SGD 
-    """
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
 
-    return model
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        """
+        Optimizers: Adam, RMSProp, SGD 
+        """
+
+        return model
+
+class BCNN():
+
+    def __init__(self):
+        self.name = "Binary CNN"
+
+    def data_transform(self, geno, pheno, anno=None):
+        print("USE Binary CNN MODEL as training method")
+        geno = decoding(geno)
+        geno.replace(0.01, 3, inplace=True)
+        geno = to_categorical(geno)
+        print("The transformed SNP shape:",geno.shape)
+
+        return geno
+
+    def model(self, n_layers, n_units, input_shape, optimizer="rmsprop", lr=0.00001):
+        lr = float(lr)
+        model = Sequential()
+        """
+        Convolutional Layers
+        """
+        model.add(Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu',
+                         input_shape=input_shape))
+        model.add(MaxPooling1D(pool_size=2))
+
+        model.add(Conv1D(128, kernel_size=3, strides=3, padding='valid', activation='elu'))
+        model.add(MaxPooling1D(pool_size=2))
+
+        # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
+        model.add(Dropout(rate=0.2))
+
+        model.add(Flatten())
+
+        # Full connected layers, classic multilayer perceptron (MLP)
+        for layers in range(n_layers):
+            model.add(Dense(n_units, activation="elu"))
+        model.add(Dropout(0.2))
+        model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        """
+        Optimizers: Adam, RMSProp, SGD 
+        """
+
+        return model
 
 def DeepGS(input_shape,n_layers=0,n_units=32,optimizer="SGD",lr=0.01):
     print("If need to specify MLP parameters for DeepGS model, modify MODEL file instead.")
@@ -141,6 +213,47 @@ def TDCNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     return model
 
+
+class MLP():
+
+    def __init__(self):
+        self.name = "MLP"
+
+    def data_transform(self, geno, pheno, anno=None):
+        print("USE Numeric CNN MODEL as training method")
+        geno = decoding(geno)
+        geno = np.expand_dims(geno, axis=2)
+        print("The transformed SNP shape:", geno.shape)
+
+        return geno
+
+    def model(self, n_layers=8, n_units=16, input_shape=None, optimizer="rmsprop", lr=0.00001):
+        model = Sequential()
+        model.add(Dense(n_units, activation="elu", input_shape=input_shape))
+        for layers in range(n_layers - 1):
+            model.add(Dense(n_units, activation="elu"))
+        # model.add(Dropout(0.2))
+
+        model.add(Dense(1, activation="linear"))
+
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        return model
+
+
 def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
     model = Sequential()
     model.add(Dense(n_units, activation="elu",input_shape=input_shape))
@@ -167,8 +280,6 @@ def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
 
     return model
 
-class BCNN():
-    pass
 
 
 def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
@@ -190,7 +301,7 @@ def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
 
 MODELS = {
     "MLP": MLP,
-    "Numeric CNN": CNN,
+    "Numeric CNN": NCNN,
     "Binary CNN": BCNN,
     "TDCNN": TDCNN,
     "DeepGS": DeepGS
