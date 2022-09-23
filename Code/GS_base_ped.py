@@ -114,34 +114,20 @@ class ML_composer:
 
         return
 
+    def init_model(self):
+
     def prepare_training(self,train_index:list,valid_index:list):
 
-        train_mask = np.where(self._raw_data["INFO"].iloc[:,-1] in train_index)
-        valid_mask = np.where(self._raw_data["INFO"].iloc[:,-1] in valid_index)
+        train_mask = np.where(self._raw_data["INFO"].iloc[:, -1] in train_index)
+        valid_mask = np.where(self._raw_data["INFO"].iloc[:, -1] in valid_index)
 
-        self.train_data = self._raw_data["GENO"].iloc[train_mask,6:]
+        self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:]
         self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:]
 
-        if self.config["BASIC"]["sub_selection"] == '1' and factor_value != 'all':
-            print("Creating subsets by non_genetic_factors..")
-            print("The reference factor index: {} in {}".format(factor_value,other_factor))
-            in_train = self.train_data.dropna(subset=[trait], axis=0).query('Region == @factor_value').drop(
-                self.keeping,axis=1
-            )
-            in_valid = self.valid_data.dropna(subset=[trait], axis=0).query('Region == @factor_value').drop(
-                self.keeping,axis=1
-            )
-
-        else:
-            print("Use the default setting, add non-genetic factors as attributes")
-            in_train = self.train_data.dropna(subset=[trait], axis=0)
-            in_valid = self.valid_data.dropna(subset=[trait], axis=0)
+        self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.pheno+1]
+        self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.pheno + 1]
 
         label_encoder = LabelEncoder()
-        train_targets = in_train[trait].values  # Get the target values from train set
-        valid_targets = in_valid[trait].values
-        train_features = in_train.drop(self.traits, axis=1)
-        valid_features = in_valid.drop(self.traits, axis=1)
 
         print("currently the training method is: ", self.method)
         if self.method in CNNs:
