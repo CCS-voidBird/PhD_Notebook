@@ -41,7 +41,7 @@ def get_args():
     req_grp.add_argument('-g', '--ped', type=str, help="PED-like file name", required=True)
     req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
     req_grp.add_argument('-index', '--index', type=str, help="File of train/validate reference", required=True)
-    req_grp.add_argument('-m', '--model', type=str, help="Select training model.", default="CNN")
+    req_grp.add_argument('-m', '--model', type=str, help="Select training model.", required=True)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
@@ -69,10 +69,15 @@ def plot_loss_history(h, title):
 class ML_composer:
 
     def __init__(self,silence=0):
-        self._raw_data = {"GENO":pd.DataFrame(),"PHENO":pd.DataFrame(),"INDEX":pd.DataFrame()}
+        self._raw_data = {"GENO":pd.DataFrame(),"PHENO":pd.DataFrame(),"INDEX":pd.DataFrame(),"ANNOTATION":pd.DataFrame()}
         self.train_data = None
+        self.train_info = pd.DataFrame()
+        self.train_pheno = pd.DataFrame()
         self.valid_data = None
+        self.valid_info = pd.DataFrame()
+        self.valid_pheno = pd.DataFrame()
         self._model = {"INIT_MODEL":None,"TRAINED_MODEL":None}
+        self._info = {}
         self.method = None
         self.modelling = None
         self.silence_mode = silence
@@ -84,56 +89,38 @@ class ML_composer:
     def get_data(self,configer,args):
         self.args = args
         self.config = configer
-        self.method = configer["BASIC"]["method"]
-        self.silence_mode = configer["BASIC"]["silence"]
-        self.modelling = METHODS[self.method]
-        self.traits = configer["BASIC"]["traits"].split("#")
-        self.keeping = configer["BASIC"]["non_genetic_factors"].split("#")
-        if "None" in self.keeping: self.keeping = []
-        #train_year = get_years(configer["BASIC"]["train"])
-        #valid_year = get_years(configer["BASIC"]["valid"])
-
-        print("Getting data from config file path..")
 
         self._raw_data["GENO"] = pd.read_table(args.ped,sep="\t",header=None)
         self._raw_data["PHENO"] = pd.read_table(args.pheno, sep="\t", header=None)
         self._raw_data["INDEX"] = pd.read_table(args.index,sep="\t", header=None)
-        train_sample = self._raw_data["INDEX"].query(
-            "index == 1"
-        ).id.unique()
+        index_col = self._raw_data["INDEX"].shape[1]-1
+        self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"][index_col].unique())
 
-        valid_sample = self._raw_data["INDEX"].query(
-            "index is not 1"
-        ).id.unique()
+        print(self._raw_data["INDEX"][index_col].value_counts().sort_values())
 
-        print("Train clones: {}, valid clones: {}".format(len(train_sample),len(valid_sample)))
-
-        self._raw_data["INFO"] = self._raw_data["GENO"].iloc[:,0:6]
-
-
-        remove_list = []
-        print("Strict training model detected, detecting overlapping in training data..")
-        remove_list = np.intersect1d(train_sample,valid_sample)
-        #train_sample.query("id not in @remove_list")
-        #valid_sample.query("id not in @remove_list")
-        print("Finished")
+        self._raw_data["INFO"] = self._raw_data["GENO"].iloc[:,0:6]  #Further using fam file instead.
 
         print("Get genotype shape:",self._raw_data["GENO"].iloc[:,6:].shape)
         print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
 
 
-        self.train_data = self._raw_data["GENO"].query('X.1 in @train_sample').query('X.1 not in @remove_list').iloc[:,6:]
-        self.valid_data = self._raw_data["GENO"].query('X.1 in @valid_sample').iloc[:,6:]
-        print(self.train_data.shape)
-        print(self.valid_data.shape)
+        #self.train_data = self._raw_data["GENO"].query('X.1 in @train_sample').query('X.1 not in @remove_list').iloc[:,6:]
+        #self.valid_data = self._raw_data["GENO"].query('X.1 in @valid_sample').iloc[:,6:]
+        #print(self.train_data.shape)
+        #print(self.valid_data.shape)
 
         #self.train_data = filtered_data.query('Series in @train_year').query('Sample not in @remove_list').drop(["Series","Sample"], axis=1)
         #self.valid_data = filtered_data.query('Series in @valid_year').drop(["Series","Sample"], axis=1)
 
-
         return
 
-    def prepare_training(self,trait,other_factor = 'Region',factor_value = 'all',test=True):
+    def prepare_training(self,train_index:list,valid_index:list):
+
+        train_mask = np.where(self._raw_data["INFO"].iloc[:,-1] in train_index)
+        valid_mask = np.where(self._raw_data["INFO"].iloc[:,-1] in valid_index)
+
+        self.train_data = self._raw_data["GENO"].iloc[train_mask,6:]
+        self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:]
 
         if self.config["BASIC"]["sub_selection"] == '1' and factor_value != 'all':
             print("Creating subsets by non_genetic_factors..")
