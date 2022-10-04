@@ -168,52 +168,6 @@ def DeepGS(input_shape,n_layers=0,n_units=32,optimizer="SGD",lr=0.01):
 
     return model
 
-
-def TDCNN(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
-    n_factors = input_shape[1]
-    lr = float(lr)
-    model = Sequential()
-    """
-    Convolutional Layers
-    """
-    model.add(Conv2D(64,kernel_size=(5,n_factors),strides=(3,1),padding='valid',activation='elu',input_shape=input_shape))
-    model.add(MaxPooling2D(pool_size=(2,1)))
-
-    model.add(Conv2D(128, kernel_size=(3,1), strides=(3,1), padding='valid',activation='elu'))
-    model.add(MaxPooling2D(pool_size=(2,1)))
-
-    # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
-    model.add(Dropout(rate = 0.2))
-
-    model.add(Flatten())
-
-    # Full connected layers, classic multilayer perceptron (MLP)
-    for layers in range(n_layers):
-        model.add(Dense(n_units,activation="elu"))
-    model.add(Dropout(0.2))
-    model.add(Dense(1, activation="linear")) # The output layer uses a linear function to predict traits.
-    try:
-        adm = keras.optimizers.Adam(learning_rate=lr)
-        rms = keras.optimizers.RMSprop(learning_rate=lr)
-        sgd = keras.optimizers.SGD(learning_rate=lr)
-    except:
-        adm = keras.optimizers.Adam(lr=lr)
-        rms = keras.optimizers.RMSprop(lr=lr)
-        sgd = keras.optimizers.SGD(lr=lr)
-
-    optimizers = {"rmsprop":rms,
-                 "Adam": adm,
-                 "SGD": sgd}
-
-    model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
-
-    """
-    Optimizers: Adam, RMSProp, SGD 
-    """
-
-    return model
-
-
 class MLP():
 
     def __init__(self):
@@ -253,35 +207,6 @@ class MLP():
 
         return model
 
-
-def MLP(n_layers,n_units,input_shape,optimizer="rmsprop",lr=0.00001):
-    model = Sequential()
-    model.add(Dense(n_units, activation="elu",input_shape=input_shape))
-    for layers in range(n_layers-1):
-        model.add(Dense(n_units, activation="elu"))
-    #model.add(Dropout(0.2))
-
-    model.add(Dense(1, activation="linear"))
-
-    try:
-        adm = keras.optimizers.Adam(learning_rate=lr)
-        rms = keras.optimizers.RMSprop(learning_rate=lr)
-        sgd = keras.optimizers.SGD(learning_rate=lr)
-    except:
-        adm = keras.optimizers.Adam(lr=lr)
-        rms = keras.optimizers.RMSprop(lr=lr)
-        sgd = keras.optimizers.SGD(lr=lr)
-
-    optimizers = {"rmsprop":rms,
-                 "Adam": adm,
-                 "SGD": sgd}
-
-    model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
-
-    return model
-
-
-
 def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
     if specific == True:
         model = RandomForestRegressor(n_jobs=-1, random_state=0, criterion="mse", oob_score=False, verbose=1,max_features=n_features,
@@ -303,19 +228,18 @@ MODELS = {
     "MLP": MLP,
     "Numeric CNN": NCNN,
     "Binary CNN": BCNN,
-    "TDCNN": TDCNN,
     "DeepGS": DeepGS
 }
 
 METHODS = {
     "MLP": MLP,
-    "CNN": CNN,
-    "TDCNN": TDCNN,
+    "NCNN": NCNN,
+    "BCNN": BCNN,
     "DeepGS": DeepGS
 }
 
 def main():
-    model = CNN(n_layers=3,n_units=8,input_shape=[26084,4])
+    model = NCNN(n_layers=3,n_units=8,input_shape=[26084,4])
     tf.keras.utils.plot_model(model, to_file="./print_model.png", show_shapes=True)
 
 if __name__ == "__main__":

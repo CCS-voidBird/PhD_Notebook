@@ -9,7 +9,6 @@ try:
 except:
     print("This a CPU-only platform.")
 import pickle
-
 import numpy as np
 from sklearn.model_selection import train_test_split
 import argparse
@@ -19,7 +18,8 @@ import platform
 from datetime import datetime
 from sklearn.metrics import mean_squared_error
 import configparser
-
+import gc
+import os
 ##############################################################
 ##########Training requirement################################
 ##Training by para-sets -- convolutional act function + full connected act function + optimizer + learningRate###
@@ -38,11 +38,12 @@ VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
 def get_args():
     parser = argparse.ArgumentParser()
     req_grp = parser.add_argument_group(title='Required')
-    req_grp.add_argument('-g', '--ped', type=str, help="PED-like file name", required=True)
+    req_grp.add_argument('--ped', type=str, help="PED-like file name", required=True)
     req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
     req_grp.add_argument('-index', '--index', type=str, help="File of train/validate reference", required=True)
-    req_grp.add_argument('-m', '--model', type=str, help="Select training model.", required=True)
-    req_grp.add_argument('-l', '--load', type=str, help="load model from file.", default=None)
+    req_grp.add_argument('--model', type=str, help="Select training model.", required=True)
+    req_grp.add_argument('--load', type=str, help="load model from file.", default=None)
+    req_grp.add_argument('--trait-name', type=str, help="load model from file.", default=None)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
@@ -52,8 +53,8 @@ def get_args():
                          default=True)
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=False)
-    req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ~/MLP_parameters.ini',
-                         default="~/MLP_parameters.ini",required=True)
+    req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ./ML_composer.ini',
+                         default="./ML_composer.ini",required=True)
     args = parser.parse_args()
 
     return args
@@ -86,11 +87,12 @@ class ML_composer:
         self.save = True
         self.plot = False
         self.args = None
+        self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
+                          "Valid_Accuracy", "MSE", "Runtime"])
 
     def get_data(self,configer,args):
         self.args = args
         self.config = configer
-
         self._raw_data["GENO"] = pd.read_table(args.ped,sep="\t",header=None)
         self._raw_data["PHENO"] = pd.read_table(args.pheno, sep="\t", header=None)
         self._raw_data["INDEX"] = pd.read_table(args.index,sep="\t", header=None)
@@ -126,6 +128,15 @@ class ML_composer:
         # get data requirements - dimension, annotations, etc
         return
 
+    def prepare_cross_validate(self):
+        index_ref = []
+        for idx in self._info["CROSS_VALIDATE"]:
+            train_index = [x for x in self._info["CROSS_VALIDATE"] if x is not idx]
+            valid_index = [idx]
+            index_ref.append((train_index,valid_index))
+
+        return index_ref
+
     def prepare_training(self,train_index:list,valid_index:list):
 
         train_mask = np.where(self._raw_data["INFO"].iloc[:, -1] in train_index)
@@ -137,7 +148,7 @@ class ML_composer:
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.pheno + 1]
         self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.pheno + 1]
 
-        label_encoder = LabelEncoder()
+        #label_encoder = LabelEncoder()
 
         self.prepare_model()
         self.train_data = self._model["INIT_MODEL"].data_transform(self.train_data) ## The raw data to transform include geno, pheno, annotations
@@ -150,18 +161,92 @@ class ML_composer:
 
         return
 
-    def compose(self):
+    def train(self,features_train, features_test, target_train, target_test):
 
+        n_features = self.train_data.shape[1:]
+        self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(data_shape=n_features,
+                                                                           lr=float(self.args.lr))
+
+        callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=PATIENCE)
+
+        try:
+            print(self._model["TRAINED_MODEL"].summary())
+        except:
+            print("It is a sklean-Random-forest model.")
+
+        startTime = datetime.now()
+
+        history = self._model["TRAINED_MODEL"].fit(
+            features_train, target_train,
+            epochs=int(self.config["BASIC"]["Epoch"]),
+            validation_data=(features_test, target_test), verbose=int(self.silence_mode),
+            callbacks=[callback])
+
+        if self.plot is True:
+            plot_loss_history(history, "trait")
+
+        # let's just print the final loss
+        print(' - train loss     : ' + str(history.history['loss'][-1]))
+        print(' - validation loss: ' + str(history.history['val_loss'][-1]))
+        print(' - loss decrease rate in last 5 epochs: ' + str(
+            np.mean(np.gradient(history.history['val_loss'][-5:]))))
+
+        test_length = features_test.shape[0]
+        y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_test), (test_length,))
+        test_accuracy = np.corrcoef(y_pred, target_test)[0, 1]
+        print("Train End.")
+        print("In-year accuracy (measured as Pearson's correlation) is: ", test_accuracy)
+        endTime = datetime.now()
+        runtime = endTime - startTime
+        print("Training Runtime: ", runtime.seconds / 60, " min")
+
+        return history,test_accuracy,runtime
+
+    def compose(self,train_index:list,valid_index:list):
+
+        features_train, features_test, target_train, target_test = train_test_split(self.train_data, self.train_pheno,
+                                                                                    test_size=0.2)
         print("Train status:")
         print("Epochs: ",self.args.epoch)
         print("Repeat(Round): ",self.args.round)
 
-        for round in self.args.round:
+        round = 1
+        while round <= self.args.round:
+            history, test_accuracy, runtime = self.train(features_train, features_test, target_train, target_test)
+            valid_accuracy, mse = self.model_validation()
+            self.record = [self.args.trait, train_index, valid_index, self.args.model,
+                               test_accuracy, valid_accuracy, mse, runtime.seconds / 60]
+            check_usage()
+            if self.save == True:
+                self.export_record()
+            self._model["TRAINED_MODEL"] = None
+            gc.collect()
+            round += 1
 
-            n_features = self.train_data.shape[1:]
-            self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(data_shape=n_features)
+        return
 
-        pass
+    def model_validation(self):
+
+        print("Predicting valid set..")
+        val_length = self.valid_pheno.shape[0]
+        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(self.valid_data), (val_length,))
+        print("Testing prediction:")
+        print("Predicted: ", y_pred_valid[:10])
+        print("observed: ", self.valid_pheno[:10])
+        accuracy_valid = np.corrcoef(y_pred_valid, self.valid_pheno)[0, 1]
+        mse = mean_squared_error(y_pred_valid, self.valid_pheno)
+
+        print("Future prediction accuracy (measured as Pearson's correlation) is: ",
+              accuracy_valid)
+        return accuracy_valid,mse
+
+    def export_record(self):
+
+        self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self._model, self.args.trait), sep="\t")
+        print("Result:")
+        print(self.record)
+
+        return
 
 class Model(ML_composer):
 
@@ -180,11 +265,52 @@ class Model(ML_composer):
         self.data_transform = self._init_model.data_transform
         self.modelling = MODELS[self.args.model].model
 
-        pass
+        return
 
     def load_model(self,path):
+
+        self._init_model = MODELS[self.args.model]()
+        self.data_transform = self._init_model.data_transform
+        self.modelling = MODELS[self.args.model].model
+        self.modelling = keras.models.load_model(path)
+
         #self._init_model = load(path)
-        pass
+        return
+
+
+def main():
+    args = get_args()
+    config_path = os.path.abspath(args.config)
+    print("Get config file path from: ", config_path)
+    config = configparser.ConfigParser()
+    if platform.system().lower() == "windows":
+        print(config_path)
+        config.read(config_path)
+    else:
+        config.read(config_path)
+
+    """
+    Create folders from given output path
+    """
+    if args.output[0] == "/":
+        locat = '/' + args.output.strip('/') + '/'
+    else:
+        locat = args.output.strip('/') + '/'
+    if not os.path.exists(locat):
+        os.mkdir(locat)
+
+    composer = ML_composer()
+    composer.get_data(config,args)
+    composer.prepare_model()
+
+    index_ref = composer.prepare_cross_validate()
+    i = 1
+    for train_idx,valid_idx in index_ref:
+        print("Cross-validate: {}".format(i))
+        composer.prepare_training(train_idx,valid_idx)
+        composer.compose(train_idx,valid_idx)
+        i+=1
+
 
 
 
