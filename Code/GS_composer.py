@@ -1,6 +1,6 @@
 
 from Functions import *
-from GSModel import *
+from ClassModel import *
 import pandas as pd
 import matplotlib.pyplot as plt
 try:
@@ -40,10 +40,10 @@ def get_args():
     req_grp = parser.add_argument_group(title='Required')
     req_grp.add_argument('--ped', type=str, help="PED-like file name", required=True)
     req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
-    req_grp.add_argument('-index', '--index', type=str, help="File of train/validate reference", required=True)
+    req_grp.add_argument('-index', '--index', type=str, help="File of train/validate reference", required=None)
     req_grp.add_argument('--model', type=str, help="Select training model.", required=True)
     req_grp.add_argument('--load', type=str, help="load model from file.", default=None)
-    req_grp.add_argument('--trait-name', type=str, help="load model from file.", default=None)
+    req_grp.add_argument('--trait', type=str, help="load model from file.", default=None)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
@@ -78,7 +78,7 @@ class ML_composer:
         self.valid_data = None
         self.valid_info = pd.DataFrame()
         self.valid_pheno = pd.DataFrame()
-        self._model = {"INIT_MODEL":Model(),"TRAINED_MODEL":None}
+        self._model = {"INIT_MODEL":None,"TRAINED_MODEL":None}
         self._info = {}
         self.method = None
         self.modelling = None
@@ -248,12 +248,11 @@ class ML_composer:
 
         return
 
-class Model(ML_composer):
+class Model:
 
-    def __init__(self):
+    def __init__(self,args):
 
-        super().__init__()
-
+        self.args = args
         self._init_model = None
         self._data_requirements = None
         self.modelling = None
@@ -311,6 +310,9 @@ def main():
         composer.compose(train_idx,valid_idx)
         i+=1
 
+# set main
+if __name__ == '__main__':
+    main()
 
 
 
