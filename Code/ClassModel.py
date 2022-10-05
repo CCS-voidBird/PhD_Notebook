@@ -34,7 +34,7 @@ class NCNN():
 
         return geno
 
-    def model(self,n_layers, n_units, input_shape, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,n_layers=4, n_units=8, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
         model = Sequential()
         """

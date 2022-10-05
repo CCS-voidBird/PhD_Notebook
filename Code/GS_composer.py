@@ -40,10 +40,10 @@ def get_args():
     req_grp = parser.add_argument_group(title='Required')
     req_grp.add_argument('--ped', type=str, help="PED-like file name", required=True)
     req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
-    req_grp.add_argument('-index', '--index', type=str, help="File of train/validate reference", required=None)
+    req_grp.add_argument('-index', '--index', type=str, help="File of train/validate reference", required=True)
     req_grp.add_argument('--model', type=str, help="Select training model.", required=True)
     req_grp.add_argument('--load', type=str, help="load model from file.", default=None)
-    req_grp.add_argument('--trait', type=str, help="load model from file.", default=None)
+    req_grp.add_argument('--trait-name', type=str, help="load model from file.", default=None)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
@@ -93,13 +93,13 @@ class ML_composer:
     def get_data(self,configer,args):
         self.args = args
         self.config = configer
-        self._raw_data["GENO"] = pd.read_table(args.ped,sep="\t",header=None)
-        self._raw_data["PHENO"] = pd.read_table(args.pheno, sep="\t", header=None)
-        self._raw_data["INDEX"] = pd.read_table(args.index,sep="\t", header=None)
-        index_col = self._raw_data["INDEX"].shape[1]-1
-        self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"][index_col].unique())
+        self._model = {"INIT_MODEL":Model(self.args),"TRAINED_MODEL":Model(self.args)}
+        self._raw_data["GENO"] = pd.read_table(args.ped+".ped",sep="\t",header=None)
+        self._raw_data["PHENO"] = pd.read_table(args.ped+".pheno", sep="\t", header=None)
+        self._raw_data["INDEX"] = pd.read_table(args.ped+".pheno",sep="\t", header=None)
+        self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique())
 
-        print(self._raw_data["INDEX"][index_col].value_counts().sort_values())
+        print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
         self._raw_data["INFO"] = self._raw_data["GENO"].iloc[:,0:6]  #Further using fam file instead.
 
@@ -138,10 +138,13 @@ class ML_composer:
         return index_ref
 
     def prepare_training(self,train_index:list,valid_index:list):
-
-        train_mask = np.where(self._raw_data["INFO"].iloc[:, -1] in train_index)
-        valid_mask = np.where(self._raw_data["INFO"].iloc[:, -1] in valid_index)
-
+        
+        removal = np.where(self._raw_data["PHENO"].iloc[:, int(self.args.pheno)+1].isin([-9,None,"NA"]))[0].tolist()
+        print("Overall population: {}".format(len(self._raw_data["INDEX"].index)))
+        print("{} individuals need to be removed due to the miss phenotype".format(len(removal)))
+        train_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(train_index))[0].tolist() if x not in removal]
+        valid_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(valid_index))[0].tolist() if x not in removal]
+        print("Filtered population: {}".format(len(train_mask)+len(valid_mask)))
         self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:]
         self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:]
 
@@ -151,8 +154,8 @@ class ML_composer:
         #label_encoder = LabelEncoder()
 
         self.prepare_model()
-        self.train_data = self._model["INIT_MODEL"].data_transform(self.train_data) ## The raw data to transform include geno, pheno, annotations
-        self.valid_data = self._model["INIT_MODEL"].data_transform(self.valid_data)
+        self.train_data = self._model["INIT_MODEL"].data_transform(self.train_data,None) ## The raw data to transform include geno, pheno, annotations
+        self.valid_data = self._model["INIT_MODEL"].data_transform(self.valid_data,None)
 
         self.train_data = np.asarray(self.train_data).astype(np.float32)
         self.train_pheno = np.asarray(self.train_pheno).astype(np.float32)
@@ -164,8 +167,8 @@ class ML_composer:
     def train(self,features_train, features_test, target_train, target_test):
 
         n_features = self.train_data.shape[1:]
-        self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(data_shape=n_features,
-                                                                           lr=float(self.args.lr))
+        self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
+            input_shape = n_features,lr=float(self.args.lr))
 
         callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=PATIENCE)
 
@@ -178,7 +181,7 @@ class ML_composer:
 
         history = self._model["TRAINED_MODEL"].fit(
             features_train, target_train,
-            epochs=int(self.config["BASIC"]["Epoch"]),
+            epochs=int(self.args.epoch),
             validation_data=(features_test, target_test), verbose=int(self.silence_mode),
             callbacks=[callback])
 
@@ -214,15 +217,15 @@ class ML_composer:
         while round <= self.args.round:
             history, test_accuracy, runtime = self.train(features_train, features_test, target_train, target_test)
             valid_accuracy, mse = self.model_validation()
-            self.record = [self.args.trait, train_index, valid_index, self.args.model,
+            self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.args.model,
                                test_accuracy, valid_accuracy, mse, runtime.seconds / 60]
             check_usage()
-            if self.save == True:
-                self.export_record()
             self._model["TRAINED_MODEL"] = None
+            keras.backend.clear_session()
             gc.collect()
             round += 1
-
+        if self.save == True:
+            self.export_record()
         return
 
     def model_validation(self):
@@ -242,7 +245,7 @@ class ML_composer:
 
     def export_record(self):
 
-        self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self._model, self.args.trait), sep="\t")
+        self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self.args.model, self.args.trait), sep="\t")
         print("Result:")
         print(self.record)
 
@@ -262,7 +265,7 @@ class Model:
 
         self._init_model = MODELS[self.args.model]()
         self.data_transform = self._init_model.data_transform
-        self.modelling = MODELS[self.args.model].model
+        self.modelling = self._init_model.model
 
         return
 
@@ -270,7 +273,7 @@ class Model:
 
         self._init_model = MODELS[self.args.model]()
         self.data_transform = self._init_model.data_transform
-        self.modelling = MODELS[self.args.model].model
+        self.modelling = self._init_model.model
         self.modelling = keras.models.load_model(path)
 
         #self._init_model = load(path)
@@ -310,9 +313,6 @@ def main():
         composer.compose(train_idx,valid_idx)
         i+=1
 
-# set main
-if __name__ == '__main__':
-    main()
 
 
 
