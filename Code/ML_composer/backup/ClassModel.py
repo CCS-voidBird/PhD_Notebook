@@ -24,10 +24,7 @@ import numpy as np
 import configparser
 from Functions import *
 
-
-
 ####################
-"""
 class TransformerBlock(layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
         super(TransformerBlock, self).__init__()
@@ -62,16 +59,15 @@ class TokenAndPositionEmbedding(layers.Layer):
         return x + positions
 
 ####################
-"""
 
-class TNN():
+class TCNN():
     
     #############################
     #Need work!!!!!!!!!!#
     ###########################
 
     def __init__(self):
-        self.name = "Test model"
+        self.name = "Numeric CNN"
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
         print("USE Numeric CNN MODEL as training method")
@@ -82,7 +78,7 @@ class TNN():
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,n_layers=4, n_units=8, optimizer="rmsprop", lr=0.00001):
         embed_dim = 32  # Embedding size for each token
         num_heads = 2  # Number of attention heads
         ff_dim = 32  # Hidden layer size in feed forward network inside transformer
@@ -90,63 +86,10 @@ class TNN():
         vocab_size = 26086  # Only consider the top 20k words
         maxlen = 200
         model = Sequential()
-        # Add an Embedding layer expecting input vocab of size sequence length, and
-        # output embedding dimension of size 64.
-        model.add(layers.Embedding(input_dim=input_shape[1], output_dim=64))
-
-        # Add a LSTM layer with 128 internal units.
-        model.add(layers.LSTM(128))
-
-        # Add a Dense layer with 10 units.
-        model.add(layers.Dense(10))
-
-        model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
-        try:
-            adm = keras.optimizers.Adam(learning_rate=lr)
-            rms = keras.optimizers.RMSprop(learning_rate=lr)
-            sgd = keras.optimizers.SGD(learning_rate=lr)
-        except:
-            adm = keras.optimizers.Adam(lr=lr)
-            rms = keras.optimizers.RMSprop(lr=lr)
-            sgd = keras.optimizers.SGD(lr=lr)
-
-        optimizers = {"rmsprop": rms,
-                      "Adam": adm,
-                      "SGD": sgd}
-
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
-
-        """
-        Optimizers: Adam, RMSProp, SGD 
-        """
-
-        return model
-
-class DCNN():
-    """
-    double CNN, esitmate additive SNP alleles and heterozygous SNP alleles
-    """
-    def __init__(self):
-        self.name = "Duo CNN"
-
-    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE Duo (Double) CNN MODEL as training method")
-        geno1 = geno
-        geno2 = geno.mask(geno != 1,0)
-        #overlap geno1 and geno2 to one matrix
-        geno = np.stack((geno1,geno2),axis=2)
-        print("The transformed SNP shape:", geno.shape)
-        if pheno_standard is True:
-            pheno = stats.zscore(pheno)
-        return geno,pheno
-
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
-        lr = float(lr)
-        model = Sequential()
         """
         Convolutional Layers
         """
-        model.add(Conv2D(64, kernel_size=[5,2], strides=3, padding='valid', activation='elu',
+        model.add(Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu',
                          input_shape=input_shape))
         model.add(MaxPooling1D(pool_size=2))
 
@@ -157,10 +100,15 @@ class DCNN():
         model.add(Dropout(rate=0.2))
 
         model.add(Flatten())
+        #embedding_layer = TokenAndPositionEmbedding(maxlen, vocab_size, embed_dim)
+        #model.add(embedding_layer())
+        #transformer_block = TransformerBlock(embed_dim, num_heads, ff_dim)
+        #model.add(transformer_block())
+        model.add(keras_nlp.layers.TransformerEncoder(embed_dim, num_heads))
 
         # Full connected layers, classic multilayer perceptron (MLP)
-        for layers in range(args.depth):
-            model.add(Dense(args.width, activation="elu"))
+        for layers in range(n_layers):
+            model.add(Dense(n_units, activation="elu"))
         model.add(Dropout(0.2))
         model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
         try:
@@ -184,7 +132,6 @@ class DCNN():
 
         return model
 
-
 class NCNN():
 
     def __init__(self):
@@ -199,7 +146,7 @@ class NCNN():
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,n_layers=4, n_units=8, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
         model = Sequential()
         """
@@ -218,8 +165,8 @@ class NCNN():
         model.add(Flatten())
 
         # Full connected layers, classic multilayer perceptron (MLP)
-        for layers in range(args.depth):
-            model.add(Dense(args.width, activation="elu"))
+        for layers in range(n_layers):
+            model.add(Dense(n_units, activation="elu"))
         model.add(Dropout(0.2))
         model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
         try:
@@ -261,7 +208,7 @@ class BCNN():
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, n_layers, n_units, input_shape, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
         model = Sequential()
         """
@@ -280,8 +227,8 @@ class BCNN():
         model.add(Flatten())
 
         # Full connected layers, classic multilayer perceptron (MLP)
-        for layers in range(args.depth):
-            model.add(Dense(args.width, activation="elu"))
+        for layers in range(n_layers):
+            model.add(Dense(n_units, activation="elu"))
         model.add(Dropout(0.2))
         model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
         try:
@@ -350,11 +297,11 @@ class MLP():
 
         return geno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, n_layers=8, n_units=16, input_shape=None, optimizer="rmsprop", lr=0.00001):
         model = Sequential()
-        model.add(Dense(args.width, activation="elu", input_shape=input_shape))
-        for layers in range(args.depth - 1):
-            model.add(Dense(args.width, activation="elu"))
+        model.add(Dense(n_units, activation="elu", input_shape=input_shape))
+        for layers in range(n_layers - 1):
+            model.add(Dense(n_units, activation="elu"))
         # model.add(Dropout(0.2))
 
         model.add(Dense(1, activation="linear"))
@@ -397,8 +344,7 @@ MODELS = {
     "MLP": MLP,
     "Numeric CNN": NCNN,
     "Binary CNN": BCNN,
-    "Transformer CNN":TNN,
-    "Duo CNN": DCNN,
+    "Transformer CNN":TCNN,
     "DeepGS": DeepGS
 }
 
@@ -410,7 +356,7 @@ METHODS = {
 }
 
 def main():
-    print("Main function from ClassModel.py")
+    model = NCNN(n_layers=3,n_units=8,input_shape=[26084,4])
     #tf.keras.utils.plot_model(model, to_file="./print_model.png", show_shapes=True)
 
 if __name__ == "__main__":

@@ -145,18 +145,15 @@ def check_usage():
     print("Ratio of used memory: %.4f GB" % (info.percent))
     print("Number of CPU node: ",psutil.cpu_count())
 
-
 def decoding(data):
     """
     :param data: genotyping data (AA, AT, TT)
     :return: numeric genotype data
     """
-    try:
-        snps = {'TT':0,'AT':1,'AA':2,'--':0.01}
-        data.replace(snps,inplace=True)
-        data.fillna("0.01",inplace=True)
-    except:
-        return data
+    snps = {'TT':0,'AT':1,'AA':2,'--':0.01}
+    data.replace(snps,inplace=True)
+    data.fillna("0.01",inplace=True)
+
     return data
 
 def load_data(args):

@@ -40,16 +40,13 @@ def get_args():
     req_grp = parser.add_argument_group(title='Required')
     req_grp.add_argument('--ped', type=str, help="PED-like file name", required=True)
     req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
-    req_grp.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns (start with 1).", default=1)
-    req_grp.add_argument('-index', '--index', type=str, help="index file", default = None)
+    req_grp.add_argument('-index', '--index', type=str, help="File of train/validate reference", required=True)
     req_grp.add_argument('--model', type=str, help="Select training model.", required=True)
     req_grp.add_argument('--load', type=str, help="load model from file.", default=None)
-    req_grp.add_argument('--trait', type=str, help="give trait a name.", default=None)
+    req_grp.add_argument('--trait-name', type=str, help="load model from file.", default=None)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
-    req_grp.add_argument('-r', '--round', type=int, help="training round.", default=10)
-    req_grp.add_argument('-lr', '--lr', type=int, help="Learning rate.", default=0.0001)
+    req_grp.add_argument('-r', '--round', type=int, help="training round.", default=20)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
-    req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     req_grp.add_argument('-plot', '--plot', type=bool, help="show plot?",
                          default=False)
     req_grp.add_argument('-sli', '--silence', type=bool, help="silent mode",
@@ -57,12 +54,7 @@ def get_args():
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=False)
     req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ./ML_composer.ini',
-                         default="./ML_composer.ini")
-
-    ### Neural model default attributes##
-    req_grp.add_argument('--width', type=int, help="Hidden layer width (units).", default=8)
-    req_grp.add_argument('--depth', type=int, help="Hidden layer depth.", default=4)
-
+                         default="./ML_composer.ini",required=True)
     args = parser.parse_args()
 
     return args
@@ -86,7 +78,7 @@ class ML_composer:
         self.valid_data = None
         self.valid_info = pd.DataFrame()
         self.valid_pheno = pd.DataFrame()
-        self._model = {"INIT_MODEL":Model(args=None),"TRAINED_MODEL":Model(args=None)}
+        self._model = {"INIT_MODEL":None,"TRAINED_MODEL":None}
         self._info = {}
         self.method = None
         self.modelling = None
@@ -104,8 +96,8 @@ class ML_composer:
         self.config = configer
         self._model = {"INIT_MODEL":Model(self.args),"TRAINED_MODEL":Model(self.args)}
         self._raw_data["GENO"] = pd.read_table(args.ped+".ped",sep="\t",header=None)
-        self._raw_data["PHENO"] = pd.read_table(args.pheno, sep="\t", header=None)
-        self._raw_data["INDEX"] = pd.read_table(args.index,sep="\t", header=None)
+        self._raw_data["PHENO"] = pd.read_table(args.ped+".pheno", sep="\t", header=None)
+        self._raw_data["INDEX"] = pd.read_table(args.ped+".pheno",sep="\t", header=None)
         self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique())
 
         print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
@@ -133,9 +125,6 @@ class ML_composer:
             self._model["INIT_MODEL"].load_model(self.args.load)
         else:
             self._model["INIT_MODEL"].init_model()
-        # save model summary to a txt file under the output directory
-        with open(os.path.abspath(self.args.output) + "/model_summary.txt", "w") as fh:
-            self._model["INIT_MODEL"].modelling.summary(print_fn=lambda x: fh.write(x + "\n"))
 
         # get data requirements - dimension, annotations, etc
         return
@@ -151,7 +140,7 @@ class ML_composer:
 
     def prepare_training(self,train_index:list,valid_index:list):
         
-        removal = np.where(self._raw_data["PHENO"].iloc[:, int(self.args.mpheno)+1].isin([-9,None,"NA",np.nan]))[0].tolist()
+        removal = np.where(self._raw_data["PHENO"].iloc[:, int(self.args.pheno)+1].isin([-9,None,"NA"]))[0].tolist()
         print("Overall population: {}".format(len(self._raw_data["INDEX"].index)))
         print("{} individuals need to be removed due to the miss phenotype".format(len(removal)))
         train_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(train_index))[0].tolist() if x not in removal]
@@ -160,8 +149,8 @@ class ML_composer:
         self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:]
         self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:]
 
-        self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
-        self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
+        self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.pheno + 1]
+        self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.pheno + 1]
 
         #label_encoder = LabelEncoder()
 
@@ -180,7 +169,7 @@ class ML_composer:
 
         n_features = self.train_data.shape[1:]
         self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
-            input_shape = n_features,args = self.args, lr=float(self.args.lr))
+            input_shape = n_features,lr=float(self.args.lr))
 
         callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=PATIENCE)
 
@@ -292,11 +281,6 @@ class Model:
         return
 
 
-def get_model_summary(model: tf.keras.Model) -> str:
-    string_list = []
-    model.summary(line_length=80, print_fn=lambda x: string_list.append(x))
-    return "\n".join(string_list)
-
 def main():
     args = get_args()
     config_path = os.path.abspath(args.config)
@@ -318,14 +302,9 @@ def main():
     if not os.path.exists(locat):
         os.mkdir(locat)
 
-    ##write args to a txt file in the locat
-    with open(locat + 'args.txt', 'w') as f:
-        f.write(str(args))
-
     composer = ML_composer()
     composer.get_data(config,args)
     composer.prepare_model()
-
 
     index_ref = composer.prepare_cross_validate()
     i = 1
@@ -335,8 +314,7 @@ def main():
         composer.compose(train_idx,valid_idx)
         i+=1
 
-if __name__ == "__main__":
-    main()
+
 
 
 
