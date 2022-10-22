@@ -153,9 +153,12 @@ def decoding(data):
     """
     try:
         snps = {'TT':0,'AT':1,'AA':2,'--':0.01}
+        nas = {np.nan : 0.01}
+        data.replace(nas, inplace=True)
+        data.fillna("0.01", inplace=True)
         data.replace(snps,inplace=True)
-        data.fillna("0.01",inplace=True)
     except:
+        print("All the SNPs are already decoded, imputing missing SNPs with 0.01")
         return data
     return data
 
