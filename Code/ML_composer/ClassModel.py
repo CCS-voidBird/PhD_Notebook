@@ -12,6 +12,7 @@ except:
         from tensorflow import keras
         from tensorflow.keras import layers
         from tensorflow.keras.models import Sequential
+        from tensorflow.keras.utils import to_categorical
         from tensorflow.keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D, Dropout
         import tensorflow as tf
         print("Use tensorflow backend keras module")
@@ -190,6 +191,10 @@ class NCNN():
     def __init__(self):
         self.name = "Numeric CNN"
 
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
         print("USE Numeric CNN MODEL as training method")
         geno = decoding(geno)
@@ -250,6 +255,10 @@ class BCNN():
 
     def __init__(self):
         self.name = "Binary CNN"
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
 
     def data_transform(self, geno, pheno, anno=None,pheno_standard = False):
         print("USE Binary CNN MODEL as training method")
@@ -376,6 +385,18 @@ class MLP():
 
         return model
 
+class NN():
+
+    def __init__(self):
+        self.name = "NN"
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+    def model(self):
+        pass
+
 def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
     if specific == True:
         model = RandomForestRegressor(n_jobs=-1, random_state=0, criterion="mse", oob_score=False, verbose=1,max_features=n_features,
@@ -392,6 +413,8 @@ def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
                                           n_estimators=2000)
 
         return model
+
+
 
 MODELS = {
     "MLP": MLP,

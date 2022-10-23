@@ -68,12 +68,20 @@ def get_args():
     return args
 
 
-def plot_loss_history(h, title):
-    plt.plot(h.history['loss'], label = "Train loss")
-    plt.plot(h.history['val_loss'], label = "Validation loss")
+def plot_loss_history(h, title,plot_name=None,checkpoint=0):
+    print("Plotting loss history...")
+    plt.plot(h.history['loss'], label = "Train loss", color = "blue")
+    plt.plot(h.history['val_loss'], label = "Validation loss", color = "red")
     plt.xlabel('Epochs')
     plt.title(title)
-    plt.legend()
+    #print plot name
+    print("Plot name: ", plot_name)
+    if plot_name and checkpoint == 0:
+        plt.legend()
+        plt.savefig(plot_name)
+        plt.close()
+    else:
+        plt.show()
     #plt.show()
 
 class ML_composer:
@@ -98,6 +106,7 @@ class ML_composer:
         self.batchSize = 64
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
                           "Valid_Accuracy", "MSE", "Runtime"])
+        self.model_name = None
 
     def get_data(self,configer,args):
         self.args = args
@@ -114,7 +123,7 @@ class ML_composer:
 
         print("Get genotype shape:",self._raw_data["GENO"].iloc[:,6:].shape)
         print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
-
+        self.plot = self.args.plot
         """
         #self.train_data = self._raw_data["GENO"].query('X.1 in @train_sample').query('X.1 not in @remove_list').iloc[:,6:]
         #self.valid_data = self._raw_data["GENO"].query('X.1 in @valid_sample').iloc[:,6:]
@@ -134,8 +143,7 @@ class ML_composer:
         else:
             self._model["INIT_MODEL"].init_model()
         # save model summary to a txt file under the output directory
-        with open(os.path.abspath(self.args.output) + "/model_summary.txt", "w") as fh:
-            self._model["INIT_MODEL"].modelling.summary(print_fn=lambda x: fh.write(x + "\n"))
+        self.model_name = self._model["INIT_MODEL"].get_model_name()
 
         # get data requirements - dimension, annotations, etc
         return
@@ -176,11 +184,14 @@ class ML_composer:
 
         return
 
-    def train(self,features_train, features_test, target_train, target_test):
+    def train(self,features_train, features_test, target_train, target_test,round=1):
 
         n_features = self.train_data.shape[1:]
         self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
             input_shape = n_features,args = self.args, lr=float(self.args.lr))
+        if round == 1:
+            with open(os.path.abspath(self.args.output) + "/model_summary.txt", "w") as fh:
+                self._model["TRAINED_MODEL"].summary(print_fn=lambda x: fh.write(x + "\n"))
 
         callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=PATIENCE)
 
@@ -197,8 +208,6 @@ class ML_composer:
             validation_data=(features_test, target_test), verbose=int(self.silence_mode),
             callbacks=[callback],batch_size = self.batchSize)
 
-        if self.plot is True:
-            plot_loss_history(history, "trait")
 
         # let's just print the final loss
         print(' - train loss     : ' + str(history.history['loss'][-1]))
@@ -217,7 +226,7 @@ class ML_composer:
 
         return history,test_accuracy,runtime
 
-    def compose(self,train_index:list,valid_index:list):
+    def compose(self,train_index:list,valid_index:list,val=1):
 
         features_train, features_test, target_train, target_test = train_test_split(self.train_data, self.train_pheno,
                                                                                     test_size=0.2)
@@ -227,11 +236,23 @@ class ML_composer:
 
         round = 1
         while round <= self.args.round:
-            history, test_accuracy, runtime = self.train(features_train, features_test, target_train, target_test)
+            history, test_accuracy, runtime = self.train(features_train, features_test, target_train, target_test,round=round)
             valid_accuracy, mse = self.model_validation()
-            self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.args.model,
+            self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
                                test_accuracy, valid_accuracy, mse, runtime.seconds / 60]
             check_usage()
+            if self.plot is True:
+                # create a folder to save the plot, folder name: trait, model
+                print("Plotting the training process...")
+                plot_dir = os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,
+                                                                                  self.args.trait)
+                print(plot_dir)
+                if not os.path.exists(plot_dir):
+                    os.makedirs(plot_dir)
+                # create a file name for the plot: path, model name, trait and round
+                plot_name = plot_dir + "/{}_{}_{}.png".format(self.args.trait, self.model_name, val)
+                # plot_name = os.path.abspath(self.args.output) + "/" + self.args.model + "_" + self.args.trait + "_" + str(round) + ".png"
+                plot_loss_history(history, self.args.trait, plot_name,round-self.args.round)
             self._model["TRAINED_MODEL"] = None
             keras.backend.clear_session()
             gc.collect()
@@ -257,7 +278,7 @@ class ML_composer:
 
     def export_record(self):
 
-        self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self.args.model, self.args.trait), sep="\t")
+        self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self.model_name, self.args.trait), sep="\t")
         print("Result:")
         print(self.record)
 
@@ -268,10 +289,13 @@ class Model:
     def __init__(self,args):
 
         self.args = args
-        self._init_model = None
+        self._init_model = NN()
         self._data_requirements = None
         self.modelling = None
         self.data_transform = None
+
+    def get_model_name(self):
+        return self._init_model.model_name()
 
     def init_model(self):
 
@@ -332,7 +356,7 @@ def main():
     for train_idx,valid_idx in index_ref:
         print("Cross-validate: {}".format(i))
         composer.prepare_training(train_idx,valid_idx)
-        composer.compose(train_idx,valid_idx)
+        composer.compose(train_idx,valid_idx,valid_idx[0])
         i+=1
 
 if __name__ == "__main__":
