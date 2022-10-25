@@ -351,6 +351,10 @@ class MLP():
     def __init__(self):
         self.name = "MLP"
 
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
     def data_transform(self, geno, pheno, anno=None):
         print("USE Numeric CNN MODEL as training method")
         geno = decoding(geno)
