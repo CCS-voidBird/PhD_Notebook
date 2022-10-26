@@ -2,7 +2,7 @@ try:
     import keras
     from keras.models import Sequential
     from tensorflow.keras import layers
-    from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
+    from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D, MaxPooling2D, Conv2D
     from keras.layers import Dropout
     from tensorflow.keras.utils import to_categorical
     import tensorflow as tf
@@ -13,8 +13,9 @@ except:
         from tensorflow.keras import layers
         from tensorflow.keras.models import Sequential
         from tensorflow.keras.utils import to_categorical
-        from tensorflow.keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D, Dropout
+        from tensorflow.keras.layers import MaxPooling1D, Flatten, Dense, Conv1D, MaxPooling2D, Conv2D, Dropout
         import tensorflow as tf
+
         print("Use tensorflow backend keras module")
     except:
         print("This is not a GPU env.")
@@ -24,8 +25,6 @@ from scipy import stats
 import numpy as np
 import configparser
 from Functions import *
-
-
 
 ####################
 """
@@ -65,25 +64,26 @@ class TokenAndPositionEmbedding(layers.Layer):
 ####################
 """
 
+
 class TNN():
-    
+
     #############################
-    #Need work!!!!!!!!!!#
+    # Need work!!!!!!!!!!#
     ###########################
 
     def __init__(self):
         self.name = "Test model"
 
-    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+    def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
         print("USE Numeric CNN MODEL as training method")
         geno = decoding(geno)
         geno = np.expand_dims(geno, axis=2)
         print("The transformed SNP shape:", geno.shape)
-        if pheno_standard is True: 
+        if pheno_standard is True:
             pheno = stats.zscore(pheno)
-        return geno,pheno
+        return geno, pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
         embed_dim = 32  # Embedding size for each token
         num_heads = 2  # Number of attention heads
         ff_dim = 32  # Hidden layer size in feed forward network inside transformer
@@ -123,31 +123,33 @@ class TNN():
 
         return model
 
+
 class DCNN():
     """
     double CNN, esitmate additive SNP alleles and heterozygous SNP alleles
     """
+
     def __init__(self):
         self.name = "Duo CNN"
 
-    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+    def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
         print("USE Duo (Double) CNN MODEL as training method")
         geno1 = geno
-        geno2 = geno.mask(geno != 1,0)
-        #overlap geno1 and geno2 to one matrix
-        geno = np.stack((geno1,geno2),axis=2)
+        geno2 = geno.mask(geno != 1, 0)
+        # overlap geno1 and geno2 to one matrix
+        geno = np.stack((geno1, geno2), axis=2)
         print("The transformed SNP shape:", geno.shape)
         if pheno_standard is True:
             pheno = stats.zscore(pheno)
-        return geno,pheno
+        return geno, pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
         model = Sequential()
         """
         Convolutional Layers
         """
-        model.add(Conv2D(64, kernel_size=[5,2], strides=3, padding='valid', activation='elu',
+        model.add(Conv2D(64, kernel_size=[5, 2], strides=3, padding='valid', activation='elu',
                          input_shape=input_shape))
         model.add(MaxPooling1D(pool_size=2))
 
@@ -192,19 +194,19 @@ class NCNN():
         self.name = "Numeric CNN"
 
     def model_name(self):
-        #get class name
+        # get class name
         return self.__class__.__name__
 
-    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+    def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
         print("USE Numeric CNN MODEL as training method")
         geno = decoding(geno)
         geno = np.expand_dims(geno, axis=2)
         print("The transformed SNP shape:", geno.shape)
-        if pheno_standard is True: 
+        if pheno_standard is True:
             pheno = stats.zscore(pheno)
-        return geno,pheno
+        return geno, pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
         model = Sequential()
         """
@@ -249,28 +251,26 @@ class NCNN():
         return model
 
 
-    
-    
 class BCNN():
 
     def __init__(self):
         self.name = "Binary CNN"
 
     def model_name(self):
-        #get class name
+        # get class name
         return self.__class__.__name__
 
-    def data_transform(self, geno, pheno, anno=None,pheno_standard = False):
+    def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
         print("USE Binary CNN MODEL as training method")
         geno = decoding(geno)
         geno.replace(0.01, 3, inplace=True)
         geno = to_categorical(geno)
-        print("The transformed SNP shape:",geno.shape)
-        if pheno_standard is True: 
+        print("The transformed SNP shape:", geno.shape)
+        if pheno_standard is True:
             pheno = stats.zscore(pheno)
-        return geno,pheno
+        return geno, pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
         model = Sequential()
         """
@@ -314,20 +314,21 @@ class BCNN():
 
         return model
 
-def DeepGS(input_shape,n_layers=0,n_units=32,optimizer="SGD",lr=0.01):
+
+def DeepGS(input_shape, n_layers=0, n_units=32, optimizer="SGD", lr=0.01):
     print("If need to specify MLP parameters for DeepGS model, modify MODEL file instead.")
     lr = float(lr)
     model = Sequential()
     model.add(Conv1D(8, kernel_size=18, strides=1, padding='valid', activation='relu',
                      input_shape=input_shape))
-    model.add(MaxPooling1D(pool_size=4,strides=4))
+    model.add(MaxPooling1D(pool_size=4, strides=4))
     model.add(Dropout(rate=0.2))
 
     model.add(Flatten())
     model.add(Dropout(rate=0.1))
-    model.add(Dense(32,activation="relu"))
+    model.add(Dense(32, activation="relu"))
     model.add(Dropout(rate=0.05))
-    model.add(Dense(1,activation="linear"))
+    model.add(Dense(1, activation="linear"))
 
     try:
         adm = keras.optimizers.Adam(learning_rate=lr)
@@ -338,13 +339,14 @@ def DeepGS(input_shape,n_layers=0,n_units=32,optimizer="SGD",lr=0.01):
         rms = keras.optimizers.RMSprop(lr=lr)
         sgd = keras.optimizers.SGD(lr=lr)
 
-    optimizers = {"rmsprop":rms,
-                 "Adam": adm,
-                 "SGD": sgd}
+    optimizers = {"rmsprop": rms,
+                  "Adam": adm,
+                  "SGD": sgd}
 
-    model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
+    model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
 
     return model
+
 
 class MLP():
 
@@ -352,19 +354,19 @@ class MLP():
         self.name = "MLP"
 
     def model_name(self):
-        #get class name
+        # get class name
         return self.__class__.__name__
 
-    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+    def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
         print("USE Numeric CNN MODEL as training method")
         geno = decoding(geno)
-        #geno = np.expand_dims(geno, axis=2)
+        geno = np.expand_dims(geno, axis=2)
         print("The transformed SNP shape:", geno.shape)
         if pheno_standard is True:
             pheno = stats.zscore(pheno)
-        return geno,pheno
+        return geno, pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
         model = Sequential()
         model.add(Dense(args.width, activation="elu", input_shape=input_shape))
         for layers in range(args.depth - 1):
@@ -390,22 +392,58 @@ class MLP():
 
         return model
 
+
 class NN():
 
     def __init__(self):
         self.name = "NN"
 
     def model_name(self):
-        #get class name
+        # get class name
         return self.__class__.__name__
+
+    def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
+        print("USE Numeric CNN MODEL as training method")
+        geno = decoding(geno)
+        geno = np.expand_dims(geno, axis=2)
+        print("The transformed SNP shape:", geno.shape)
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno, pheno
 
     def model(self):
         pass
 
 
-def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
+class RF():
+
+    def __init__(self):
+        self.name = "Random Forest"
+
+    def model_name(self):
+        # get class name
+        return self.__class__.__name__
+
+    def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
+        print("USE Numeric CNN MODEL as training method")
+        geno = decoding(geno)
+        # geno = np.expand_dims(geno, axis=2)
+        print("The transformed SNP shape:", geno.shape)
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno, pheno
+
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
+        model = RandomForestRegressor(n_jobs=-1, random_state=0, criterion="mse", oob_score=False, verbose=1,
+                                      max_features=args["leaves"],
+                                      n_estimators=args["trees"])
+        return model
+
+
+def RF_backup(config=None, specific=False, n_features=500, n_estimators=200):
     if specific == True:
-        model = RandomForestRegressor(n_jobs=-1, random_state=0, criterion="mse", oob_score=False, verbose=1,max_features=n_features,
+        model = RandomForestRegressor(n_jobs=-1, random_state=0, criterion="mse", oob_score=False, verbose=1,
+                                      max_features=n_features,
                                       n_estimators=n_estimators)
         return model
     else:
@@ -421,14 +459,14 @@ def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
         return model
 
 
-
 MODELS = {
     "MLP": MLP,
     "Numeric CNN": NCNN,
     "Binary CNN": BCNN,
-    "Transformer CNN":TNN,
+    "Transformer CNN": TNN,
     "Duo CNN": DCNN,
-    "DeepGS": DeepGS
+    "DeepGS": DeepGS,
+    "Random Forest": RF,
 }
 
 METHODS = {
@@ -438,9 +476,11 @@ METHODS = {
     "DeepGS": DeepGS
 }
 
+
 def main():
     print("Main function from ClassModel.py")
-    #tf.keras.utils.plot_model(model, to_file="./print_model.png", show_shapes=True)
+    # tf.keras.utils.plot_model(model, to_file="./print_model.png", show_shapes=True)
+
 
 if __name__ == "__main__":
     main()

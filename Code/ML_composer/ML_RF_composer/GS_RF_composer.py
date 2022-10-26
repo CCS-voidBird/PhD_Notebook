@@ -62,7 +62,8 @@ def get_args():
     ### Neural model default attributes##
     req_grp.add_argument('--width', type=int, help="Hidden layer width (units).", default=8)
     req_grp.add_argument('--depth', type=int, help="Hidden layer depth.", default=4)
-
+    req_grp.add_argument('--leave', type=int,nargs='+', help="tree leaf options.", default=[50,100,500,1000,2000,5000])
+    req_grp.add_argument('--tree', type=int,nargs='+', help="tree population options.", default=[50,100,200,500])
     args = parser.parse_args()
 
     return args
@@ -107,6 +108,7 @@ class ML_composer:
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
                           "Valid_Accuracy", "MSE", "Runtime"])
         self.model_name = None
+        self.rf_hp = dict()
 
     def get_data(self,configer,args):
         self.args = args
@@ -124,6 +126,9 @@ class ML_composer:
         print("Get genotype shape:",self._raw_data["GENO"].iloc[:,6:].shape)
         print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
         self.plot = self.args.plot
+        if self.args.model == "Random Forest":
+            self.record = self.record.reindex(columns=self.record.columns.tolist() + ["Leaves", "Trees"])
+        print(self.record.shape)
         """
         #self.train_data = self._raw_data["GENO"].query('X.1 in @train_sample').query('X.1 not in @remove_list').iloc[:,6:]
         #self.valid_data = self._raw_data["GENO"].query('X.1 in @valid_sample').iloc[:,6:]
@@ -185,11 +190,16 @@ class ML_composer:
         return
 
     def train(self,features_train, features_test, target_train, target_test,round=1):
-
+        history = dict()
         n_features = self.train_data.shape[1:]
-        self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
-            input_shape = n_features,args = self.args, lr=float(self.args.lr))
-        if round == 1:
+
+        if self.model_name == "RF":
+            self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
+                input_shape=n_features, args=self.rf_hp, lr=float(self.args.lr))
+        else:
+            self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
+                input_shape=n_features, args=self.args, lr=float(self.args.lr))
+        if round == 1 and self.model_name != "RF":
             with open(os.path.abspath(self.args.output) + "/model_summary.txt", "w") as fh:
                 self._model["TRAINED_MODEL"].summary(print_fn=lambda x: fh.write(x + "\n"))
 
@@ -201,22 +211,25 @@ class ML_composer:
             print("It is a sklean-Random-forest model.")
 
         startTime = datetime.now()
-
+        self._model["TRAINED_MODEL"].fit(features_train, target_train)
+        '''
         history = self._model["TRAINED_MODEL"].fit(
             features_train, target_train,
             epochs=int(self.args.epoch),
             validation_data=(features_test, target_test), verbose=int(self.silence_mode),
             callbacks=[callback],batch_size = self.batchSize)
-
+        
 
         # let's just print the final loss
         print(' - train loss     : ' + str(history.history['loss'][-1]))
         print(' - validation loss: ' + str(history.history['val_loss'][-1]))
         print(' - loss decrease rate in last 5 epochs: ' + str(
             np.mean(np.gradient(history.history['val_loss'][-5:]))))
-        print(self._model["TRAINED_MODEL"].predict(features_test).shape)
+        '''
         test_length = features_test.shape[0]
-        y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_test), (test_length,))
+        y_pred = self._model["TRAINED_MODEL"].predict(features_test)  # Testing with the valid set - outside the training
+        #obversed = np.squeeze(target_test)
+        #y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_test), (test_length,))
         test_accuracy = np.corrcoef(y_pred, target_test)[0, 1]
         print("Train End.")
         print("In-year accuracy (measured as Pearson's correlation) is: ", test_accuracy)
@@ -227,37 +240,50 @@ class ML_composer:
         return history,test_accuracy,runtime
 
     def compose(self,train_index:list,valid_index:list,val=1):
+        print("Mention: This is a random forest model.")
+        if self.model_name != "RF":
+            print("The model is not a random forest model. Please use GS_compose.py instead.")
+            quit()
+        else:
+            print("add trees and leaves columns to self.record")
 
         features_train, features_test, target_train, target_test = train_test_split(self.train_data, self.train_pheno,
                                                                                     test_size=0.2)
         print("Train status:")
-        print("Epochs: ",self.args.epoch)
         print("Repeat(Round): ",self.args.round)
-        print("feature shape:",features_train.shape)
+        print("RF parameters: {} leave options, {} tree options".format(len(self.args.leave),len(self.args.tree)))
+        #build a list of elements pair from args leaves and trees
+        hp_sets = list(combi([self.args.leave,self.args.tree]))
 
-        round = 1
-        while round <= self.args.round:
-            history, test_accuracy, runtime = self.train(features_train, features_test, target_train, target_test,round=round)
-            valid_accuracy, mse = self.model_validation()
-            self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
-                               test_accuracy, valid_accuracy, mse, runtime.seconds / 60]
-            check_usage()
-            if self.plot is True:
-                # create a folder to save the plot, folder name: trait, model
-                print("Plotting the training process...")
-                plot_dir = os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,
-                                                                                  self.args.trait)
-                print(plot_dir)
-                if not os.path.exists(plot_dir):
-                    os.makedirs(plot_dir)
-                # create a file name for the plot: path, model name, trait and round
-                plot_name = plot_dir + "/{}_{}_{}.png".format(self.args.trait, self.model_name, val)
-                # plot_name = os.path.abspath(self.args.output) + "/" + self.args.model + "_" + self.args.trait + "_" + str(round) + ".png"
-                plot_loss_history(history, self.args.trait, plot_name,round-self.args.round)
-            self._model["TRAINED_MODEL"] = None
-            keras.backend.clear_session()
-            gc.collect()
-            round += 1
+        for hp in hp_sets:
+            self.rf_hp["leaves"],self.rf_hp["trees"] = hp
+            print(hp)
+            round = 1
+            while round <= self.args.round:
+                history, test_accuracy, runtime = self.train(features_train, features_test, target_train, target_test,
+                                                             round=round)
+                valid_accuracy, mse = self.model_validation()
+                new_record = [self.args.trait, train_index, valid_index, self.model_name,
+                                                     test_accuracy, valid_accuracy, mse, runtime.seconds / 60,self.rf_hp["leaves"],self.rf_hp["trees"]]
+                print(new_record)
+                self.record.loc[len(self.record)] = new_record
+                check_usage()
+                if self.plot is True and self.model_name != "RF":
+                    # create a folder to save the plot, folder name: trait, model
+                    print("Plotting the training process...")
+                    plot_dir = os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,
+                                                                                      self.args.trait)
+                    print(plot_dir)
+                    if not os.path.exists(plot_dir):
+                        os.makedirs(plot_dir)
+                    # create a file name for the plot: path, model name, trait and round
+                    plot_name = plot_dir + "/{}_{}_{}.png".format(self.args.trait, self.model_name, val)
+                    # plot_name = os.path.abspath(self.args.output) + "/" + self.args.model + "_" + self.args.trait + "_" + str(round) + ".png"
+                    plot_loss_history(history, self.args.trait, plot_name, round - self.args.round)
+                self._model["TRAINED_MODEL"] = None
+                # keras.backend.clear_session()
+                # gc.collect()
+                round += 1
         if self.save == True:
             self.export_record()
         return
@@ -266,7 +292,7 @@ class ML_composer:
 
         print("Predicting valid set..")
         val_length = self.valid_pheno.shape[0]
-        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(self.valid_data), (val_length,))
+        y_pred_valid = self._model["TRAINED_MODEL"].predict(self.valid_data) #np.reshape(self._model["TRAINED_MODEL"].predict(self.valid_data), (val_length,))
         print("Testing prediction:")
         print("Predicted: ", y_pred_valid[:10])
         print("observed: ", self.valid_pheno[:10])
