@@ -142,7 +142,7 @@ def check_usage():
     print("Resource check:")
     print("Total memory: %.4f GB" % (info.total/1024/1024/1024))
     print("Currently using memory: %.4f GB" % (psutil.Process(os.getpid()).memory_info().rss/1024/1024/1024))
-    print("Ratio of used memory: %.4f GB" % (info.percent))
+    print("Ratio of used memory: %.4f " % (info.percent),"%")
     print("Number of CPU node: ",psutil.cpu_count())
 
 

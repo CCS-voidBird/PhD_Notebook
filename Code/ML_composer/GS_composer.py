@@ -214,6 +214,7 @@ class ML_composer:
         print(' - validation loss: ' + str(history.history['val_loss'][-1]))
         print(' - loss decrease rate in last 5 epochs: ' + str(
             np.mean(np.gradient(history.history['val_loss'][-5:]))))
+        print(' - Actual Training epochs: ', len(history.history['loss']))
         print(self._model["TRAINED_MODEL"].predict(features_test).shape)
         test_length = features_test.shape[0]
         y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_test), (test_length,))

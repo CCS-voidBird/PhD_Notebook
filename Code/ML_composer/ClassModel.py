@@ -130,13 +130,22 @@ class DCNN():
     def __init__(self):
         self.name = "Duo CNN"
 
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
         print("USE Duo (Double) CNN MODEL as training method")
         geno1 = geno
         geno2 = geno.mask(geno != 1,0)
         #overlap geno1 and geno2 to one matrix
+        #geno1 = np.expand_dims(geno1, axis=2)
+        #geno2 = np.expand_dims(geno2, axis=2)
         geno = np.stack((geno1,geno2),axis=2)
+
         print("The transformed SNP shape:", geno.shape)
+        print(geno[0:10,0:10,1])
         if pheno_standard is True:
             pheno = stats.zscore(pheno)
         return geno,pheno
@@ -147,7 +156,7 @@ class DCNN():
         """
         Convolutional Layers
         """
-        model.add(Conv2D(64, kernel_size=[5,2], strides=3, padding='valid', activation='elu',
+        model.add(Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu',
                          input_shape=input_shape))
         model.add(MaxPooling1D(pool_size=2))
 
@@ -162,6 +171,79 @@ class DCNN():
         # Full connected layers, classic multilayer perceptron (MLP)
         for layers in range(args.depth):
             model.add(Dense(args.width, activation="elu"))
+        model.add(Dropout(0.2))
+        model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        """
+        Optimizers: Adam, RMSProp, SGD 
+        """
+
+        return model
+
+class NDCNN():
+    """
+    double CNN, esitmate additive SNP alleles and heterozygous SNP alleles
+    """
+    def __init__(self):
+        self.name = "ND CNN"
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+
+    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+        print("USE Duo (Double) CNN MODEL as training method")
+        geno1 = geno
+        geno2 = geno.mask(geno != 1,0)
+        geno = np.stack((geno1,geno2),axis=2)
+        geno = np.expand_dims(geno, axis=3)
+        print("The transformed SNP shape:", geno.shape)
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno,pheno
+
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+        lr = float(lr)
+        args = args
+        model = Sequential()
+        """
+        Convolutional Layers
+        """
+        model.add(Conv2D(16, kernel_size=[1,2], strides=[1,1], padding='valid', activation='relu',
+                         input_shape=input_shape))
+
+        model.add(Conv2D(64, kernel_size=[5,1], strides=[3, 1], padding='valid', activation='elu',
+                         input_shape=input_shape))
+
+        #model.add(MaxPooling2D(pool_size=[2,1]))
+
+        model.add(Conv2D(128, kernel_size=[3,1], strides=[3,1], padding='valid', activation='elu'))
+        #model.add(MaxPooling2D(pool_size=[2,1]))
+
+        # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
+        model.add(Dropout(rate=0.2))
+
+        model.add(Flatten())
+        # Full connected layers, classic multilayer perceptron (MLP)
+        while args.depth > 0:
+            model.add(Dense(args.width, activation="elu"))
+            args.depth -= 1
+
         model.add(Dropout(0.2))
         model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
         try:
@@ -390,7 +472,7 @@ class MLP():
 
         return model
 
-class NN():
+class NN:
 
     def __init__(self):
         self.name = "NN"
@@ -428,7 +510,8 @@ MODELS = {
     "Binary CNN": BCNN,
     "Transformer CNN":TNN,
     "Duo CNN": DCNN,
-    "DeepGS": DeepGS
+    "DeepGS": DeepGS,
+    "ND CNN": NDCNN,
 }
 
 METHODS = {
