@@ -47,7 +47,7 @@ def get_args():
     req_grp.add_argument('--trait', type=str, help="give trait a name.", default=None)
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=10)
-    req_grp.add_argument('-lr', '--lr', type=int, help="Learning rate.", default=0.0001)
+    req_grp.add_argument('-lr', '--lr', type=float, help="Learning rate.", default=0.0001)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     req_grp.add_argument('-plot', '--plot', type=bool, help="show plot?",
@@ -169,8 +169,12 @@ class ML_composer:
         self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:]
 
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
-        self.train_pheno = self.train_pheno - np.mean(self.train_pheno)
-        self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1] - np.mean(self.train_pheno)
+        print("Mean of train phenotype:",np.mean(self.train_pheno))
+        mean_train = np.mean(self.train_pheno)
+        self.train_pheno = self.train_pheno - mean_train
+        self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
+        self.valid_pheno = self.valid_pheno - mean_train
+        print(self.valid_pheno.head(5))
 
         #label_encoder = LabelEncoder()
 
