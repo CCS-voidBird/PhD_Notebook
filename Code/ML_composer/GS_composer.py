@@ -169,7 +169,8 @@ class ML_composer:
         self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:]
 
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
-        self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
+        self.train_pheno = self.train_pheno - np.mean(self.train_pheno)
+        self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1] - np.mean(self.train_pheno)
 
         #label_encoder = LabelEncoder()
 
