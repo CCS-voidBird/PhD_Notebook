@@ -74,9 +74,14 @@ class TNN():
     def __init__(self):
         self.name = "Test model"
 
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
         print("USE Numeric CNN MODEL as training method")
         geno = decoding(geno)
+        geno.replace(0.01, 3, inplace=True)
         geno = np.expand_dims(geno, axis=2)
         print("The transformed SNP shape:", geno.shape)
         if pheno_standard is True: 
@@ -87,16 +92,15 @@ class TNN():
         embed_dim = 32  # Embedding size for each token
         num_heads = 2  # Number of attention heads
         ff_dim = 32  # Hidden layer size in feed forward network inside transformer
+        output_dim=16
         lr = float(lr)
-        vocab_size = 26086  # Only consider the top 20k words
-        maxlen = 200
         model = Sequential()
         # Add an Embedding layer expecting input vocab of size sequence length, and
         # output embedding dimension of size 64.
-        model.add(layers.Embedding(input_dim=input_shape[1], output_dim=64))
+        model.add(layers.Embedding(input_dim=4, output_dim=output_dim, input_length=input_shape[1]))
 
         # Add a LSTM layer with 128 internal units.
-        model.add(layers.LSTM(128))
+        model.add(layers.LSTM(128,input_shape=(input_shape[1],output_dim)))
 
         # Add a Dense layer with 10 units.
         model.add(layers.Dense(10))
@@ -508,7 +512,7 @@ MODELS = {
     "MLP": MLP,
     "Numeric CNN": NCNN,
     "Binary CNN": BCNN,
-    "Transformer CNN":TNN,
+    "Test CNN":TNN,
     "Duo CNN": DCNN,
     "DeepGS": DeepGS,
     "ND CNN": NDCNN,
