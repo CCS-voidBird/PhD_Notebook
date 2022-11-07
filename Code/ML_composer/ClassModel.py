@@ -140,7 +140,7 @@ class DCNN():
 
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE Duo (Double) CNN MODEL as training method")
+        print("USE Duo (Double channel) CNN MODEL as training method")
         geno1 = geno
         geno2 = geno.mask(geno != 1,0)
         #overlap geno1 and geno2 to one matrix
