@@ -298,7 +298,7 @@ class Model:
     def __init__(self,args):
 
         self.args = args
-        self._init_model = NN()
+        self._init_model = NN(args)
         self._data_requirements = None
         self.modelling = None
         self.data_transform = None

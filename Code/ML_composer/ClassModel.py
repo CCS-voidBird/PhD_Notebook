@@ -65,14 +65,27 @@ class TokenAndPositionEmbedding(layers.Layer):
 ####################
 """
 
-class TNN():
+class NN:
+
+    def __init__(self,args):
+        self.name = "NN"
+        self.args = args
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
+        pass
+
+class TNN(NN):
     
     #############################
     #Need work!!!!!!!!!!#
     ###########################
 
     def __init__(self):
-        self.name = "Test model"
+        self.name = "Transformer model"
 
     def model_name(self):
         #get class name
@@ -129,6 +142,73 @@ class TNN():
         """
 
         return model
+
+
+class RNN(NN):
+
+    #############################
+    # Need work!!!!!!!!!!#
+    ###########################
+    # super init function with RNN
+    def __init__(self,args):
+        NN.__init__(self,args)
+        self.name = "RNN"
+
+    def model_name(self):
+        # get class name
+        return self.__class__.__name__
+
+    def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
+        print("USE Numeric CNN MODEL as training method")
+        geno = decoding(geno)
+        geno.replace(0.01, 0, inplace=True)
+        # geno = np.expand_dims(geno, axis=2)
+        print("The transformed SNP shape:", geno.shape)
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno, pheno
+
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
+        embed_dim = 32  # Embedding size for each token
+        num_heads = 2  # Number of attention heads
+        ff_dim = 32  # Hidden layer size in feed forward network inside transformer
+        output_dim = 4
+        lr = float(lr)
+        model = Sequential()
+        # Add an Embedding layer expecting input vocab of size sequence length, and
+        # output embedding dimension of size 64.
+        model.add(layers.Input(shape=input_shape, dtype="float32"))
+
+        # model.add(layers.Embedding(input_dim=3, output_dim=output_dim))
+
+        # Add a LSTM layer with 128 internal units.
+        model.add(layers.Bidirectional(layers.LSTM(64)))
+
+        # Add a Dense layer with defined units.
+        model.add(layers.Dense(args.width))
+
+        model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        """
+        Optimizers: Adam, RMSProp, SGD 
+        """
+
+        return model
+
 
 class DCNN():
     """
@@ -479,17 +559,7 @@ class MLP():
 
         return model
 
-class NN:
 
-    def __init__(self):
-        self.name = "NN"
-
-    def model_name(self):
-        #get class name
-        return self.__class__.__name__
-
-    def model(self):
-        pass
 
 
 def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
