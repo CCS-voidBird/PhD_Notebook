@@ -81,8 +81,8 @@ class TNN():
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
         print("USE Numeric CNN MODEL as training method")
         geno = decoding(geno)
-        geno.replace(0.01, 3, inplace=True)
-        geno = np.expand_dims(geno, axis=2)
+        geno.replace(0.01, 0, inplace=True)
+        #geno = np.expand_dims(geno, axis=2)
         print("The transformed SNP shape:", geno.shape)
         if pheno_standard is True: 
             pheno = stats.zscore(pheno)
@@ -92,18 +92,21 @@ class TNN():
         embed_dim = 32  # Embedding size for each token
         num_heads = 2  # Number of attention heads
         ff_dim = 32  # Hidden layer size in feed forward network inside transformer
-        output_dim=16
+        output_dim=4
         lr = float(lr)
         model = Sequential()
         # Add an Embedding layer expecting input vocab of size sequence length, and
         # output embedding dimension of size 64.
-        model.add(layers.Embedding(input_dim=4, output_dim=output_dim, input_length=input_shape[1]))
+        model.add(layers.Input(shape=input_shape, dtype="float32"))
+
+
+        #model.add(layers.Embedding(input_dim=3, output_dim=output_dim))
 
         # Add a LSTM layer with 128 internal units.
-        model.add(layers.LSTM(128,input_shape=(input_shape[1],output_dim)))
+        model.add(layers.Bidirectional(layers.LSTM(64)))
 
-        # Add a Dense layer with 10 units.
-        model.add(layers.Dense(10))
+        # Add a Dense layer with defined units.
+        model.add(layers.Dense(args.width))
 
         model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
         try:

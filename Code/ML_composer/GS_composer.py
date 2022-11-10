@@ -52,8 +52,7 @@ def get_args():
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     req_grp.add_argument('-plot', '--plot', type=bool, help="show plot?",
                          default=False)
-    req_grp.add_argument('-sli', '--silence', type=bool, help="silent mode",
-                         default=True)
+    req_grp.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=0)
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=False)
     req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ./ML_composer.ini',
@@ -62,6 +61,7 @@ def get_args():
     ### Neural model default attributes##
     req_grp.add_argument('--width', type=int, help="Hidden layer width (units).", default=8)
     req_grp.add_argument('--depth', type=int, help="Hidden layer depth.", default=4)
+    req_grp.add_argument('--mean', type=bool, help="if remove train mean", default=True)
 
     args = parser.parse_args()
 
@@ -171,6 +171,8 @@ class ML_composer:
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
         print("Mean of train phenotype:",np.mean(self.train_pheno))
         mean_train = np.mean(self.train_pheno)
+        if self.args.mean is not True:
+            mean_train = 0
         self.train_pheno = self.train_pheno - mean_train
         self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
         self.valid_pheno = self.valid_pheno - mean_train
@@ -210,7 +212,7 @@ class ML_composer:
         history = self._model["TRAINED_MODEL"].fit(
             features_train, target_train,
             epochs=int(self.args.epoch),
-            validation_data=(features_test, target_test), verbose=int(self.silence_mode),
+            validation_data=(features_test, target_test), verbose=int(self.args.quiet),
             callbacks=[callback],batch_size = self.batchSize)
 
 
