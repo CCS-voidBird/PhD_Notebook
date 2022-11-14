@@ -61,7 +61,8 @@ def get_args():
     ### Neural model default attributes##
     req_grp.add_argument('--width', type=int, help="Hidden layer width (units).", default=8)
     req_grp.add_argument('--depth', type=int, help="Hidden layer depth.", default=4)
-    req_grp.add_argument('--mean', type=bool, help="if remove train mean", default=True)
+    parser.add_argument('--use-mean', dest='mean', action='store_true')
+    parser.set_defaults(mean=False)
 
     args = parser.parse_args()
 
@@ -172,6 +173,7 @@ class ML_composer:
         print("Mean of train phenotype:",np.mean(self.train_pheno))
         mean_train = np.mean(self.train_pheno)
         if self.args.mean is not True:
+            print("Use raw phenotype as the target")
             mean_train = 0
         self.train_pheno = self.train_pheno - mean_train
         self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]

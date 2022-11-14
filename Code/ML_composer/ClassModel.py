@@ -24,7 +24,27 @@ from scipy import stats
 import numpy as np
 import configparser
 from Functions import *
+from tensorflow.keras.layers import Layer
 
+# Define the residual block as a new layer
+class Residual(Layer):
+    def __init__(self, channels_in,kernel,**kwargs):
+        super(Residual, self).__init__(**kwargs)
+        self.channels_in = channels_in
+        self.kernel = kernel
+
+    def call(self, x):
+        # the residual block using Keras functional API
+        first_layer = layers.Activation("linear", trainable=False)(x)
+        x = Conv1D(self.channels_in, self.kernel, padding="same")(first_layer)
+        x = layers.Activation("relu")(x)
+        x = Conv1D(self.channels_in, self.kernel, padding="same")(x)
+        residual = layers.Add()([x, first_layer])
+        x = layers.Activation("relu")(residual)
+        return x
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
 
 
 ####################
@@ -84,8 +104,9 @@ class TNN(NN):
     #Need work!!!!!!!!!!#
     ###########################
 
-    def __init__(self):
+    def __init__(self,args):
         self.name = "Transformer model"
+        self.args = args
 
     def model_name(self):
         #get class name
@@ -215,7 +236,7 @@ class DCNN():
     double CNN, esitmate additive SNP alleles and heterozygous SNP alleles
     """
     def __init__(self):
-        self.name = "Duo CNN"
+        self.name = "Deep Residual CNN"
 
     def model_name(self):
         #get class name
@@ -223,7 +244,7 @@ class DCNN():
 
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE Duo (Double channel) CNN MODEL as training method")
+        print("USE Deep Residual CNN MODEL as training method")
         geno1 = geno
         geno2 = geno.mask(geno != 1,0)
         #overlap geno1 and geno2 to one matrix
@@ -243,23 +264,26 @@ class DCNN():
         """
         Convolutional Layers
         """
-        model.add(Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu',
-                         input_shape=input_shape))
-        model.add(MaxPooling1D(pool_size=2))
-
-        model.add(Conv1D(128, kernel_size=3, strides=3, padding='valid', activation='elu'))
-        model.add(MaxPooling1D(pool_size=2))
+        #model.add(layers.Input(shape=input_shape, dtype="float32"))
+        #model.add(layers.BatchNormalization())
+        model.add(Conv1D(32, kernel_size=5, strides=3, padding='same',input_shape=input_shape))
+        model.add(layers.Activation('relu'))
+        model.add(Residual(32, 3))
+        model.add(Residual(32, 3))
+        model.add(Residual(32, 3))
+        #model.add(layers.BatchNormalization())
+        #model.add(Conv1D(128, kernel_size=3, strides=3, padding='same', activation='relu'))
+        #model.add(MaxPooling1D(pool_size=2))
 
         # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
-        model.add(Dropout(rate=0.2))
-
         model.add(Flatten())
-
+        model.add(Dropout(rate=0.2))
+        #model.add(layers.BatchNormalization())
         # Full connected layers, classic multilayer perceptron (MLP)
-        for layers in range(args.depth):
-            model.add(Dense(args.width, activation="elu"))
+        #for i in range(args.depth): model.add(Dense(args.width, activation="relu"))
+        model.add(Dense(512))
         model.add(Dropout(0.2))
-        model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
+        model.add(layers.Activation("linear"))  # The output layer uses a linear function to predict traits.
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
             rms = keras.optimizers.RMSprop(learning_rate=lr)
