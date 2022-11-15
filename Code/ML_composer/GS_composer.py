@@ -109,6 +109,14 @@ class ML_composer:
                           "Valid_Accuracy", "MSE", "Runtime"])
         self.model_name = None
 
+    def load_data(self,raw_data,raw_model,raw_info):
+        #read outside dict of data
+        self._raw_data = raw_data
+        self._model = raw_model
+        self._info = raw_info
+
+        return
+
     def get_data(self,configer,args):
         self.args = args
         self.config = configer

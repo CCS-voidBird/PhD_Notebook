@@ -25,14 +25,15 @@ import numpy as np
 import configparser
 from Functions import *
 from tensorflow.keras.layers import Layer
-
+tf.config.experimental_run_functions_eagerly(True)
 # Define the residual block as a new layer
 class Residual(Layer):
     def __init__(self, channels_in,kernel,**kwargs):
         super(Residual, self).__init__(**kwargs)
         self.channels_in = channels_in
         self.kernel = kernel
-
+        #self.Conv1D = layers.Conv1D(self.channels_in, self.kernel, padding="same")
+        #self.Activation = layers.Activation("relu")
     def call(self, x):
         # the residual block using Keras functional API
         first_layer = layers.Activation("linear", trainable=False)(x)
@@ -131,11 +132,9 @@ class TNN(NN):
         model = Sequential()
         # Add an Embedding layer expecting input vocab of size sequence length, and
         # output embedding dimension of size 64.
-        model.add(layers.Input(shape=input_shape, dtype="float32"))
 
-
+        #model.add(layers.Input(shape=input_shape, dtype="float32"))
         #model.add(layers.Embedding(input_dim=3, output_dim=output_dim))
-
         # Add a LSTM layer with 128 internal units.
         model.add(layers.Bidirectional(layers.LSTM(64)))
 
@@ -260,30 +259,43 @@ class DCNN():
 
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
-        model = Sequential()
+        #model = Sequential()
         """
         Convolutional Layers
         """
         #model.add(layers.Input(shape=input_shape, dtype="float32"))
         #model.add(layers.BatchNormalization())
-        model.add(Conv1D(32, kernel_size=5, strides=3, padding='same',input_shape=input_shape))
-        model.add(layers.Activation('relu'))
-        model.add(Residual(32, 3))
-        model.add(Residual(32, 3))
-        model.add(Residual(32, 3))
+        input = layers.Input(shape=input_shape)
+        X = layers.Conv1D(32, 3)(input)
+        X = Residual(32, 3)(X)
+        X = Residual(32, 3)(X)
+        X = Residual(32, 3)(X)
+        X = layers.BatchNormalization()(X)
+        X = layers.MaxPooling1D(3)(X)
+        X = layers.Flatten()(X)
+        X = layers.Dropout(0.2)(X)
+        X = layers.Dense(args.width, activation="relu")(X)
+        X = layers.Dropout(0.2)(X)
+        output = layers.Dense(1, activation="linear")(X)
+        #model.add(Conv1D(32, kernel_size=5, strides=3, padding='same',input_shape=input_shape))
+        #model.add(layers.Activation('relu'))
+        #model.add(Residual(32, 3))
+        #model.add(Residual(32, 3))
+        #model.add(Residual(32, 3))
         #model.add(layers.BatchNormalization())
         #model.add(Conv1D(128, kernel_size=3, strides=3, padding='same', activation='relu'))
         #model.add(MaxPooling1D(pool_size=2))
 
         # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
-        model.add(Flatten())
-        model.add(Dropout(rate=0.2))
+        #model.add(Flatten())
+        #model.add(Dropout(rate=0.2))
         #model.add(layers.BatchNormalization())
         # Full connected layers, classic multilayer perceptron (MLP)
         #for i in range(args.depth): model.add(Dense(args.width, activation="relu"))
-        model.add(Dense(512))
-        model.add(Dropout(0.2))
-        model.add(layers.Activation("linear"))  # The output layer uses a linear function to predict traits.
+        #model.add(Dense(512))
+        #model.add(Dropout(0.2))
+        #model.add(layers.Activation("linear"))  # The output layer uses a linear function to predict traits.
+        model = keras.Model(inputs=input, outputs=output,name="DCNN")
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
             rms = keras.optimizers.RMSprop(learning_rate=lr)
