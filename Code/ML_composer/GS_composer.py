@@ -50,8 +50,8 @@ def get_args():
     req_grp.add_argument('-lr', '--lr', type=float, help="Learning rate.", default=0.0001)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
-    req_grp.add_argument('-plot', '--plot', type=bool, help="show plot?",
-                         default=False)
+    req_grp.add_argument('-plot', '--plot', dest='plot', action='store_true')
+    parser.set_defaults(plot=False)
     req_grp.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=0)
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=False)
