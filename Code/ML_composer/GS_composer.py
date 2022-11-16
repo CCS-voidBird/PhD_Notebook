@@ -71,14 +71,14 @@ def get_args():
 
 def plot_loss_history(h, title,plot_name=None,checkpoint=0):
     print("Plotting loss history...")
-    plt.plot(h.history['loss'], label = "Train loss", color = "blue")
-    plt.plot(h.history['val_loss'], label = "Validation loss", color = "red")
+    plt.plot(h.history['loss'][5:], label = "Train loss", color = "blue")
+    plt.plot(h.history['val_loss'][5:], label = "Validation loss", color = "red")
     plt.xlabel('Epochs')
     plt.title(title)
     #print plot name
     print("Plot name: ", plot_name)
     if plot_name and checkpoint == 0:
-        plt.legend()
+        #plt.legend()
         plt.savefig(plot_name)
         plt.close()
     else:
