@@ -193,19 +193,22 @@ class ML_composer:
         #label_encoder = LabelEncoder()
 
         self.prepare_model()
-        self.train_data,self.train_pheno = self._model["INIT_MODEL"].data_transform(self.train_data,self.train_pheno, pheno_standard = self.args.rank) ## The raw data to transform include geno, pheno, annotations
-        self.valid_data,self.valid_pheno = self._model["INIT_MODEL"].data_transform(self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
+        #self.train_data,self.train_pheno = self._model["INIT_MODEL"].data_transform(self.train_data,self.train_pheno, pheno_standard = self.args.rank) ## The raw data to transform include geno, pheno, annotations
+        #self.valid_data,self.valid_pheno = self._model["INIT_MODEL"].data_transform(self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
 
-        self.train_data = np.asarray(self.train_data).astype(np.float32)
+        #self.train_data = np.asarray(self.train_data).astype(np.float32)
         self.train_pheno = np.asarray(self.train_pheno).astype(np.float32)
-        self.valid_data = np.asarray(self.valid_data).astype(np.float32)
+        #self.valid_data = np.asarray(self.valid_data).astype(np.float32)
         self.valid_pheno = np.asarray(self.valid_pheno).astype(np.float32)
 
         return
 
     def train(self,features_train, features_test, target_train, target_test,round=1):
 
-        n_features = self.train_data.shape[1:]
+        if type(features_train) is list:
+            n_features = features_train[0].shape[1:]
+        else:
+            n_features = features_train.shape[1:]
         self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
             input_shape = n_features,args = self.args, lr=float(self.args.lr))
         if round == 1:
@@ -234,8 +237,8 @@ class ML_composer:
         print(' - loss decrease rate in last 5 epochs: ' + str(
             np.mean(np.gradient(history.history['val_loss'][-5:]))))
         print(' - Actual Training epochs: ', len(history.history['loss']))
-        print(self._model["TRAINED_MODEL"].predict(features_test).shape)
-        test_length = features_test.shape[0]
+        #print(self._model["TRAINED_MODEL"].predict(features_test).shape)
+        test_length = target_test.shape[0]
         y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_test), (test_length,))
         test_accuracy = np.corrcoef(y_pred, target_test)[0, 1]
         print("Train End.")
@@ -248,16 +251,18 @@ class ML_composer:
 
     def compose(self,train_index:list,valid_index:list,val=1):
 
-        features_train, features_test, target_train, target_test = train_test_split(self.train_data, self.train_pheno,
-                                                                                    test_size=0.2)
+        #features_train, features_test, target_train, target_test = train_test_split(self.train_data, self.train_pheno,test_size=0.2)
+        features_train,target_train = self._model["INIT_MODEL"].data_transform(self.train_data,self.train_pheno, pheno_standard = self.args.rank)
+        features_val,target_val = self._model["INIT_MODEL"].data_transform(self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
+
         print("Train status:")
         print("Epochs: ",self.args.epoch)
         print("Repeat(Round): ",self.args.round)
-        print("feature shape:",features_train.shape)
+        #print("feature shape:",features_train.shape)
 
         round = 1
         while round <= self.args.round:
-            history, test_accuracy, runtime = self.train(features_train, features_test, target_train, target_test,round=round)
+            history, test_accuracy, runtime = self.train(features_train, features_val, target_train, target_val,round=round)
             valid_accuracy, mse = self.model_validation()
             self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
                                test_accuracy, valid_accuracy, mse, runtime.seconds / 60]
@@ -284,14 +289,16 @@ class ML_composer:
 
     def model_validation(self):
 
+        valid_data,valid_pheno = self._model["INIT_MODEL"].data_transform(
+            self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
         print("Predicting valid set..")
-        val_length = self.valid_pheno.shape[0]
-        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(self.valid_data), (val_length,))
+        val_length = valid_pheno.shape[0]
+        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(valid_data), (val_length,))
         print("Testing prediction:")
         print("Predicted: ", y_pred_valid[:10])
-        print("observed: ", self.valid_pheno[:10])
-        accuracy_valid = np.corrcoef(y_pred_valid, self.valid_pheno)[0, 1]
-        mse = mean_squared_error(y_pred_valid, self.valid_pheno)
+        print("observed: ", valid_pheno[:10])
+        accuracy_valid = np.corrcoef(y_pred_valid, valid_pheno)[0, 1]
+        mse = mean_squared_error(y_pred_valid, valid_pheno)
 
         print("Future prediction accuracy (measured as Pearson's correlation) is: ",
               accuracy_valid)
@@ -344,6 +351,7 @@ def get_model_summary(model: tf.keras.Model) -> str:
 
 def main():
     args = get_args()
+    '''
     config_path = os.path.abspath(args.config)
     print("Get config file path from: ", config_path)
     config = configparser.ConfigParser()
@@ -352,6 +360,7 @@ def main():
         config.read(config_path)
     else:
         config.read(config_path)
+    '''
 
     """
     Create folders from given output path
@@ -368,7 +377,7 @@ def main():
         f.write(str(args))
 
     composer = ML_composer()
-    composer.get_data(config,args)
+    composer.get_data(configer=None,args=args)
     composer.prepare_model()
 
 

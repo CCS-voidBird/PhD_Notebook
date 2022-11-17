@@ -159,7 +159,9 @@ def decoding(data):
         data.replace(snps,inplace=True)
     except:
         print("All the SNPs are already decoded, imputing missing SNPs with 0.01")
-        return data
+    print("Convert data to np.array float32")
+    data = np.asarray(data).astype(np.float32)
+
     return data
 
 def load_data(args):

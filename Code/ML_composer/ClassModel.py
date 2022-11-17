@@ -388,12 +388,14 @@ class DCNN():
         return model
 
 
-class NDCNN():
+class DoubleCNN(NN):
     """
     double CNN, esitmate additive SNP alleles and heterozygous SNP alleles
     """
-    def __init__(self):
-        self.name = "ND CNN"
+    def __init__(self,args):
+        super(DoubleCNN, self).__init__(args)
+        self.name = "Double channel residual CNN"
+        self.args = args
 
     def model_name(self):
         #get class name
@@ -402,44 +404,49 @@ class NDCNN():
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
         print("USE Duo (Double) CNN MODEL as training method")
+        #geno = decoding(geno)
+        #geno = np.expand_dims(geno, axis=2)
         geno1 = geno
+        geno1 = decoding(geno1)
+        geno1 = np.expand_dims(geno1, axis=2)
         geno2 = geno.mask(geno != 1,0)
-        geno = np.stack((geno1,geno2),axis=2)
-        geno = np.expand_dims(geno, axis=3)
-        print("The transformed SNP shape:", geno.shape)
+        geno2 = decoding(geno2)
+        geno2 = np.expand_dims(geno2, axis=2)
+        #geno = np.stack((geno1,geno2),axis=2)
+        #geno = np.expand_dims(geno, axis=3)
+        print("The transformed SNP shape:", geno1.shape,geno2.shape)
         if pheno_standard is True:
             pheno = stats.zscore(pheno)
-        return geno,pheno
+        return [geno1,geno2],pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
-        lr = float(lr)
-        args = args
-        model = Sequential()
-        """
-        Convolutional Layers
-        """
-        model.add(Conv2D(16, kernel_size=[1,2], strides=[1,1], padding='valid', activation='relu',
-                         input_shape=input_shape))
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.0001):
 
-        model.add(Conv2D(64, kernel_size=[5,1], strides=[3, 1], padding='valid', activation='elu',
-                         input_shape=input_shape))
+        input1 = layers.Input(shape=input_shape)
+        X1 = layers.Conv1D(64, kernel_size=25, strides=3, padding='same')(input1)
+        X1 = layers.Activation('relu')(X1)
+        X1 = layers.MaxPooling1D(pool_size=2)(X1)
+        X1 = layers.Conv1D(128, kernel_size=3, strides=3, padding='same')(X1)
+        X1 = layers.Activation('relu')(X1)
+        X1 = layers.MaxPooling1D(pool_size=2)(X1)
 
-        #model.add(MaxPooling2D(pool_size=[2,1]))
+        input2 = layers.Input(shape=input_shape)
+        X2 = layers.Conv1D(64, kernel_size=25, strides=3, padding='same')(input2)
+        X2 = layers.Activation('relu')(X2)
+        X2 = layers.MaxPooling1D(pool_size=2)(X2)
+        X2 = layers.Conv1D(128, kernel_size=3, strides=3, padding='same')(X2)
+        X2 = layers.Activation('relu')(X2)
+        X2 = layers.MaxPooling1D(pool_size=2)(X2)
 
-        model.add(Conv2D(128, kernel_size=[3,1], strides=[3,1], padding='valid', activation='elu'))
-        #model.add(MaxPooling2D(pool_size=[2,1]))
+        X = layers.concatenate([X1, X2], axis=-1)
+        X = layers.Flatten()(X)
+        X = layers.Dropout(rate=0.2)(X)
 
-        # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
-        model.add(Dropout(rate=0.2))
+        for i in range(args.depth):
+            X = residual_fl_block(input=X, width=self.args.width, downsample=(i % 2 != 0 & self.args.residual))
 
-        model.add(Flatten())
-        # Full connected layers, classic multilayer perceptron (MLP)
-        while args.depth > 0:
-            model.add(Dense(args.width, activation="elu"))
-            args.depth -= 1
+        output = layers.Dense(1, activation="linear")(X)
+        model = keras.Model(inputs=[input1,input2], outputs=output)
 
-        model.add(Dropout(0.2))
-        model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
             rms = keras.optimizers.RMSprop(learning_rate=lr)
@@ -460,7 +467,6 @@ class NDCNN():
         """
 
         return model
-
 
 class NCNN(NN):
 
@@ -508,9 +514,9 @@ class NCNN(NN):
         model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
         """
         input = layers.Input(shape=input_shape)
-        X = layers.Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu')(input)
+        X = layers.Conv1D(64, kernel_size=25, strides=3, padding='same', activation='relu')(input)
         X = layers.MaxPooling1D(pool_size=2)(X)
-        X = layers.Conv1D(128, kernel_size=3, strides=3, padding='valid', activation='elu')(X)
+        X = layers.Conv1D(128, kernel_size=25, strides=3, padding='same', activation='relu')(X)
         X = layers.MaxPooling1D(pool_size=2)(X)
 
         X = layers.Dropout(rate=0.2)(X)
@@ -761,7 +767,7 @@ MODELS = {
     "Test CNN":Transformer,
     "Duo CNN": DCNN,
     "DeepGS": DeepGS,
-    "ND CNN": NDCNN,
+    "Double CNN": DoubleCNN,
     "ResMLP": ResMLP,
 }
 
