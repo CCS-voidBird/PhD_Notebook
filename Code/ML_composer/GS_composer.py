@@ -52,6 +52,8 @@ def get_args():
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     req_grp.add_argument('-plot', '--plot', dest='plot', action='store_true')
     parser.set_defaults(plot=False)
+    req_grp.add_argument('-residual', '--residual', dest='residual', action='store_true')
+    parser.set_defaults(residual=True)
     req_grp.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=0)
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=False)
@@ -318,7 +320,7 @@ class Model:
 
     def init_model(self):
 
-        self._init_model = MODELS[self.args.model]()
+        self._init_model = MODELS[self.args.model](self.args)
         self.data_transform = self._init_model.data_transform
         self.modelling = self._init_model.model
 
@@ -326,7 +328,7 @@ class Model:
 
     def load_model(self,path):
 
-        self._init_model = MODELS[self.args.model]()
+        self._init_model = MODELS[self.args.model](self.args)
         self.data_transform = self._init_model.data_transform
         self.modelling = self._init_model.model
         self.modelling = keras.models.load_model(path)

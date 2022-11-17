@@ -27,6 +27,7 @@ from Functions import *
 from tensorflow.keras.layers import Layer
 tf.config.experimental_run_functions_eagerly(True)
 # Define the residual block as a new layer
+
 class Residual(Layer):
     def __init__(self, channels_in,kernel,**kwargs):
         super(Residual, self).__init__(**kwargs)
@@ -86,6 +87,40 @@ class TokenAndPositionEmbedding(layers.Layer):
 ####################
 """
 
+def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
+    #residual fully connected layers block
+    X = layers.Dense(width)(input)
+    X = layers.BatchNormalization()(X)
+
+    if downsample:
+        out = layers.Add()([X, input])
+        out = activation(out)
+        return out
+    else:
+        X = activation(X)
+        return X
+
+
+
+def residual_conv1D_block(input,filters,kernel_size,activation=layers.ReLU(),downsample=False):
+    X = layers.Conv1D(filters, kernel_size, padding="same")(input)
+    X = layers.BatchNormalization()(X)
+    X = activation(X)
+
+    X1 = layers.Conv1D(filters, kernel_size, padding="same")(X)
+    X1 = layers.BatchNormalization()(X1)
+
+    if downsample:
+        input = layers.Conv1D(filters, 1, padding="same")(input)
+        input = layers.BatchNormalization()(input)
+        out = layers.Add()([X1, input])
+    else:
+        out = layers.Add()([X1])
+
+    out = activation(out)
+    return out
+
+
 class NN:
 
     def __init__(self,args):
@@ -99,14 +134,15 @@ class NN:
     def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
         pass
 
-class TNN(NN):
+class Transformer(NN):
     
     #############################
     #Need work!!!!!!!!!!#
     ###########################
 
     def __init__(self,args):
-        self.name = "Transformer model"
+        super(Transformer,self).__init__(args)
+        self.name = "Transformer"
         self.args = args
 
     def model_name(self):
@@ -351,6 +387,7 @@ class DCNN():
 
         return model
 
+
 class NDCNN():
     """
     double CNN, esitmate additive SNP alleles and heterozygous SNP alleles
@@ -425,10 +462,13 @@ class NDCNN():
         return model
 
 
-class NCNN():
+class NCNN(NN):
 
-    def __init__(self):
+    def __init__(self,args):
+        super(NCNN,self).__init__(args)
         self.name = "Numeric CNN"
+        self.args = args
+
 
     def model_name(self):
         #get class name
@@ -445,10 +485,10 @@ class NCNN():
 
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
-        model = Sequential()
+
         """
         Convolutional Layers
-        """
+        model = Sequential()
         model.add(Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu',
                          input_shape=input_shape))
         model.add(MaxPooling1D(pool_size=2))
@@ -462,10 +502,26 @@ class NCNN():
         model.add(Flatten())
 
         # Full connected layers, classic multilayer perceptron (MLP)
-        for layers in range(args.depth):
+        for i in range(args.depth):
             model.add(Dense(args.width, activation="elu"))
         model.add(Dropout(0.2))
         model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
+        """
+        input = layers.Input(shape=input_shape)
+        X = layers.Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu')(input)
+        X = layers.MaxPooling1D(pool_size=2)(X)
+        X = layers.Conv1D(128, kernel_size=3, strides=3, padding='valid', activation='elu')(X)
+        X = layers.MaxPooling1D(pool_size=2)(X)
+
+        X = layers.Dropout(rate=0.2)(X)
+        X = layers.Flatten()(X)
+
+        for i in range(args.depth):
+            X = residual_fl_block(input=X, width=self.args.width,downsample=(i%2 != 0 & self.args.residual))
+
+        output = layers.Dense(1, activation="linear")(X)
+        model = keras.Model(inputs=input, outputs=output)
+
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
             rms = keras.optimizers.RMSprop(learning_rate=lr)
@@ -487,8 +543,6 @@ class NCNN():
 
         return model
 
-
-    
     
 class BCNN():
 
@@ -629,7 +683,56 @@ class MLP():
 
         return model
 
+class ResMLP(NN):
 
+    def __init__(self,args):
+        super(ResMLP,self).__init__(args)
+        self.name = "Residual MLP"
+        self.args = args
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+        print("USE Numeric CNN MODEL as training method")
+        geno = decoding(geno)
+        #geno = np.expand_dims(geno, axis=2)
+        print("The transformed SNP shape:", geno.shape)
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno,pheno
+
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+
+        # model.add(Dropout(0.2))
+
+        input = layers.Input(shape=input_shape)
+        X = layers.BatchNormalization()(input)
+
+        for i in range(args.depth):
+            X = residual_fl_block(input=X, width=self.args.width, downsample=(i % 2 != 0 & self.args.residual))
+
+        output = layers.Dense(1, activation="linear")(X)
+
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model = keras.Model(inputs=input, outputs=output)
+
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        return model
 
 
 def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
@@ -655,10 +758,11 @@ MODELS = {
     "MLP": MLP,
     "Numeric CNN": NCNN,
     "Binary CNN": BCNN,
-    "Test CNN":TNN,
+    "Test CNN":Transformer,
     "Duo CNN": DCNN,
     "DeepGS": DeepGS,
     "ND CNN": NDCNN,
+    "ResMLP": ResMLP,
 }
 
 METHODS = {
