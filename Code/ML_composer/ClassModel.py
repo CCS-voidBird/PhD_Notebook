@@ -773,7 +773,7 @@ class AttentionCNN(NN):
 
         print("USE Attention CNN MODEL as training method")
         geno = decoding(geno)
-        geno = np.expand_dims(geno, axis=2)
+        #geno = np.expand_dims(geno, axis=2)
         print("The transformed SNP shape:", geno.shape)
 
         if pheno_standard is True:
@@ -845,6 +845,7 @@ MODELS = {
     "Duo CNN": DCNN,
     "DeepGS": DeepGS,
     "Double CNN": DoubleCNN,
+    "Attention CNN": AttentionCNN,
     "ResMLP": ResMLP,
 }
 
