@@ -804,7 +804,7 @@ class AttentionCNN(NN):
         QV_attention = layers.GlobalAvgPool1D()(QV_attention)
 
         # Concat
-        QV_input = layers.Concatenate()([Q_encoding, QV_attention])
+        QV_input = layers.Concatenate()([Q_encoding, QV_attention], axis=-1)
         # Residual Dense
 
         for i in range(args.depth):
