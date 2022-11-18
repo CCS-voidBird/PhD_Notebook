@@ -778,12 +778,12 @@ class AttentionCNN(NN):
 
         if pheno_standard is True:
             pheno = stats.zscore(pheno)
-        return geno,pheno
+        return [geno,geno],pheno
 
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         # init Q,K,V
         Q = layers.Input(shape=input_shape)
-        K = layers.Input(shape=input_shape)
+        #K = layers.Input(shape=input_shape)
         V = layers.Input(shape=input_shape)
 
         embedding = layers.Embedding(input_dim=3, output_dim=2, input_length=input_shape[0])
@@ -805,7 +805,6 @@ class AttentionCNN(NN):
 
         # Concat
         QV_input = layers.Concatenate()([Q_encoding, QV_attention])
-
         # Residual Dense
 
         for i in range(args.depth):
@@ -826,7 +825,7 @@ class AttentionCNN(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        model = keras.Model(inputs=[Q, K, V], outputs=QV_output)
+        model = keras.Model(inputs=[Q,V], outputs=QV_output)
         model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
 
         #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
