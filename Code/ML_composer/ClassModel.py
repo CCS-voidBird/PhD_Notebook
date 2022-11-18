@@ -758,7 +758,84 @@ def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
 
         return model
 
+class AttentionCNN(NN):
 
+    def __init__(self,args):
+        super(AttentionCNN,self).__init__(args)
+        self.name = "Attention CNN"
+        self.args = args
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+
+        print("USE Attention CNN MODEL as training method")
+        geno = decoding(geno)
+        geno = np.expand_dims(geno, axis=2)
+        print("The transformed SNP shape:", geno.shape)
+
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno,pheno
+
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+        # init Q,K,V
+        Q = layers.Input(shape=input_shape)
+        K = layers.Input(shape=input_shape)
+        V = layers.Input(shape=input_shape)
+
+        embedding = layers.Embedding(input_dim=3, output_dim=2, input_length=input_shape[0])
+        Q_emb = embedding(Q)
+        #K_emb = embedding(K)
+        V_emb = embedding(V)
+
+        conv_layer = layers.Conv1D(filters=128, kernel_size=4, padding="same")
+
+        # Q,K,V 1D Conv
+        Q_encoding = conv_layer(Q_emb)
+        #K_encoding = conv_layer(K_emb)
+        V_encoding = conv_layer(V_emb)
+
+        # Attention
+        QV_attention = layers.Attention()([Q_encoding, V_encoding])
+        Q_encoding = layers.GlobalAvgPool1D()(Q_encoding)
+        QV_attention = layers.GlobalAvgPool1D()(QV_attention)
+
+        # Concat
+        QV_input = layers.Concatenate()([Q_encoding, QV_attention])
+
+        # Residual Dense
+
+        for i in range(args.depth):
+            QV_input = residual_fl_block(input=QV_input, width=self.args.width, downsample=(i % 2 != 0 & self.args.residual))
+
+        QV_output = layers.Dense(1, activation="linear")(QV_input)
+
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model = keras.Model(inputs=[Q, K, V], outputs=QV_output)
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
+        #QK = layers.Softmax(axis=-1)(QK)
+        #QKV = layers.Dot(axes=[2, 1])([QK, V_encoding])
+        #QKV = layers.Flatten()(QKV)
+        #QKV = layers.Dense(1, activation="linear")(QKV)
+
+        return model
 
 MODELS = {
     "MLP": MLP,
