@@ -805,7 +805,8 @@ class AttentionCNN(NN):
 
         # Concat
         #QV_input = layers.Concatenate()
-        QV_input = layers.concatenate()([Q_encoding, QV_attention], axis=-1)
+        #layers.concatenate([X1, X2], axis=-1)
+        QV_input = layers.concatenate([Q_encoding, QV_attention])
         # Residual Dense
 
         for i in range(args.depth):
