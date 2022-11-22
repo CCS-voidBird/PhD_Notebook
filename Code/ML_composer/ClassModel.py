@@ -786,13 +786,12 @@ class AttentionCNN(NN):
         #K = layers.Input(shape=input_shape)
         V = layers.Input(shape=input_shape)
 
-        embedding = layers.Embedding(input_dim=3, output_dim=2, input_length=input_shape[0])
+        embedding = layers.Embedding(input_dim=3, output_dim=2)
         Q_emb = embedding(Q)
         #K_emb = embedding(K)
         V_emb = embedding(V)
 
-        conv_layer = layers.Conv1D(filters=128, kernel_size=4, padding="same")
-
+        conv_layer = layers.Conv1D(filters=64, kernel_size=16, strides=8, padding="same", activation="elu")
         # Q,K,V 1D Conv
         Q_encoding = conv_layer(Q_emb)
         #K_encoding = conv_layer(K_emb)
