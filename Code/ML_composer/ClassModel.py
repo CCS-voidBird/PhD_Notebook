@@ -478,7 +478,10 @@ class NCNN(NN):
 
     def model_name(self):
         #get class name
-        return self.__class__.__name__
+        if self.args.residual is True:
+            return "Res"+self.__class__.__name__
+        else:
+            return self.__class__.__name__
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
         print("USE Numeric CNN MODEL as training method")
@@ -514,16 +517,16 @@ class NCNN(NN):
         model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
         """
         input = layers.Input(shape=input_shape)
-        X = layers.Conv1D(64, kernel_size=25, strides=3, padding='same', activation='relu')(input)
+        X = layers.Conv1D(64, kernel_size=5, strides=3, padding='same', activation='elu')(input)
         X = layers.MaxPooling1D(pool_size=2)(X)
-        X = layers.Conv1D(128, kernel_size=25, strides=3, padding='same', activation='relu')(X)
+        X = layers.Conv1D(128, kernel_size=3, strides=3, padding='same', activation='elu')(X)
         X = layers.MaxPooling1D(pool_size=2)(X)
 
         X = layers.Dropout(rate=0.2)(X)
         X = layers.Flatten()(X)
 
         for i in range(args.depth):
-            X = residual_fl_block(input=X, width=self.args.width,downsample=(i%2 != 0 & self.args.residual))
+            X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
 
         output = layers.Dense(1, activation="linear")(X)
         model = keras.Model(inputs=input, outputs=output)
@@ -717,7 +720,7 @@ class ResMLP(NN):
         X = layers.BatchNormalization()(input)
 
         for i in range(args.depth):
-            X = residual_fl_block(input=X, width=self.args.width, downsample=(i % 2 != 0 & self.args.residual))
+            X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i % 2 != 0 & self.args.residual))
 
         output = layers.Dense(1, activation="linear")(X)
 
