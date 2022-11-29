@@ -777,7 +777,9 @@ class AttentionCNN(NN):
 
         print("USE Attention CNN MODEL as training method")
         geno = decoding(geno)
-        #geno = np.expand_dims(geno, axis=2)
+        geno = np.expand_dims(geno, axis=2)
+        pos = np.arrays(range(geno.shape[1]))
+        pos = np.expand_dims(pos, axis=0)
         print("The transformed SNP shape:", geno.shape)
 
         if pheno_standard is True:
@@ -786,20 +788,24 @@ class AttentionCNN(NN):
 
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         # init Q,K,V
+        depth = args.depth
         Q = layers.Input(shape=input_shape)
         #K = layers.Input(shape=input_shape)
         V = layers.Input(shape=input_shape)
 
         embedding = layers.Embedding(input_dim=3, output_dim=2)
-        Q_emb = embedding(Q)
+        #Q_emb = embedding(Q)
         #K_emb = embedding(K)
-        V_emb = embedding(V)
+        #V_emb = embedding(V)
 
-        conv_layer = layers.Conv1D(filters=64, kernel_size=16, strides=8, padding="same", activation="elu")
+        #conv_layer = layers.Conv1D(filters=16, kernel_size=16, strides=16, padding="same", activation="relu")
+        #pool_layer = layers.AveragePooling1D(pool_size=16, strides=16, padding="same")
         # Q,K,V 1D Conv
-        Q_encoding = conv_layer(Q_emb)
+        Q_encoding = layers.Conv1D(filters=16, kernel_size=16, strides=16, padding="same", activation="relu")(Q)
+        #Q_encoding = pool_layer(Q_encoding)
         #K_encoding = conv_layer(K_emb)
-        V_encoding = conv_layer(V_emb)
+        V_encoding = layers.Conv1D(filters=16, kernel_size=16, strides=16, padding="same", activation="relu")(V)
+        #V_encoding = pool_layer(V_encoding)
 
         # Attention
         QV_attention = layers.Attention()([Q_encoding, V_encoding])
@@ -809,13 +815,16 @@ class AttentionCNN(NN):
         # Concat
         #QV_input = layers.Concatenate()
         #layers.concatenate([X1, X2], axis=-1)
-        QV_input = layers.concatenate([Q_encoding, QV_attention])
+        QV_input = layers.Concatenate()([Q_encoding, QV_attention])
         # Residual Dense
 
-        for i in range(args.depth):
-            QV_input = residual_fl_block(input=QV_input, width=self.args.width, downsample=(i % 2 != 0 & self.args.residual))
+        #X = layers.Conv1D(filters=1, kernel_size=1, strides=1, padding="same", activation="relu")(QV_input)
+        X = layers.Flatten()(QV_input)
 
-        QV_output = layers.Dense(1, activation="linear")(QV_input)
+        while depth > 0:
+            X = residual_fl_block(input=X, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
+            depth -= 1
+        QV_output = layers.Dense(1, activation="linear")(X)
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)

@@ -49,6 +49,7 @@ def get_args():
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=10)
     req_grp.add_argument('-lr', '--lr', type=float, help="Learning rate.", default=0.0001)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
+    req_grp.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     req_grp.add_argument('-plot', '--plot', dest='plot', action='store_true')
     parser.set_defaults(plot=False)
@@ -106,7 +107,7 @@ class ML_composer:
         self.save = True
         self.plot = False
         self.args = None
-        self.batchSize = 64
+        self.batchSize = 16
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
                           "Valid_Accuracy", "MSE", "Runtime"])
         self.model_name = None
@@ -127,7 +128,7 @@ class ML_composer:
         self._raw_data["PHENO"] = pd.read_table(args.pheno, sep="\t", header=None)
         self._raw_data["INDEX"] = pd.read_table(args.index,sep="\t", header=None)
         self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique())
-
+        self.batchSize = args.batch
         print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
         self._raw_data["INFO"] = self._raw_data["GENO"].iloc[:,0:6]  #Further using fam file instead.
