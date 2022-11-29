@@ -90,7 +90,8 @@ class TokenAndPositionEmbedding(layers.Layer):
 def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
     #residual fully connected layers block
     X = layers.Dense(width)(input)
-    X = layers.BatchNormalization()(X)
+    if activation == layers.ReLU():
+        X = layers.BatchNormalization()(X)
 
     if downsample:
         out = layers.Add()([X, input])
@@ -527,7 +528,7 @@ class NCNN(NN):
 
         for i in range(args.depth):
             X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
-
+        X = layers.Dropout(rate=0.2)(X)
         output = layers.Dense(1, activation="linear")(X)
         model = keras.Model(inputs=input, outputs=output)
 
