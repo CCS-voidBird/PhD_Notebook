@@ -28,6 +28,7 @@ from tensorflow.keras.layers import Layer
 tf.config.experimental_run_functions_eagerly(True)
 # Define the residual block as a new layer
 
+
 class Residual(Layer):
     def __init__(self, channels_in,kernel,**kwargs):
         super(Residual, self).__init__(**kwargs)
@@ -762,6 +763,27 @@ def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
 
         return model
 
+"""
+positional encoding
+"""
+
+class PositionalEncoding(layers.Layer):
+    """位置编码"""
+    def __init__(self, num_hiddens, dropout, max_len=1000):
+        super().__init__()
+        self.dropout = tf.keras.layers.Dropout(dropout)
+        # 创建一个足够长的P
+        self.P = np.zeros((1, max_len, num_hiddens))
+        X = np.arange(max_len, dtype=np.float32).reshape(
+            -1,1)/np.power(10000, np.arange(
+            0, num_hiddens, 2, dtype=np.float32) / num_hiddens)
+        self.P[:, :, 0::2] = np.sin(X)
+        self.P[:, :, 1::2] = np.cos(X)
+
+    def call(self, X, **kwargs):
+        X = X + self.P[:, :X.shape[1], :]
+        return self.dropout(X, **kwargs)
+
 class AttentionCNN(NN):
 
     def __init__(self,args):
@@ -778,53 +800,43 @@ class AttentionCNN(NN):
         print("USE Attention CNN MODEL as training method")
         geno = decoding(geno)
         geno = np.expand_dims(geno, axis=2)
-        pos = np.arrays(range(geno.shape[1]))
-        pos = np.expand_dims(pos, axis=0)
+        #pos = np.arrays(range(geno.shape[1]))
+        #pos = np.expand_dims(pos, axis=0)
         print("The transformed SNP shape:", geno.shape)
 
         if pheno_standard is True:
             pheno = stats.zscore(pheno)
-        return [geno,geno],pheno
+        return geno,pheno
 
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         # init Q,K,V
         depth = args.depth
-        Q = layers.Input(shape=input_shape)
-        #K = layers.Input(shape=input_shape)
-        V = layers.Input(shape=input_shape)
+        X = layers.Input(shape=input_shape,name="input_layer_1")
 
-        embedding = layers.Embedding(input_dim=3, output_dim=2)
-        #Q_emb = embedding(Q)
-        #K_emb = embedding(K)
-        #V_emb = embedding(V)
+        X = layers.ZeroPadding1D(padding=(0, input_shape[1]//16))(X)
+        V = layers.LocallyConnected1D(1,16,activation="relu",padding="valid",use_bias=False)(X)
+        #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
-        #conv_layer = layers.Conv1D(filters=16, kernel_size=16, strides=16, padding="same", activation="relu")
-        #pool_layer = layers.AveragePooling1D(pool_size=16, strides=16, padding="same")
+        Q = PositionalEncoding(num_hiddens=2, dropout=0, max_len=input_shape[0])(V)
+        V = PositionalEncoding(num_hiddens=2, dropout=0, max_len=input_shape[0])(V)
+
         # Q,K,V 1D Conv
-        Q_encoding = layers.Conv1D(filters=16, kernel_size=16, strides=16, padding="same", activation="relu")(Q)
-        #Q_encoding = pool_layer(Q_encoding)
-        #K_encoding = conv_layer(K_emb)
-        V_encoding = layers.Conv1D(filters=16, kernel_size=16, strides=16, padding="same", activation="relu")(V)
-        #V_encoding = pool_layer(V_encoding)
+        Q_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(Q)
+        V_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(V)
 
         # Attention
         QV_attention = layers.Attention()([Q_encoding, V_encoding])
-        Q_encoding = layers.GlobalAvgPool1D()(Q_encoding)
+        Q_attention = layers.GlobalAvgPool1D()(Q_encoding)
         QV_attention = layers.GlobalAvgPool1D()(QV_attention)
 
         # Concat
-        #QV_input = layers.Concatenate()
-        #layers.concatenate([X1, X2], axis=-1)
-        QV_input = layers.Concatenate()([Q_encoding, QV_attention])
+        M = layers.Concatenate()([Q_attention, QV_attention])
         # Residual Dense
 
-        #X = layers.Conv1D(filters=1, kernel_size=1, strides=1, padding="same", activation="relu")(QV_input)
-        X = layers.Flatten()(QV_input)
-
         while depth > 0:
-            X = residual_fl_block(input=X, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
+            M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1
-        QV_output = layers.Dense(1, activation="linear")(X)
+        QV_output = layers.Dense(1, activation="linear")(M)
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
@@ -839,7 +851,7 @@ class AttentionCNN(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        model = keras.Model(inputs=[Q,V], outputs=QV_output)
+        model = keras.Model(inputs=X, outputs=QV_output)
         model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
 
         #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
