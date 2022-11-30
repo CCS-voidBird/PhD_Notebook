@@ -811,10 +811,10 @@ class AttentionCNN(NN):
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         # init Q,K,V
         depth = args.depth
-        X = layers.Input(shape=input_shape,name="input_layer_1")
+        input1 = layers.Input(shape=input_shape,name="input_layer_1")
 
-        X = layers.ZeroPadding1D(padding=(0, input_shape[1]//16))(X)
-        V = layers.LocallyConnected1D(1,16,activation="relu",padding="valid",use_bias=False)(X)
+        X = layers.ZeroPadding1D(padding=(0, input_shape[1]//16))(input1)
+        V = layers.LocallyConnected1D(1,16,strides=16, activation="relu",padding="valid",use_bias=False)(X)
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
         Q = PositionalEncoding(num_hiddens=2, dropout=0, max_len=input_shape[0])(V)
@@ -851,7 +851,7 @@ class AttentionCNN(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        model = keras.Model(inputs=X, outputs=QV_output)
+        model = keras.Model(inputs=input1, outputs=QV_output)
         model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
 
         #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
