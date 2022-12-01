@@ -618,37 +618,6 @@ class BCNN():
 
         return model
 
-def DeepGS(input_shape,n_layers=0,n_units=32,optimizer="SGD",lr=0.01):
-    print("If need to specify MLP parameters for DeepGS model, modify MODEL file instead.")
-    lr = float(lr)
-    model = Sequential()
-    model.add(Conv1D(8, kernel_size=18, strides=1, padding='valid', activation='relu',
-                     input_shape=input_shape))
-    model.add(MaxPooling1D(pool_size=4,strides=4))
-    model.add(Dropout(rate=0.2))
-
-    model.add(Flatten())
-    model.add(Dropout(rate=0.1))
-    model.add(Dense(32,activation="relu"))
-    model.add(Dropout(rate=0.05))
-    model.add(Dense(1,activation="linear"))
-
-    try:
-        adm = keras.optimizers.Adam(learning_rate=lr)
-        rms = keras.optimizers.RMSprop(learning_rate=lr)
-        sgd = keras.optimizers.SGD(learning_rate=lr)
-    except:
-        adm = keras.optimizers.Adam(lr=lr)
-        rms = keras.optimizers.RMSprop(lr=lr)
-        sgd = keras.optimizers.SGD(lr=lr)
-
-    optimizers = {"rmsprop":rms,
-                 "Adam": adm,
-                 "SGD": sgd}
-
-    model.compile(optimizer=optimizers[optimizer],loss="mean_squared_error")
-
-    return model
 
 class MLP():
 
@@ -745,6 +714,70 @@ class ResMLP(NN):
 
         return model
 
+class LNN(NN):
+
+    def __init__(self,args):
+        super(LNN,self).__init__(args)
+        self.name = "Local NN"
+        self.args = args
+
+
+    def model_name(self):
+        #get class name
+        if self.args.residual is True:
+            return "Res"+self.__class__.__name__
+        else:
+            return self.__class__.__name__
+
+    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+        print("USE Numeric CNN MODEL as training method")
+        geno = decoding(geno)
+        geno = np.expand_dims(geno, axis=2)
+        print("The transformed SNP shape:", geno.shape)
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno,pheno
+
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+        lr = float(lr)
+
+        input = layers.Input(shape=input_shape)
+        X = layers.LocallyConnected1D(64, kernel_size=5, strides=5, padding='valid', activation='elu')(input)
+
+        X = layers.LocallyConnected1D(128, kernel_size=3, strides=3, padding='valid', activation='elu')(X)
+
+        X = layers.Dropout(rate=0.2)(X)
+        X = layers.Conv1D(256, kernel_size=1, strides=1, padding='same', activation='elu')(X)
+        X = layers.GlobalAvgPool1D()(X)
+
+        for i in range(args.depth):
+            X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
+
+        X = layers.Dropout(rate=0.2)(X)
+        output = layers.Dense(1, activation="linear")(X)
+        model = keras.Model(inputs=input, outputs=output)
+
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        """
+        Optimizers: Adam, RMSProp, SGD 
+        """
+
+        return model
+
 
 def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
     if specific == True:
@@ -833,6 +866,9 @@ class AttentionCNN(NN):
         M = layers.Concatenate()([Q_attention, QV_attention])
         # Residual Dense
 
+        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(M)
+        M = layers.GlobalAvgPool1D()(M)
+
         while depth > 0:
             M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1
@@ -868,17 +904,9 @@ MODELS = {
     "Binary CNN": BCNN,
     "Test CNN":Transformer,
     "Duo CNN": DCNN,
-    "DeepGS": DeepGS,
     "Double CNN": DoubleCNN,
     "Attention CNN": AttentionCNN,
     "ResMLP": ResMLP,
-}
-
-METHODS = {
-    "MLP": MLP,
-    "NCNN": NCNN,
-    "BCNN": BCNN,
-    "DeepGS": DeepGS
 }
 
 def main():
