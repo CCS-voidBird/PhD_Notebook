@@ -858,12 +858,12 @@ class AttentionCNN(NN):
         V_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(V)
 
         # Attention
-        QV_attention = layers.Attention()([Q_encoding, V_encoding])
-        Q_attention = layers.GlobalAvgPool1D()(Q_encoding)
-        QV_attention = layers.GlobalAvgPool1D()(QV_attention)
+        QV_attention = layers.Attention(use_scale=True)([Q_encoding, V_encoding])
+        #Q_attention = layers.GlobalAvgPool1D()(Q_encoding)
+        #QV_attention = layers.GlobalAvgPool1D()(QV_attention)
 
         # Concat
-        M = layers.Concatenate()([Q_attention, QV_attention])
+        M = layers.Concatenate()([Q_encoding, QV_attention])
         # Residual Dense
 
         M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(M)
