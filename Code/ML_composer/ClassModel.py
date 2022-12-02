@@ -15,6 +15,7 @@ except:
         from tensorflow.keras.utils import to_categorical
         from tensorflow.keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D, Dropout
         import tensorflow as tf
+        from CustomLayers import *
         print("Use tensorflow backend keras module")
     except:
         print("This is not a GPU env.")
@@ -87,41 +88,6 @@ class TokenAndPositionEmbedding(layers.Layer):
 
 ####################
 """
-
-def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
-    #residual fully connected layers block
-    X = layers.Dense(width)(input)
-    if activation == layers.ReLU():
-        X = layers.BatchNormalization()(X)
-
-    if downsample:
-        out = layers.Add()([X, input])
-        out = activation(out)
-        return out
-    else:
-        X = activation(X)
-        return X
-
-
-
-def residual_conv1D_block(input,filters,kernel_size,activation=layers.ReLU(),downsample=False):
-    X = layers.Conv1D(filters, kernel_size, padding="same")(input)
-    X = layers.BatchNormalization()(X)
-    X = activation(X)
-
-    X1 = layers.Conv1D(filters, kernel_size, padding="same")(X)
-    X1 = layers.BatchNormalization()(X1)
-
-    if downsample:
-        input = layers.Conv1D(filters, 1, padding="same")(input)
-        input = layers.BatchNormalization()(input)
-        out = layers.Add()([X1, input])
-    else:
-        out = layers.Add()([X1])
-
-    out = activation(out)
-    return out
-
 
 class NN:
 
@@ -800,22 +766,6 @@ def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
 positional encoding
 """
 
-class PositionalEncoding(layers.Layer):
-    """位置编码"""
-    def __init__(self, num_hiddens, dropout, max_len=1000):
-        super().__init__()
-        self.dropout = tf.keras.layers.Dropout(dropout)
-        # 创建一个足够长的P
-        self.P = np.zeros((1, max_len, num_hiddens))
-        X = np.arange(max_len, dtype=np.float32).reshape(
-            -1,1)/np.power(10000, np.arange(
-            0, num_hiddens, 2, dtype=np.float32) / num_hiddens)
-        self.P[:, :, 0::2] = np.sin(X)
-        self.P[:, :, 1::2] = np.cos(X)
-
-    def call(self, X, **kwargs):
-        X = X + self.P[:, :X.shape[1], :]
-        return self.dropout(X, **kwargs)
 
 class AttentionCNN(NN):
 
@@ -850,23 +800,25 @@ class AttentionCNN(NN):
         V = layers.LocallyConnected1D(1,16,strides=16, activation="relu",padding="valid",use_bias=False)(X)
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
-        Q = PositionalEncoding(num_hiddens=2, dropout=0, max_len=input_shape[0])(V)
-        V = PositionalEncoding(num_hiddens=2, dropout=0, max_len=input_shape[0])(V)
+        Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
+        K = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
+        V = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
         # Q,K,V 1D Conv
         Q_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(Q)
+        K_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(K)
         V_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(V)
 
         # Attention
-        QV_attention = layers.Attention(use_scale=True)([Q_encoding, V_encoding])
+        QKV_attention = SelfAttention(16)([Q_encoding,K_encoding,V_encoding])
         #Q_attention = layers.GlobalAvgPool1D()(Q_encoding)
         #QV_attention = layers.GlobalAvgPool1D()(QV_attention)
 
         # Concat
-        M = layers.Concatenate()([Q_encoding, QV_attention])
+        #M = layers.Concatenate()([V_encoding, QKV_attention])
         # Residual Dense
 
-        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(M)
+        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(QKV_attention)
         M = layers.GlobalAvgPool1D()(M)
 
         while depth > 0:
