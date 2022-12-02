@@ -810,7 +810,7 @@ class AttentionCNN(NN):
         V_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(V)
 
         # Attention
-        QKV_attention = SelfAttention(16)([Q_encoding,K_encoding,V_encoding])
+        QKV_attention = SelfAttention(16)(Q_encoding,K_encoding,V_encoding)
         #Q_attention = layers.GlobalAvgPool1D()(Q_encoding)
         #QV_attention = layers.GlobalAvgPool1D()(QV_attention)
 
