@@ -3,7 +3,7 @@ from tensorflow.keras import layers
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-
+import keras.backend as K
 """
 This file contains custom layers for ML_composer
 """
@@ -11,6 +11,12 @@ This file contains custom layers for ML_composer
 """
 Positional encoding layer
 """
+def dot_product(x, kernel):
+   if K.backend() == 'tensorflow':
+       return K.squeeze(K.dot(x, K.expand_dims(kernel)),axis=-1)
+   else:
+       return K.dot(x, kernel)
+
 class PositionalEncoding(layers.Layer):
     def __init__(self, position, d_model):
         super(PositionalEncoding, self).__init__()
@@ -34,26 +40,45 @@ class PositionalEncoding(layers.Layer):
         return tf.cast(pos_encoding, dtype=tf.float32)
 
     def call(self, inputs):
-        return inputs + self.pos_encoding[:, :tf.shape(inputs)[1], :]
+        #return inputs + self.pos_encoding[:, :tf.shape(inputs)[1], :]
+        return self.pos_encoding[:, :tf.shape(inputs)[1], :]
 
 ##Create a self attention layer with weights
-class SelfAttention(layers.Layer):
-    def __init__(self, units,dropout=0, **kwargs):
-        super(SelfAttention, self).__init__()
-        self.Wq = layers.Dense(units, use_bias=False)
-        self.Wk = layers.Dense(units, use_bias=False)
-        self.Wv = layers.Dense(1, use_bias=False)
-        self.dropout = tf.keras.layers.Dropout(dropout)
+class PosAttention(layers.Layer):
+    def __init__(self, **kwargs):
+        super(PosAttention, self).__init__(**kwargs)
 
-    def call(self, queries, keys, values, **kwargs):
-        q = self.Wq(queries)
-        k = self.Wk(keys)
-        v = self.Wv(values)
-        # calculate attention using softmax
-        score = tf.matmul(q, k, transpose_b=True)
-        attention_weights = tf.nn.softmax(score, axis=-1)
-        output = tf.matmul(self.dropout(attention_weights), v)
-        return output
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2
+        input_shape = tf.TensorShape(input_shape)
+        #input_channel = self._get_input_channel(input_shape)
+        self.W1 = self.add_weight(name='Attention_weight', shape=(input_shape[1],input_shape[2],),
+                                  initializer='normal', trainable=True)
+        self.V = layers.Dense(1, use_bias=False)
+        self.built = True
+        super(PosAttention, self).build(input_shape)
+
+    def call(self, x, pos):
+        # require constant attention score from attention layer
+        # x shape == (batch_size, seq_len,seq_len, d_model)
+        pos_attention = dot_product(pos, self.W1)
+
+        tanh_attention = tf.nn.tanh(pos_attention)
+
+        epi = dot_product(tf.nn.softmax(tanh_attention, axis=1), x)
+
+        # score shape == (batch_size, seq_len, seq_len, 1)
+
+
+        return K.sum(epi, axis=1)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], self.output_dim)
+
+    def get_config(self):
+        return super(PosAttention, self).get_config()
+
 
 def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
     #residual fully connected layers block

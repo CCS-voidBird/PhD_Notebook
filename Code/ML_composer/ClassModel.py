@@ -800,17 +800,13 @@ class AttentionCNN(NN):
         V = layers.LocallyConnected1D(1,16,strides=16, activation="relu",padding="valid",use_bias=False)(X)
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
-        Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
-        K = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
-        V = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
+        Pos = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
         # Q,K,V 1D Conv
-        Q_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(Q)
-        K_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(K)
-        V_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(V)
+        #Q_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(Pos)
 
         # Attention
-        QKV_attention = SelfAttention(16)(Q_encoding,K_encoding,V_encoding)
+        pos_attention = PosAttention()(V,Pos)
         #Q_attention = layers.GlobalAvgPool1D()(Q_encoding)
         #QV_attention = layers.GlobalAvgPool1D()(QV_attention)
 
@@ -818,7 +814,7 @@ class AttentionCNN(NN):
         #M = layers.Concatenate()([V_encoding, QKV_attention])
         # Residual Dense
 
-        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(QKV_attention)
+        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(pos_attention)
         M = layers.GlobalAvgPool1D()(M)
 
         while depth > 0:
