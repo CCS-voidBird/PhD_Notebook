@@ -15,7 +15,7 @@ except:
         from tensorflow.keras.utils import to_categorical
         from tensorflow.keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D, Dropout
         import tensorflow as tf
-        from CustomLayers import *
+
         print("Use tensorflow backend keras module")
     except:
         print("This is not a GPU env.")
@@ -26,6 +26,7 @@ import numpy as np
 import configparser
 from Functions import *
 from tensorflow.keras.layers import Layer
+from CustomLayers import *
 tf.config.experimental_run_functions_eagerly(True)
 # Define the residual block as a new layer
 
@@ -708,18 +709,18 @@ class LNN(NN):
         lr = float(lr)
 
         input = layers.Input(shape=input_shape)
-        X = layers.LocallyConnected1D(64, kernel_size=5, strides=5, padding='valid', activation='elu')(input)
+        X = layers.ZeroPadding1D(padding=(0, input_shape[1] // 5))(input)
+        X = layers.LocallyConnected1D(128, kernel_size=5, strides=5, padding='valid', activation='elu')(X)
+        X = layers.Conv1D(256, kernel_size=20, strides=2, padding='valid', activation='elu')(X)
 
-        X = layers.LocallyConnected1D(128, kernel_size=3, strides=3, padding='valid', activation='elu')(X)
+        #X = layers.LocallyConnected1D(128, kernel_size=3, strides=3, padding='valid', activation='elu')(X)
 
-        X = layers.Dropout(rate=0.2)(X)
-        X = layers.Conv1D(256, kernel_size=1, strides=1, padding='same', activation='elu')(X)
-        X = layers.GlobalAvgPool1D()(X)
-
+        #X = layers.MaxPooling1D(pool_size=2, strides=2, padding='valid')(X)
+        X = layers.Flatten()(X)
+        X = layers.Dropout(0.2)(X)
         for i in range(args.depth):
             X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
 
-        X = layers.Dropout(rate=0.2)(X)
         output = layers.Dense(1, activation="linear")(X)
         model = keras.Model(inputs=input, outputs=output)
 
@@ -762,11 +763,6 @@ def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
 
         return model
 
-"""
-positional encoding
-"""
-
-
 class AttentionCNN(NN):
 
     def __init__(self,args):
@@ -796,25 +792,25 @@ class AttentionCNN(NN):
         depth = args.depth
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
 
-        X = layers.ZeroPadding1D(padding=(0, input_shape[1]//16))(input1)
-        V = layers.LocallyConnected1D(1,16,strides=16, activation="relu",padding="valid",use_bias=False)(X)
+        X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
+        V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
+        V = layers.Reshape((input_shape[0],))(V)
 
-        Pos = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
+        Pos = PositionalEncoding(position=input_shape[0], d_model=input_shape[-1])(V)
 
         # Q,K,V 1D Conv
         #Q_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(Pos)
 
         # Attention
-        pos_attention = PosAttention()(V,Pos)
+        pos_attention = layers.Attention(use_scale=True)([Pos,Pos])
         #Q_attention = layers.GlobalAvgPool1D()(Q_encoding)
         #QV_attention = layers.GlobalAvgPool1D()(QV_attention)
-
         # Concat
-        #M = layers.Concatenate()([V_encoding, QKV_attention])
+        M = layers.Concatenate()([V,pos_attention])
         # Residual Dense
 
-        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(pos_attention)
+        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(M)
         M = layers.GlobalAvgPool1D()(M)
 
         while depth > 0:
@@ -855,6 +851,7 @@ MODELS = {
     "Double CNN": DoubleCNN,
     "Attention CNN": AttentionCNN,
     "ResMLP": ResMLP,
+    "LNN": LNN,
 }
 
 def main():

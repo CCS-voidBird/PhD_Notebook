@@ -3,7 +3,7 @@ from tensorflow.keras import layers
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-import keras.backend as K
+import tensorflow.keras.backend as K
 """
 This file contains custom layers for ML_composer
 """
@@ -51,9 +51,14 @@ class PosAttention(layers.Layer):
 
     def build(self, input_shape):
         assert len(input_shape) >= 2
-        input_shape = tf.TensorShape(input_shape)
+        attention_dim = input_shape[-1]
+        amount_size = input_shape[-1]
+        #input_shape = tf.TensorShape(input_shape)
         #input_channel = self._get_input_channel(input_shape)
-        self.W1 = self.add_weight(name='Attention_weight', shape=(input_shape[1],input_shape[2],),
+        self.W1 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim),
+                                  initializer='normal', trainable=True)
+
+        self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim),
                                   initializer='normal', trainable=True)
         self.V = layers.Dense(1, use_bias=False)
         self.built = True
@@ -65,6 +70,7 @@ class PosAttention(layers.Layer):
         pos_attention = dot_product(pos, self.W1)
 
         tanh_attention = tf.nn.tanh(pos_attention)
+        alpha = tf.nn.softmax(dot_product(tanh_attention, self.W2), axis=1)
 
         epi = dot_product(tf.nn.softmax(tanh_attention, axis=1), x)
 
