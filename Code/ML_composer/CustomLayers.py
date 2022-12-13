@@ -43,6 +43,47 @@ class PositionalEncoding(layers.Layer):
         #return inputs + self.pos_encoding[:, :tf.shape(inputs)[1], :]
         return self.pos_encoding[:, :tf.shape(inputs)[1], :]
 
+class BlockAttention(layers.Layer):
+    def __init__(self, **kwargs):
+        super(BlockAttention, self).__init__(**kwargs)
+
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2
+        attention_dim = [input_shape[-1]]
+        amount_size = input_shape[1:-1]
+        #input_shape = tf.TensorShape(input_shape)
+        #input_channel = self._get_input_channel(input_shape)
+        self.W1 = self.add_weight(name='Attention_weight', shape=(amount_size+attention_dim),
+                                  initializer='normal', trainable=True)
+
+        self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim),
+                                  initializer='normal', trainable=True)
+        self.V = layers.Dense(1, use_bias=False)
+        self.built = True
+        super(PosAttention, self).build(input_shape)
+
+    def call(self, x, pos):
+        # require constant attention score from attention layer
+        # x shape == (batch_size, seq_len,seq_len, d_model)
+        pos_attention = dot_product(pos, self.W1)
+
+        tanh_attention = tf.nn.tanh(pos_attention)
+        alpha = tf.nn.softmax(dot_product(tanh_attention, self.W2), axis=1)
+
+        epi = dot_product(tf.nn.softmax(tanh_attention, axis=1), x)
+
+        # score shape == (batch_size, seq_len, seq_len, 1)
+
+
+        return K.sum(epi, axis=1)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], self.output_dim)
+
+    def get_config(self):
+        return super(PosAttention, self).get_config()
+
 ##Create a self attention layer with weights
 class PosAttention(layers.Layer):
     def __init__(self, **kwargs):
