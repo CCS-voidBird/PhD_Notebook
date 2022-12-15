@@ -795,22 +795,10 @@ class AttentionCNN(NN):
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
-        V = layers.Reshape((input_shape[0],))(V)
 
-        Pos = PositionalEncoding(position=input_shape[0], d_model=input_shape[-1])(V)
+        block_attention = BlockAttention()(V)
 
-        # Q,K,V 1D Conv
-        #Q_encoding = layers.Conv1D(filters=16, kernel_size=1, strides=1, padding="same", activation="relu")(Pos)
-
-        # Attention
-        pos_attention = layers.Attention(use_scale=True)([Pos,Pos])
-        #Q_attention = layers.GlobalAvgPool1D()(Q_encoding)
-        #QV_attention = layers.GlobalAvgPool1D()(QV_attention)
-        # Concat
-        M = layers.Concatenate()([V,pos_attention])
-        # Residual Dense
-
-        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(M)
+        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(block_attention)
         M = layers.GlobalAvgPool1D()(M)
 
         while depth > 0:
