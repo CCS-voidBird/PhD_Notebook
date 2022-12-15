@@ -50,39 +50,40 @@ class BlockAttention(layers.Layer):
 
     def build(self, input_shape):
         assert len(input_shape) >= 2
-        attention_dim = [input_shape[-1]]
-        amount_size = input_shape[1:-1]
+        #attention_dim = [input_shape[-1]]
+        #amount_size = input_shape[1:-1]
         #input_shape = tf.TensorShape(input_shape)
         #input_channel = self._get_input_channel(input_shape)
-        self.W1 = self.add_weight(name='Attention_weight', shape=(amount_size+attention_dim),
+        self.W1 = self.add_weight(name='Attention_weight', shape=(input_shape[-1], input_shape[-1],),
                                   initializer='normal', trainable=True)
-
-        self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim),
-                                  initializer='normal', trainable=True)
-        self.V = layers.Dense(1, use_bias=False)
+        self.u = self.add_weight((input_shape[-1],),
+                                 initializer='normal',
+                                 name='Attention_u',)
+        #self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim), initializer='normal', trainable=True)
         self.built = True
-        super(PosAttention, self).build(input_shape)
+        super(BlockAttention, self).build(input_shape)
 
-    def call(self, x, pos):
+    def call(self, x):
         # require constant attention score from attention layer
         # x shape == (batch_size, seq_len,seq_len, d_model)
-        pos_attention = dot_product(pos, self.W1)
+        uit = K.tanh(dot_product(x, self.W1))
+        uit = K.tanh(uit)
+        ait = dot_product(uit, self.u)
 
-        tanh_attention = tf.nn.tanh(pos_attention)
-        alpha = tf.nn.softmax(dot_product(tanh_attention, self.W2), axis=1)
+        a = K.exp(ait)
 
-        epi = dot_product(tf.nn.softmax(tanh_attention, axis=1), x)
+        a /= K.cast(K.sum(a, axis=1, keepdims=True) + K.epsilon(), K.floatx())
 
-        # score shape == (batch_size, seq_len, seq_len, 1)
+        a = K.expand_dims(a)
+        weighted_input = x * a
+        return K.sum(weighted_input, axis=1)
 
-
-        return K.sum(epi, axis=1)
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0], self.output_dim)
 
     def get_config(self):
-        return super(PosAttention, self).get_config()
+        return super(BlockAttention, self).get_config()
 
 ##Create a self attention layer with weights
 class PosAttention(layers.Layer):
