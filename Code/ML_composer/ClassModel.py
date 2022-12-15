@@ -15,6 +15,7 @@ except:
         from tensorflow.keras.utils import to_categorical
         from tensorflow.keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D, Dropout
         import tensorflow as tf
+        from keras_self_attention import SeqSelfAttention
 
         print("Use tensorflow backend keras module")
     except:
@@ -796,10 +797,11 @@ class AttentionCNN(NN):
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
-        block_attention = BlockAttention()(V)
+        M = BlockAttention()(V)
+        #M = SeqSelfAttention(attention_activation='sigmoid')(V)
 
-        M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(block_attention)
-        M = layers.GlobalAvgPool1D()(M)
+        #M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(block_attention)
+        #M = layers.GlobalAvgPool1D()(M)
 
         while depth > 0:
             M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))

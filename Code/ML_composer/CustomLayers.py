@@ -1,3 +1,4 @@
+#import dask.array
 from tensorflow import keras
 from tensorflow.keras import layers
 import tensorflow as tf
@@ -13,6 +14,7 @@ Positional encoding layer
 """
 def dot_product(x, kernel):
    if K.backend() == 'tensorflow':
+       #x = K.squeeze(x, axis=-1)
        return K.squeeze(K.dot(x, K.expand_dims(kernel)),axis=-1)
    else:
        return K.dot(x, kernel)
@@ -50,15 +52,16 @@ class BlockAttention(layers.Layer):
 
     def build(self, input_shape):
         assert len(input_shape) >= 2
+        self.return_attention = False
         #attention_dim = [input_shape[-1]]
         #amount_size = input_shape[1:-1]
         #input_shape = tf.TensorShape(input_shape)
         #input_channel = self._get_input_channel(input_shape)
-        self.W1 = self.add_weight(name='Attention_weight', shape=(input_shape[-1], input_shape[-1],),
-                                  initializer='normal', trainable=True)
-        self.u = self.add_weight((input_shape[-1],),
-                                 initializer='normal',
-                                 name='Attention_u',)
+        self.u = self.add_weight(name='Block_extension', shape=(1,input_shape[-2]),
+                                  initializer='ones', trainable=False)
+        self.Wa = self.add_weight(name='Attention_context_vector', shape=(input_shape[-2], input_shape[-2]),
+                                 initializer='normal', trainable=True)
+        #self.u = self.add_weight(shape=(input_shape[-2],),initializer='normal',name='Attention_u')
         #self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim), initializer='normal', trainable=True)
         self.built = True
         super(BlockAttention, self).build(input_shape)
@@ -66,21 +69,37 @@ class BlockAttention(layers.Layer):
     def call(self, x):
         # require constant attention score from attention layer
         # x shape == (batch_size, seq_len,seq_len, d_model)
-        uit = K.tanh(dot_product(x, self.W1))
-        uit = K.tanh(uit)
-        ait = dot_product(uit, self.u)
+        #x = K.squeeze(x, axis=-1)
+        e = K.dot(x, self.u)
+        e = e * self.Wa
+        #sum by features
+        eff = K.sum(e, axis=-1)
+        eff = K.softmax(eff)
+        #e = K.batch_dot(K.dot(x, self.Wa), K.permute_dimensions(x, (0, 2, 1)))
+        #uit = K.expand_dims(uit, axis=-1)
+        #ait = dot_product(uit, self.u)
 
-        a = K.exp(ait)
+        #a = K.exp(ait)
 
-        a /= K.cast(K.sum(a, axis=1, keepdims=True) + K.epsilon(), K.floatx())
+        #a /= K.cast(K.sum(a, axis=1, keepdims=True) + K.epsilon(), K.floatx())
 
-        a = K.expand_dims(a)
-        weighted_input = x * a
-        return K.sum(weighted_input, axis=1)
+        #e = K.exp(e - K.max(e, axis=-1, keepdims=True))
+        #a = e / K.sum(e, axis=-1, keepdims=True)
+
+        # l_t = \sum_{t'} a_{t, t'} x_{t'}
+        #v = K.batch_dot(a, x)
+
+        if self.return_attention:
+            return [eff, e]
+        return eff
 
 
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0], self.output_dim)
+def compute_output_shape(self, output_shape):
+    input_shape = output_shape
+    if self.return_attention:
+        attention_shape = (input_shape[0], output_shape[1], input_shape[1])
+        return [output_shape, attention_shape]
+    return output_shape
 
     def get_config(self):
         return super(BlockAttention, self).get_config()
