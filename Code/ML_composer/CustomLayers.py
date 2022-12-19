@@ -61,6 +61,8 @@ class BlockAttention(layers.Layer):
                                   initializer='ones', trainable=False)
         self.Wa = self.add_weight(name='Attention_context_vector', shape=(input_shape[-2], input_shape[-2]),
                                  initializer='normal', trainable=True)
+        self.We = self.add_weight(name='effect_context_vector', shape=(input_shape[-2], input_shape[-2]),
+                                  initializer='normal', trainable=True)
         #self.u = self.add_weight(shape=(input_shape[-2],),initializer='normal',name='Attention_u')
         #self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim), initializer='normal', trainable=True)
         self.built = True
@@ -73,8 +75,11 @@ class BlockAttention(layers.Layer):
         e = K.dot(x, self.u)
         e = e * self.Wa
         #sum by features
-        eff = K.sum(e, axis=-1)
-        eff = K.softmax(eff)
+        #eff = K.sum(e, axis=1)
+        eff = K.softmax(e)
+        eff = eff * self.We
+        #sum by time
+        eff = K.sum(eff, axis=1, keepdims=True)
         #e = K.batch_dot(K.dot(x, self.Wa), K.permute_dimensions(x, (0, 2, 1)))
         #uit = K.expand_dims(uit, axis=-1)
         #ait = dot_product(uit, self.u)
