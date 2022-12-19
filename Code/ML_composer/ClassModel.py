@@ -798,6 +798,8 @@ class AttentionCNN(NN):
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
         M = BlockAttention()(V)
+        #2D CNN by column
+        #M = layers.Conv2D(32, kernel_size=(), strides=2, padding='valid', activation='elu')(M)
         #M = SeqSelfAttention(attention_activation='sigmoid')(V)
 
         #M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(block_attention)

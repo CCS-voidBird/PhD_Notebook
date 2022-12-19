@@ -57,11 +57,12 @@ class BlockAttention(layers.Layer):
         #amount_size = input_shape[1:-1]
         #input_shape = tf.TensorShape(input_shape)
         #input_channel = self._get_input_channel(input_shape)
-        self.u = self.add_weight(name='Block_extension', shape=(1,input_shape[-2]),
+        self.filters = input_shape[-1]
+        self.u = self.add_weight(name='Block_extension', shape=(self.filters,input_shape[-2]),
                                   initializer='ones', trainable=False)
-        self.Wa = self.add_weight(name='Attention_context_vector', shape=(input_shape[-2], input_shape[-2]),
+        self.Wa = self.add_weight(name='Attention_context_vector', shape=(self.filters,input_shape[-2], input_shape[-2]),
                                  initializer='normal', trainable=True)
-        self.We = self.add_weight(name='effect_context_vector', shape=(input_shape[-2], input_shape[-2]),
+        self.We = self.add_weight(name='effect_context_vector', shape=(self.filters,input_shape[-2], input_shape[-2]),
                                   initializer='normal', trainable=True)
         #self.u = self.add_weight(shape=(input_shape[-2],),initializer='normal',name='Attention_u')
         #self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim), initializer='normal', trainable=True)
