@@ -108,6 +108,7 @@ class ML_composer:
         self.plot = False
         self.args = None
         self.batchSize = 16
+        self.mean_pheno = 0
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
                           "Valid_Accuracy", "MSE", "Runtime"])
         self.model_name = None
@@ -182,13 +183,13 @@ class ML_composer:
 
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
         print("Mean of train phenotype:",np.mean(self.train_pheno))
-        mean_train = np.mean(self.train_pheno)
+        self.mean_pheno = np.mean(self.train_pheno)
         if self.args.mean is not True:
             print("Use raw phenotype as the target")
-            mean_train = 0
-        self.train_pheno = self.train_pheno - mean_train
+            self.mean_pheno = 0
+        self.train_pheno = self.train_pheno - self.mean_pheno
         self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
-        self.valid_pheno = self.valid_pheno - mean_train
+        #self.valid_pheno = self.valid_pheno - self.mean_pheno
         print(self.valid_pheno.head(5))
 
         #label_encoder = LabelEncoder()
@@ -305,7 +306,7 @@ class ML_composer:
             self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
         print("Predicting valid set..")
         val_length = valid_pheno.shape[0]
-        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(valid_data), (val_length,))
+        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(valid_data), (val_length,))+self.mean_pheno
         print("Testing prediction:")
         print("Predicted: ", y_pred_valid[:10])
         print("observed: ", valid_pheno[:10])

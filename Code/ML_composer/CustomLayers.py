@@ -74,11 +74,11 @@ class BlockAttention(layers.Layer):
         # x shape == (batch_size, seq_len,seq_len, d_model)
         #x = K.squeeze(x, axis=-1)
         e = K.dot(x, self.u)
-        e = e * self.Wa
+        att = e * self.Wa
         #sum by features
         #eff = K.sum(e, axis=1)
-        eff = K.softmax(e)
-        eff = eff * self.We
+        att = K.softmax(att)
+        eff = att * e * self.We
         #sum by time
         eff = K.sum(eff, axis=1, keepdims=True)
         #e = K.batch_dot(K.dot(x, self.Wa), K.permute_dimensions(x, (0, 2, 1)))
@@ -96,7 +96,7 @@ class BlockAttention(layers.Layer):
         #v = K.batch_dot(a, x)
 
         if self.return_attention:
-            return [eff, e]
+            return [eff, att]
         return eff
 
 
