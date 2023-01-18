@@ -769,6 +769,7 @@ class AttentionCNN(NN):
     def __init__(self,args):
         super(AttentionCNN,self).__init__(args)
         self.name = "Attention CNN"
+        self.rank = True  ##rank block value to 0 (zero),1 (low),2 (high).
         self.args = args
 
     def model_name(self):
@@ -794,7 +795,10 @@ class AttentionCNN(NN):
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
 
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
+
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
+        #V = layers.Activation("sigmoid")(V)
+        #V = layers.Embedding(input_dim=1, output_dim=8, input_length=input_shape[1])(V)
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
         M = BlockAttention()(V)
