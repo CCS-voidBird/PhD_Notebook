@@ -54,42 +54,6 @@ class Residual(Layer):
 
 
 ####################
-"""
-class TransformerBlock(layers.Layer):
-    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
-        super(TransformerBlock, self).__init__()
-        self.att = layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
-        self.ffn = keras.Sequential(
-            [layers.Dense(ff_dim, activation="relu"), layers.Dense(embed_dim),]
-        )
-        self.layernorm1 = layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = layers.LayerNormalization(epsilon=1e-6)
-        self.dropout1 = layers.Dropout(rate)
-        self.dropout2 = layers.Dropout(rate)
-
-    def call(self, inputs, training):
-        attn_output = self.att(inputs, inputs)
-        attn_output = self.dropout1(attn_output, training=training)
-        out1 = self.layernorm1(inputs + attn_output)
-        ffn_output = self.ffn(out1)
-        ffn_output = self.dropout2(ffn_output, training=training)
-        return self.layernorm2(out1 + ffn_output)
-
-class TokenAndPositionEmbedding(layers.Layer):
-    def __init__(self, maxlen, vocab_size, embed_dim):
-        super(TokenAndPositionEmbedding, self).__init__()
-        self.token_emb = layers.Embedding(input_dim=vocab_size, output_dim=embed_dim)
-        self.pos_emb = layers.Embedding(input_dim=maxlen, output_dim=embed_dim)
-
-    def call(self, x):
-        maxlen = tf.shape(x)[-1]
-        positions = tf.range(start=0, limit=maxlen, delta=1)
-        positions = self.pos_emb(positions)
-        x = self.token_emb(x)
-        return x + positions
-
-####################
-"""
 
 class NN:
 
@@ -838,6 +802,80 @@ class AttentionCNN(NN):
 
         return model
 
+class MultiHeadAttentionCNN(NN):
+
+    def __init__(self,args):
+        super(MultiHeadAttentionCNN,self).__init__(args)
+        self.name = "Attention CNN"
+        self.rank = True  ##rank block value to 0 (zero),1 (low),2 (high).
+        self.args = args
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+
+        print("USE Attention CNN MODEL as training method")
+        geno = decoding(geno)
+        geno = np.expand_dims(geno, axis=2)
+        #pos = np.arrays(range(geno.shape[1]))
+        #pos = np.expand_dims(pos, axis=0)
+        print("The transformed SNP shape:", geno.shape)
+
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno,pheno
+
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+        # init Q,K,V
+        depth = args.depth
+        input1 = layers.Input(shape=input_shape,name="input_layer_1")
+
+        X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
+
+        V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
+        #V = layers.Activation("sigmoid")(V)
+        #V = layers.Embedding(input_dim=1, output_dim=8, input_length=input_shape[1])(V)
+        #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
+
+        M = MultiHead_BlockAttention(args.num_heads)(V)
+        #2D CNN by column
+        #M = layers.Conv2D(32, kernel_size=(), strides=2, padding='valid', activation='elu')(M)
+        #M = SeqSelfAttention(attention_activation='sigmoid')(V)
+
+        #M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(block_attention)
+        #M = layers.GlobalAvgPool1D()(M)
+
+        while depth > 0:
+            M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
+            depth -= 1
+        QV_output = layers.Dense(1, activation="linear")(M)
+
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model = keras.Model(inputs=input1, outputs=QV_output)
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
+        #QK = layers.Softmax(axis=-1)(QK)
+        #QKV = layers.Dot(axes=[2, 1])([QK, V_encoding])
+        #QKV = layers.Flatten()(QKV)
+        #QKV = layers.Dense(1, activation="linear")(QKV)
+
+        return model
+
 MODELS = {
     "MLP": MLP,
     "Numeric CNN": NCNN,
@@ -846,6 +884,7 @@ MODELS = {
     "Duo CNN": DCNN,
     "Double CNN": DoubleCNN,
     "Attention CNN": AttentionCNN,
+    "MultiHead Attention CNN": MultiHeadAttentionCNN,
     "ResMLP": ResMLP,
     "LNN": LNN,
 }
