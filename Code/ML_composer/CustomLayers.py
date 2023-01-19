@@ -110,11 +110,11 @@ class MultiHead_BlockAttention(layers.Layer):
         self.filters = input_shape[-1]
         self.seq_len = input_shape[1]
 
-        self.wq = self.add_weight(name='query', shape=(self.filters,self.seq_len,self.head_num),
+        self.wq = self.add_weight(name='query', shape=(self.filters,self.seq_len*self.head_num),
                                   initializer='normal', trainable=True)
-        self.wk = self.add_weight(name='key', shape=(self.filters,self.seq_len,self.head_num),
+        self.wk = self.add_weight(name='key', shape=(self.filters,self.seq_len*self.head_num),
                                   initializer='normal', trainable=True)
-        self.wv = self.add_weight(name='value', shape=(self.filters,self.seq_len,self.head_num),
+        self.wv = self.add_weight(name='value', shape=(self.filters,self.seq_len*self.head_num),
                                   initializer='normal', trainable=True)
 
         self.built = True

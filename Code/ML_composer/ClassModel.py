@@ -802,10 +802,10 @@ class AttentionCNN(NN):
 
         return model
 
-class MultiHeadAttentionCNN(NN):
+class MultiHeadAttentionLNN(NN):
 
     def __init__(self,args):
-        super(MultiHeadAttentionCNN,self).__init__(args)
+        super(MultiHeadAttentionLNN,self).__init__(args)
         self.name = "Attention CNN"
         self.rank = True  ##rank block value to 0 (zero),1 (low),2 (high).
         self.args = args
@@ -884,7 +884,7 @@ MODELS = {
     "Duo CNN": DCNN,
     "Double CNN": DoubleCNN,
     "Attention CNN": AttentionCNN,
-    "MultiHead Attention CNN": MultiHeadAttentionCNN,
+    "MultiHead Attention LNN": MultiHeadAttentionLNN,
     "ResMLP": ResMLP,
     "LNN": LNN,
 }
