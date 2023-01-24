@@ -846,7 +846,7 @@ class MultiHeadAttentionLNN(NN):
 
         #M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(block_attention)
         #M = layers.GlobalAvgPool1D()(M)
-
+        M = layers.Flatten()(M)
         while depth > 0:
             M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1
