@@ -142,6 +142,50 @@ class MultiHead_BlockAttention(layers.Layer):
 
         return all_effects
 
+class MultiHead_QK_BlockAttention(layers.Layer):
+    def __init__(self,head_num=1, **kwargs):
+        super(MultiHead_QK_BlockAttention, self).__init__(**kwargs)
+        self.head_num = head_num
+
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2
+        self.return_attention = False
+        self.feature_dim = input_shape[-1]
+        self.seq_len = input_shape[1]
+
+        self.wq = self.add_weight(name='query', shape=(self.feature_dim,self.seq_len*self.head_num),
+                                  initializer='normal', trainable=True)
+        self.wk = self.add_weight(name='key', shape=(self.feature_dim,self.seq_len*self.head_num),
+                                  initializer='normal', trainable=True)
+        self.wv = self.add_weight(name='value', shape=(self.feature_dim,self.seq_len*self.head_num),
+                                  initializer='normal', trainable=True)
+
+        self.built = True
+        super(MultiHead_QK_BlockAttention, self).build(input_shape)
+
+    def call(self, x):
+
+        query = tf.tensordot(x, self.wq, axes=(-1,0))
+        key = tf.tensordot(x, self.wk, axes=(-1,0))
+        value = tf.tensordot(x, self.wv, axes=(-1,0))
+
+        # q,k,v shape == (batch_size, seq_len, d_model)
+
+        query = tf.stack(tf.split(query, self.head_num, axis=2))
+        key = tf.stack(tf.split(key, self.head_num, axis=2))
+        value = tf.stack(tf.split(value, self.head_num, axis=2))
+
+        inner_product = tf.matmul(query, key, transpose_b=True)
+        attention_score = tf.nn.softmax(inner_product)
+
+        effect = tf.matmul(attention_score, value)
+
+        all_effects = tf.concat(tf.split(effect, self.head_num,), axis=-1)
+        all_effects = tf.squeeze(all_effects, axis=0) # (batch_size, seq_len, d_model)\
+
+        return all_effects
+
 
 def compute_output_shape(self, output_shape):
     input_shape = output_shape

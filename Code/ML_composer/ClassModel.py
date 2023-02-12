@@ -760,18 +760,12 @@ class AttentionCNN(NN):
 
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
 
+
+
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
-        #V = layers.Activation("sigmoid")(V)
-        #V = layers.Embedding(input_dim=1, output_dim=8, input_length=input_shape[1])(V)
-        #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
+
 
         M = BlockAttention()(V)
-        #2D CNN by column
-        #M = layers.Conv2D(32, kernel_size=(), strides=2, padding='valid', activation='elu')(M)
-        #M = SeqSelfAttention(attention_activation='sigmoid')(V)
-
-        #M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(block_attention)
-        #M = layers.GlobalAvgPool1D()(M)
 
         while depth > 0:
             M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
@@ -835,11 +829,12 @@ class MultiHeadAttentionLNN(NN):
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
 
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
+        V = layers.Embedding(1,8)(V)
         #V = layers.Activation("sigmoid")(V)
         #V = layers.Embedding(input_dim=1, output_dim=8, input_length=input_shape[1])(V)
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
-        M = MultiHead_BlockAttention(args.num_heads)(V)
+        M = MultiHead_QK_BlockAttention(args.num_heads)(V)
         #2D CNN by column
         #M = layers.Conv2D(32, kernel_size=(), strides=2, padding='valid', activation='elu')(M)
         #M = SeqSelfAttention(attention_activation='sigmoid')(V)
