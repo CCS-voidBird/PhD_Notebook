@@ -13,11 +13,11 @@ This file contains custom layers for ML_composer
 Positional encoding layer
 """
 def dot_product(x, kernel):
-   if K.backend() == 'tensorflow':
+    if K.backend() == 'tensorflow':
        #x = K.squeeze(x, axis=-1)
-       return K.squeeze(K.dot(x, K.expand_dims(kernel)),axis=-1)
-   else:
-       return K.dot(x, kernel)
+        return K.squeeze(K.dot(x, K.expand_dims(kernel)),axis=-1)
+    else:
+        return K.dot(x, kernel)
 
 class PositionalEncoding(layers.Layer):
     def __init__(self, position, d_model):
@@ -152,13 +152,13 @@ class MultiHead_QK_BlockAttention(layers.Layer):
         assert len(input_shape) >= 2
         self.return_attention = False
         self.feature_dim = input_shape[-1]
-        self.seq_len = input_shape[1]
+        self.seq_len = input_shape[1] / self.head_num
 
-        self.wq = self.add_weight(name='query', shape=(self.feature_dim,self.seq_len*self.head_num),
+        self.wq = self.add_weight(name='query', shape=(self.feature_dim,self.feature_dim),
                                   initializer='normal', trainable=True)
-        self.wk = self.add_weight(name='key', shape=(self.feature_dim,self.seq_len*self.head_num),
+        self.wk = self.add_weight(name='key', shape=(self.feature_dim,self.feature_dim),
                                   initializer='normal', trainable=True)
-        self.wv = self.add_weight(name='value', shape=(self.feature_dim,self.seq_len*self.head_num),
+        self.wv = self.add_weight(name='value', shape=(self.feature_dim,self.feature_dim),
                                   initializer='normal', trainable=True)
 
         self.built = True
@@ -166,23 +166,24 @@ class MultiHead_QK_BlockAttention(layers.Layer):
 
     def call(self, x):
 
-        query = tf.tensordot(x, self.wq, axes=(-1,0))
-        key = tf.tensordot(x, self.wk, axes=(-1,0))
-        value = tf.tensordot(x, self.wv, axes=(-1,0))
+        query = tf.einsum('bsd,dd->bsd',x,self.wq)
+        key = tf.einsum('bsd,dd->bsd',x,self.wk)
+        value = tf.einsum('bsd,dd->bsd',x,self.wv)
+        #value = tf.tensordot(x, self.wv, axes=(-1,0))
 
         # q,k,v shape == (batch_size, seq_len, d_model)
 
-        query = tf.stack(tf.split(query, self.head_num, axis=2))
-        key = tf.stack(tf.split(key, self.head_num, axis=2))
-        value = tf.stack(tf.split(value, self.head_num, axis=2))
+        query = tf.stack(tf.split(query, self.head_num, axis=2),axis=1)
+        key = tf.stack(tf.split(key, self.head_num, axis=2),axis=1)
+        value = tf.stack(tf.split(value, self.head_num, axis=2),axis=1)
 
-        inner_product = tf.matmul(query, key, transpose_b=True)
+        inner_product = tf.matmul(query, key, transpose_b=True)/tf.math.sqrt(seq_len)
         attention_score = tf.nn.softmax(inner_product)
 
         effect = tf.matmul(attention_score, value)
 
         all_effects = tf.concat(tf.split(effect, self.head_num,), axis=-1)
-        all_effects = tf.squeeze(all_effects, axis=0) # (batch_size, seq_len, d_model)\
+        all_effects = tf.squeeze(all_effects, axis=0) # (batch_size, seq_len, d_model)
 
         return all_effects
 
