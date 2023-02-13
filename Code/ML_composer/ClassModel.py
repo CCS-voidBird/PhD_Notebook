@@ -762,10 +762,12 @@ class AttentionCNN(NN):
         
 
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
-        V = layers.Conv1D(8,kernel_size=1,strides=1,activation='relu')(V)
-        V = layers.LayerNormalization()(V)
+        V = layers.Conv1D(8,kernel_size=1,strides=1,activation='relu',use_bias=False)(V)
+        #V = layers.LayerNormalization()(V)
 
-        M = MultiHead_QK_BlockAttention()(V)
+        M = MultiHead_QK_BlockAttention(self.args.num_heads)(V)
+        M = layers.Conv1D(1,1,1,activation='relu')(M)
+        M = layers.Flatten()(M)
 
         while depth > 0:
             M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))

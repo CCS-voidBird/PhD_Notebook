@@ -177,13 +177,13 @@ class MultiHead_QK_BlockAttention(layers.Layer):
         key = tf.stack(tf.split(key, self.head_num, axis=2),axis=1)
         value = tf.stack(tf.split(value, self.head_num, axis=2),axis=1)
 
-        inner_product = tf.matmul(query, key, transpose_b=True)/tf.math.sqrt(seq_len)
+        inner_product = tf.matmul(query, key, transpose_b=True)/tf.math.sqrt(self.seq_len)
         attention_score = tf.nn.softmax(inner_product)
 
         effect = tf.matmul(attention_score, value)
 
-        all_effects = tf.concat(tf.split(effect, self.head_num,), axis=-1)
-        all_effects = tf.squeeze(all_effects, axis=0) # (batch_size, seq_len, d_model)
+        all_effects = tf.concat(tf.split(effect, self.head_num,axis=1), axis=-1)
+        all_effects = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
 
         return all_effects
 

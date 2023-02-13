@@ -110,6 +110,7 @@ class ML_composer:
         self.args = None
         self.batchSize = 16
         self.mean_pheno = 0
+        self.subset_ratio = 1
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
                           "Valid_Accuracy", "MSE", "Runtime"])
         self.model_name = None
