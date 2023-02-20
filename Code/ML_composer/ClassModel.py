@@ -31,7 +31,6 @@ from CustomLayers import *
 tf.config.experimental_run_functions_eagerly(True)
 # Define the residual block as a new layer
 
-
 class Residual(Layer):
     def __init__(self, channels_in,kernel,**kwargs):
         super(Residual, self).__init__(**kwargs)

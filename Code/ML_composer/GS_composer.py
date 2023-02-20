@@ -89,6 +89,8 @@ def plot_loss_history(h, title,plot_name=None,checkpoint=0):
         plt.show()
     #plt.show()
 
+lr_opt = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=0, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
+
 class ML_composer:
 
     def __init__(self,silence=0):
@@ -232,7 +234,7 @@ class ML_composer:
             features_train, target_train,
             epochs=int(self.args.epoch),
             validation_data=(features_test, target_test), verbose=int(self.args.quiet),
-            callbacks=[callback],batch_size = self.batchSize)
+            callbacks=[lr_opt],batch_size = self.batchSize)
 
 
         # let's just print the final loss
