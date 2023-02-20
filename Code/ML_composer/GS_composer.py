@@ -89,7 +89,7 @@ def plot_loss_history(h, title,plot_name=None,checkpoint=0):
         plt.show()
     #plt.show()
 
-lr_opt = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=0, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
+lr_opt = keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=10, verbose=0, mode='auto', min_delta=0.005, cooldown=0, min_lr=0)
 
 class ML_composer:
 
@@ -221,7 +221,7 @@ class ML_composer:
             with open(os.path.abspath(self.args.output) + "/model_summary.txt", "w") as fh:
                 self._model["TRAINED_MODEL"].summary(print_fn=lambda x: fh.write(x + "\n"))
 
-        callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=PATIENCE)
+        #callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=PATIENCE)
 
         try:
             print(self._model["TRAINED_MODEL"].summary())

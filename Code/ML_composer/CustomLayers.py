@@ -248,8 +248,11 @@ def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
         X = layers.BatchNormalization()(X)
 
     if downsample:
-        out = layers.Add()([X, input])
-        out = activation(out)
+        if input.shape[-1] != X.shape[-1]:
+            filter_n = X.shape[-1]
+            input_x = layers.Conv1D(filter_n,1,1,padding='same')(X)
+        out = layers.Add()([X, input_x])
+        #out = activation(out)
         return out
     else:
         X = activation(X)

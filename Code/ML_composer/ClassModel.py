@@ -754,23 +754,34 @@ class AttentionCNN(NN):
 
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         # init Q,K,V
-        depth = args.depth
+        if args.depth < 1:
+            depth = 1
+        else:
+            depth = args.depth
+
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
 
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
-        
 
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
-        V = layers.Conv1D(8,kernel_size=1,strides=1,activation='relu',use_bias=False)(V)
-        #V = layers.LayerNormalization()(V)
-
-        M = MultiHead_QK_BlockAttention(self.args.num_heads)(V)
-        M = layers.Conv1D(1,1,1,activation='relu')(M)
-        M = layers.Flatten()(M)
+        M = layers.Conv1D(8, kernel_size=1, strides=1, activation='relu', use_bias=False)(V)
 
         while depth > 0:
+            # V = layers.LayerNormalization()(V)
+            M = MultiHead_QK_BlockAttention(self.args.num_heads)(M)
+
+            M = layers.Add()([M, V])
+            M = layers.BatchNormalization()(M)
+            #M = layers.BatchNormalization()(M)
             M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1
+
+        #M = layers.Conv1D(1, 1, 1, activation='relu')(M)
+        M = layers.AveragePooling1D(2,2)(M)
+        M = layers.Flatten()(M)
+        M = layers.Dropout(0.5)(M)
+        M = layers.Dense(self.args.width, activation="relu")(M)
+        M = layers.Dropout(0.5)(M)
         QV_output = layers.Dense(1, activation="linear")(M)
 
         try:
