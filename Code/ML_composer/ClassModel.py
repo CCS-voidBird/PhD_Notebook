@@ -768,8 +768,10 @@ class AttentionCNN(NN):
 
         while depth > 0:
             # V = layers.LayerNormalization()(V)
-            M = MultiHead_QK_BlockAttention(self.args.num_heads)(M)
-
+            M,embedding = MultiHead_seq_BlockAttention()(M)
+            #M = layers.Conv2D(8,(1,4),(1,4)
+            M = MultiHead_conv_BlockAttention()(M)
+            M = Conv2D(8,(1,embedding),(1,1))(M)  #b,q,d,s -> b,n,d,s -> b,n,s
             M = layers.Add()([M, V])
             M = layers.BatchNormalization()(M)
             #M = layers.BatchNormalization()(M)
