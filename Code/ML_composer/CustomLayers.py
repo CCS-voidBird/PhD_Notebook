@@ -215,9 +215,9 @@ class MultiHead_Seq_BlockAttention(layers.Layer):
         #value = tf.tensordot(x, self.wv, axes=(-1,0))
         #key_trans = tf.transpose(key,perm=[0,2,1])
         attention_score = tf.nn.softmax(attention_value)
-        trans_attention_score = tf.transpose(attention_score,perm=[0,2,3,1])
+        trans_attention_score = tf.transpose(attention_score,perm=[0,1,3,2])
 
-        return attention_score,self.embedding #shape (batch,seq,embed,seq)
+        return trans_attention_score,x #shape (batch,seq,embed,seq)
 
     def compute_output_shape(self, output_shape):
         input_shape = output_shape
@@ -230,34 +230,33 @@ class MultiHead_Seq_BlockAttention(layers.Layer):
         return super(MultiHead_Seq_BlockAttention, self).get_config()    
     
 class MultiHead_conv_BlockAttention(layers.Layer):
-    def __init__(self,head_num=1,second_embed = None, **kwargs):
+    def __init__(self,second_embed = None, **kwargs):
         super(MultiHead_conv_BlockAttention, self).__init__(**kwargs)
-        self.head_num = head_num
-        self.second_embedding = None
+        #self.head_num = head_num
+        self.second_embedding = second_embed
 
     def build(self, input_shape):
-        assert len(input_shape) >= 2
-        self.return_attention = False
-        self.seq_dim  = input_shape[1]
-        self.embedding = input_shape[-1]
-        self.kernel_size = input_shape[-1]
-        if self.second_embedding is None:
-            self.second_embedding = self.embedding
 
-        self.wv = self.add_weight(name='value', shape=(self.seq_dim,self.embedding),
+        self.first_embed = input_shape[0][-1]
+        self.seq_dim = input_shape[0][1]
+        self.value_embed = input_shape[1][-1]
+        if self.second_embedding is None:
+            self.second_embedding = self.first_embed
+        self.wv1 = self.add_weight(name='value', shape=(self.value_embed, self.value_embed),
+                                  initializer='normal', trainable=True)
+        self.wv2 = self.add_weight(name='value', shape=(self.first_embed,self.second_embedding),
                                   initializer='normal', trainable=True)
 
         self.built = True
         super(MultiHead_conv_BlockAttention, self).build(input_shape)
 
     def call(self, x):
-        
+        attention_score,value = x
         #attention_score = tf.transpose(x,perm=[0,3,1,2]) #b,q,d,s -> b,s,q,d
-        effect_map = tf.einsum('bqds,qd->bqds',x,self.wv)
-        
+        effect_map = tf.einsum('bsdq,qn->bsdn',attention_score,self.wv)
+        trans_effect_map = tf.transpose(effect_map, perm=[0,2,3,1]) # b,d,n,s
 
-
-        return effect_map
+        return trans_effect_map,self.seq_dim
     
     def compute_output_shape(self, output_shape):
         input_shape = output_shape

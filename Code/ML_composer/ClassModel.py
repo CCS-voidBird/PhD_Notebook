@@ -766,25 +766,15 @@ class AttentionCNN(NN):
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
         M = layers.Conv1D(8, kernel_size=1, strides=1, activation='relu', use_bias=False)(V)
 
-        while depth > 0:
-            # V = layers.LayerNormalization()(V)
-            M,embedding = MultiHead_seq_BlockAttention()(M)
-            #M = layers.Conv2D(8,(1,4),(1,4)
-            M = MultiHead_conv_BlockAttention()(M)
-            M = Conv2D(8,(1,embedding),(1,1))(M)  #b,q,d,s -> b,n,d,s -> b,n,s
-            M = layers.Add()([M, V])
-            M = layers.BatchNormalization()(M)
-            #M = layers.BatchNormalization()(M)
-            M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
-            depth -= 1
+        # V = layers.LayerNormalization()(V)
+        M,value = MultiHead_Seq_BlockAttention()(M)
+        M,seq = MultiHead_conv_BlockAttention(8)([M,value])
+        M = Conv2D(seq,(1,1),(1,1))(M)  #b,q,d,s -> b,n,d,s -> b,n,s
+        M = layers.GlobalAvgPool2D()(M) #out shape b,s
+        M = layers.BatchNormalization()(M)
+        #M = layers.BatchNormalization()(M)
 
-        #M = layers.Conv1D(1, 1, 1, activation='relu')(M)
-        M = layers.AveragePooling1D(2,2)(M)
-        M = layers.Flatten()(M)
-        M = layers.Dropout(0.5)(M)
-        M = layers.Dense(self.args.width, activation="relu")(M)
-        M = layers.Dropout(0.5)(M)
-        QV_output = layers.Dense(1, activation="linear")(M)
+        QV_output = tf.reduce_sum(M)
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
