@@ -210,7 +210,7 @@ class MultiHead_Seq_BlockAttention(layers.Layer):
         
         query = tf.einsum('bsd,dd->bsd',x,self.wq)
         exquery = tf.expand_dims(query,axis=2) #shape = (b,s,1,d)
-        attention_value = tf.einsum('bsqd,qsd->bssd',exquery,self.wk) #shape = (b,s,s,d)
+        attention_value = tf.einsum('bsnd,nqd->bsqd',exquery,self.wk) #shape = (b,s,s,d)
         #value = tf.einsum('bsd,dd->bsd',x,self.wv)
         #value = tf.tensordot(x, self.wv, axes=(-1,0))
         #key_trans = tf.transpose(key,perm=[0,2,1])
@@ -244,7 +244,7 @@ class MultiHead_conv_BlockAttention(layers.Layer):
             self.second_embedding = self.first_embed
         self.wv1 = self.add_weight(name='value', shape=(self.value_embed, self.value_embed),
                                   initializer='normal', trainable=True)
-        self.wv2 = self.add_weight(name='value', shape=(self.first_embed,self.second_embedding),
+        self.wq = self.add_weight(name='value', shape=(self.seq_dim, self.second_embedding),
                                   initializer='normal', trainable=True)
 
         self.built = True
@@ -252,11 +252,16 @@ class MultiHead_conv_BlockAttention(layers.Layer):
 
     def call(self, x):
         attention_score,value = x
+        value_v = tf.einsum('bsd,dd->bsd',value,self.wv1)
+        value_v = tf.expand_dims(value_v,axis=-1) #bsd1
         #attention_score = tf.transpose(x,perm=[0,3,1,2]) #b,q,d,s -> b,s,q,d
-        effect_map = tf.einsum('bsdq,qn->bsdn',attention_score,self.wv)
-        trans_effect_map = tf.transpose(effect_map, perm=[0,2,3,1]) # b,d,n,s
+        attention_map = tf.multiply(attention_score, value_v)
+        #attention_map = tf.einsum('bsdq,bsdn->bsdq', attention_score, value_v)
+        #effect_map = tf.tensordot(attention_map,self.wv2,axes=)
+        effect_map = tf.matmul(attention_map,self.wq) #tf.einsum('bsdq,qn->bsdn',attention_map,self.wv2)
+        effect_map = tf.transpose(effect_map, perm=[0,2,3,1]) # b,d,n,s
 
-        return trans_effect_map,self.seq_dim
+        return effect_map
     
     def compute_output_shape(self, output_shape):
         input_shape = output_shape

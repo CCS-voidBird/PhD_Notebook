@@ -758,20 +758,21 @@ class AttentionCNN(NN):
             depth = 1
         else:
             depth = args.depth
-
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
 
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
 
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
         M = layers.Conv1D(8, kernel_size=1, strides=1, activation='relu', use_bias=False)(V)
-
+        M = layers.BatchNormalization()(M)
         # V = layers.LayerNormalization()(V)
         M,value = MultiHead_Seq_BlockAttention()(M)
-        M,seq = MultiHead_conv_BlockAttention(8)([M,value])
-        M = Conv2D(seq,(1,1),(1,1))(M)  #b,q,d,s -> b,n,d,s -> b,n,s
-        M = layers.GlobalAvgPool2D()(M) #out shape b,s
         M = layers.BatchNormalization()(M)
+        M = MultiHead_conv_BlockAttention(8)([M,value])
+        #seq = M.shape[-1]
+        #M = Conv2D(seq,(1,1),(1,1))(M)  #b,q,d,s -> b,n,d,s -> b,n,s
+        M = layers.GlobalAvgPool2D()(M) #out shape b,s
+        #M = layers.BatchNormalization()(M)
         #M = layers.BatchNormalization()(M)
 
         QV_output = tf.reduce_sum(M)
