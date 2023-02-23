@@ -310,7 +310,7 @@ class ML_composer:
             self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
         print("Predicting valid set..")
         val_length = valid_pheno.shape[0]
-        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(valid_data), (val_length,))+self.mean_pheno
+        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize), (val_length,))+self.mean_pheno
         print("Testing prediction:")
         print("Predicted: ", y_pred_valid[:10])
         print("observed: ", valid_pheno[:10])
