@@ -245,7 +245,7 @@ class ML_composer:
         print(' - Actual Training epochs: ', len(history.history['loss']))
         #print(self._model["TRAINED_MODEL"].predict(features_test).shape)
         test_length = target_test.shape[0]
-        y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_test), (test_length,))
+        y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_test,batch_size=self.batchSize), (test_length,))
         test_accuracy = np.corrcoef(y_pred, target_test)[0, 1]
         print("Train End.")
         print("In-year accuracy (measured as Pearson's correlation) is: ", test_accuracy)
