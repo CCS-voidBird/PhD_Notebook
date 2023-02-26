@@ -771,11 +771,13 @@ class AttentionCNN(NN):
         M = MultiHead_conv_BlockAttention(8)([M,value])
         #seq = M.shape[-1]
         #M = Conv2D(seq,(1,1),(1,1))(M)  #b,q,d,s -> b,n,d,s -> b,n,s
+        M = layers.Dropout(0.4)(M)
         M = layers.GlobalAvgPool2D()(M) #out shape b,s
         #M = layers.BatchNormalization()(M)
         #M = layers.BatchNormalization()(M)
 
-        QV_output = layers.Dense(256)(M)
+        #M = layers.Dense(256,activation="relu")(M)
+        model_output = layers.Dense(1,activation='linear')(M)
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
@@ -790,7 +792,7 @@ class AttentionCNN(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        model = keras.Model(inputs=input1, outputs=QV_output)
+        model = keras.Model(inputs=input1, outputs=model_output)
         model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
 
         #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
@@ -829,6 +831,86 @@ class MultiHeadAttentionLNN(NN):
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         # init Q,K,V
         depth = args.depth
+        input1 = layers.Input(shape=input_shape,name="input_layer_1")
+
+        X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
+
+        V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
+        V = layers.Embedding(1,8)(V)
+        #V = layers.Activation("sigmoid")(V)
+        #V = layers.Embedding(input_dim=1, output_dim=8, input_length=input_shape[1])(V)
+        #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
+
+        M = MultiHead_QK_BlockAttention(args.num_heads)(V)
+        #2D CNN by column
+        #M = layers.Conv2D(32, kernel_size=(), strides=2, padding='valid', activation='elu')(M)
+        #M = SeqSelfAttention(attention_activation='sigmoid')(V)
+
+        #M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(block_attention)
+        #M = layers.GlobalAvgPool1D()(M)
+        M = layers.Flatten()(M)
+        while depth > 0:
+            M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
+            depth -= 1
+        QV_output = layers.Dense(1, activation="linear")(M)
+
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model = keras.Model(inputs=input1, outputs=QV_output)
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
+        #QK = layers.Softmax(axis=-1)(QK)
+        #QKV = layers.Dot(axes=[2, 1])([QK, V_encoding])
+        #QKV = layers.Flatten()(QKV)
+        #QKV = layers.Dense(1, activation="linear")(QKV)
+
+        return model
+
+class MultiLevelAttention(NN):
+    """
+    Need work
+    SNP (by LD mask) * LD Attention = Global averaging GEBVs
+    """
+
+    def __init__(self,args):
+        super(MultiLevelAttention,self).__init__(args)
+        self.name = "MultiLevelAttention"
+        self.rank = False  ##rank block value to 0 (zero),1 (low),2 (high).
+        self.args = args
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+
+        print("USE Attention CNN MODEL as training method")
+        geno = decoding(geno)
+        geno = np.expand_dims(geno, axis=2)
+        #pos = np.arrays(range(geno.shape[1]))
+        #pos = np.expand_dims(pos, axis=0)
+        print("The transformed SNP shape:", geno.shape)
+
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno,pheno
+
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001,annotation=None):
+        # init Q,K,V
+        depth = args.depth
+        Annotation_shape = annotation.shape
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
 
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)

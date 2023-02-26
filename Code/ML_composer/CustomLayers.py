@@ -273,7 +273,87 @@ class MultiHead_conv_BlockAttention(layers.Layer):
     def get_config(self):
         return super(MultiHead_conv_BlockAttention, self).get_config()
 
-##Create a self attention layer with weights
+
+class MultiLevel_BlockAttention(layers.Layer):
+    """
+    LD or multi-level based block attention
+    SNP weight = (LDxLD) * (insider LD)
+    LD: categorical embedding (dict length, LDs+1, individual SNP grouped as LD 0 (labelled as 1)
+    """
+
+    def __init__(self,num_heads=2, **kwargs):
+        super(MultiLevel_BlockAttention, self).__init__(**kwargs)
+        self.head_num=num_heads
+
+    def build(self, input_shape, annotation=False):
+        assert len(input_shape) >= 2
+        self.return_attention = False
+        self.ld_embedding = input_shape[1][-1]
+        self.seq_embedding = input_shape[0][-1]
+        self.seq_dim = input_shape[1]
+        self.embedding = input_shape[-1]
+
+        self.Wq_ld = self.add_weight(name='Annotation_embedding_q_weights', shape=(self.ld_embedding, self.ld_embedding),
+                                  initializer='normal', trainable=True)
+
+        self.Wk_ld = self.add_weight(name='Annotation_embedding_k_weights', shape=(self.ld_embedding, self.ld_embedding),
+                                    initializer='normal', trainable=True)
+
+        self.Wv_ld = self.add_weight(name='Annotation_embedding_v_weights', shape=(self.ld_embedding, self.ld_embedding),
+                                    initializer='normal', trainable=True)
+
+        self.Wq_seq = self.add_weight(name='Sequence_embedding_q_weights', shape=(self.seq_embedding, self.seq_embedding),
+                                   initializer='normal', trainable=True)
+
+        self.Wk_seq = self.add_weight(name='Sequence_embedding_k_weights', shape=(self.seq_embedding, self.seq_embedding),
+                                      initializer='normal', trainable=True)
+
+        self.wq = self.add_weight(name='query', shape=(self.embedding, self.embedding),
+                                  initializer='normal', trainable=True)
+        self.wk = self.add_weight(name='key', shape=(1, self.seq_dim, self.embedding),
+                                  initializer='normal', trainable=True)
+
+        self.built = True
+        super(MultiLevel_BlockAttention, self).build(input_shape)
+
+    def call(self, x):
+
+        #query = tf.einsum('bsd,dd->bsd', x, self.q_ld)
+        #key = tf.einsum('bsd,dd->bsd', x, self.k_ld)
+        #value = tf.einsum('bsd,dd->bsd', x, self.v_ld)
+
+        query = tf.tensordot(x, self.q_ld, axes=(-1, 0))
+        key = tf.tensordot(x, self.k_ld, axes=(-1, 0))
+        value = tf.tensordot(x, self.v_ld, axes=(-1, 0))
+
+        # q,k,v shape == (batch_size, seq_len, d_model)
+
+        query = tf.stack(tf.split(query, self.head_num, axis=2))
+        key = tf.stack(tf.split(key, self.head_num, axis=2))
+        value = tf.stack(tf.split(value, self.head_num, axis=2))
+
+        inner_product = tf.matmul(query, key, transpose_b=True)
+        attention_score = tf.nn.softmax(inner_product)
+
+        effect = tf.matmul(attention_score, value)
+
+        all_effects = tf.concat(tf.split(effect, self.head_num, ), axis=-1)
+        all_effects = tf.squeeze(all_effects, axis=0)  # (batch_size, seq_len, d_model)\
+
+        return all_effects, x  # shape (batch,seq,embed,seq)
+
+    def compute_output_shape(self, output_shape):
+        input_shape = output_shape
+        if self.return_attention:
+            attention_shape = (input_shape[0], output_shape[1], input_shape[1])
+            return [output_shape, attention_shape]
+        return output_shape
+
+    def get_config(self):
+        return super(MultiLevel_BlockAttention, self).get_config()
+
+
+
 class PosAttention(layers.Layer):
     def __init__(self, **kwargs):
         super(PosAttention, self).__init__(**kwargs)
