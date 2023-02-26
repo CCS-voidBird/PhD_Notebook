@@ -775,7 +775,7 @@ class AttentionCNN(NN):
         #M = layers.BatchNormalization()(M)
         #M = layers.BatchNormalization()(M)
 
-        QV_output = tf.reduce_sum(M)
+        QV_output = layers.Dense(256)(M)
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
