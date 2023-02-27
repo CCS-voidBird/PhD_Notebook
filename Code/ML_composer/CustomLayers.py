@@ -150,10 +150,10 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
 
 
     def build(self, input_shape):
-        assert len(input_shape) >= 2
+        assert len(input_shape[0]) >= 2
         self.return_attention = False
-        self.feature_dim = input_shape[-1]
-        self.seq_len = input_shape[1] / self.head_num
+        self.feature_dim = input_shape[0][-1]
+        self.seq_len = input_shape[0][1] / self.head_num
 
         self.wq = self.add_weight(name='query', shape=(self.feature_dim,self.feature_dim),
                                   initializer='normal', trainable=True)
@@ -166,11 +166,10 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
         super(MultiHead_QKV_BlockAttention, self).build(input_shape)
 
     def call(self, x):
-        if type(x) is list:
-            X = x[0]
-            residual_score = x[1]
+        if type(x) is list and len(x) >= 2:
+            X,residual_score = x
         else:
-            X = x
+            X = x[0]
             residual_score = 0
         query = tf.einsum('bsd,dd->bsd',X,self.wq)
         key = tf.einsum('bsd,dd->bsd',X,self.wk)

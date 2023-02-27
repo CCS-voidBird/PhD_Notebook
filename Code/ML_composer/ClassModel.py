@@ -804,6 +804,9 @@ class AttentionCNN(NN):
         return model
 
 class MultiHeadAttentionLNN(NN):
+    """
+    Multi Head Attention with RealFormer (Residual Transformer) structure
+    """
 
     def __init__(self,args):
         super(MultiHeadAttentionLNN,self).__init__(args)
@@ -838,15 +841,17 @@ class MultiHeadAttentionLNN(NN):
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
         V = layers.Conv1D(8,1,1,activation="relu")(V)
 
-        M1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=False)(V)
+        M1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=False)([V])
         M2 = layers.LayerNormalization()(M1)
-        M = residual_fl_block(input=M2, width=self.args.width, downsample=True)
+        M = residual_fl_block(input=M2, width=8, downsample=True)
         #M2 = residual_fl_block(input=M1, width=self.args.width, downsample=True)
+        M = layers.Dropout(0.4)(M)
         M3 = MultiHead_QKV_BlockAttention(args.num_heads,residual=True)([M, M1])
         M3 = layers.LayerNormalization()(M3)
-        M3 = residual_fl_block(input=M3, width=self.args.width, downsample=True)
+        M3 = residual_fl_block(input=M3, width=8, downsample=True)
 
         M = layers.Flatten()(M3)
+        M = layers.Dropout(0.2)(M)
         while depth > 0:
             M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1
@@ -919,7 +924,7 @@ class MultiLevelAttention(NN):
         #V = layers.Embedding(input_dim=1, output_dim=8, input_length=input_shape[1])(V)
         #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
 
-        M = MultiHead_QK_BlockAttention(args.num_heads)(V)
+        M = MultiHead_QKV_BlockAttention(args.num_heads)(V)
         #2D CNN by column
         #M = layers.Conv2D(32, kernel_size=(), strides=2, padding='valid', activation='elu')(M)
         #M = SeqSelfAttention(attention_activation='sigmoid')(V)
