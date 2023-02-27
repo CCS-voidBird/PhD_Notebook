@@ -768,15 +768,15 @@ class AttentionCNN(NN):
         # V = layers.LayerNormalization()(V)
         M,value = MultiHead_Seq_BlockAttention()(M)
         M = layers.BatchNormalization()(M)
+        M = layers.Dropout(0.4)(M)
         M = MultiHead_conv_BlockAttention(8)([M,value])
         #seq = M.shape[-1]
         #M = Conv2D(seq,(1,1),(1,1))(M)  #b,q,d,s -> b,n,d,s -> b,n,s
-        M = layers.Dropout(0.4)(M)
+
         M = layers.GlobalAvgPool2D()(M) #out shape b,s
-        #M = layers.BatchNormalization()(M)
-        #M = layers.BatchNormalization()(M)
 
         #M = layers.Dense(256,activation="relu")(M)
+        M = layers.Dropout(0.2)(M)
         model_output = layers.Dense(1,activation='linear')(M)
 
         try:
@@ -836,19 +836,17 @@ class MultiHeadAttentionLNN(NN):
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
 
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
-        V = layers.Embedding(1,8)(V)
-        #V = layers.Activation("sigmoid")(V)
-        #V = layers.Embedding(input_dim=1, output_dim=8, input_length=input_shape[1])(V)
-        #Q = PositionalEncoding(position=input_shape[0], d_model=input_shape[1])(V)
+        V = layers.Conv1D(8,1,1,activation="relu")(V)
 
-        M = MultiHead_QK_BlockAttention(args.num_heads)(V)
-        #2D CNN by column
-        #M = layers.Conv2D(32, kernel_size=(), strides=2, padding='valid', activation='elu')(M)
-        #M = SeqSelfAttention(attention_activation='sigmoid')(V)
+        M1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=False)(V)
+        M2 = layers.LayerNormalization()(M1)
+        M = residual_fl_block(input=M2, width=self.args.width, downsample=True)
+        #M2 = residual_fl_block(input=M1, width=self.args.width, downsample=True)
+        M3 = MultiHead_QKV_BlockAttention(args.num_heads,residual=True)([M, M1])
+        M3 = layers.LayerNormalization()(M3)
+        M3 = residual_fl_block(input=M3, width=self.args.width, downsample=True)
 
-        #M = layers.Conv1D(filters=64, kernel_size=1, strides=1, padding="same", activation="elu")(block_attention)
-        #M = layers.GlobalAvgPool1D()(M)
-        M = layers.Flatten()(M)
+        M = layers.Flatten()(M3)
         while depth > 0:
             M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1

@@ -142,10 +142,11 @@ class MultiHead_BlockAttention(layers.Layer):
 
         return all_effects
 
-class MultiHead_QK_BlockAttention(layers.Layer):
-    def __init__(self,head_num=1, **kwargs):
-        super(MultiHead_QK_BlockAttention, self).__init__(**kwargs)
+class MultiHead_QKV_BlockAttention(layers.Layer):
+    def __init__(self,head_num=1,residual=False, **kwargs):
+        super(MultiHead_QKV_BlockAttention, self).__init__(**kwargs)
         self.head_num = head_num
+        self.residual = residual
 
 
     def build(self, input_shape):
@@ -162,13 +163,18 @@ class MultiHead_QK_BlockAttention(layers.Layer):
                                   initializer='normal', trainable=True)
 
         self.built = True
-        super(MultiHead_QK_BlockAttention, self).build(input_shape)
+        super(MultiHead_QKV_BlockAttention, self).build(input_shape)
 
     def call(self, x):
-
-        query = tf.einsum('bsd,dd->bsd',x,self.wq)
-        key = tf.einsum('bsd,dd->bsd',x,self.wk)
-        value = tf.einsum('bsd,dd->bsd',x,self.wv)
+        if type(x) is list:
+            X = x[0]
+            residual_score = x[1]
+        else:
+            X = x
+            residual_score = 0
+        query = tf.einsum('bsd,dd->bsd',X,self.wq)
+        key = tf.einsum('bsd,dd->bsd',X,self.wk)
+        value = tf.einsum('bsd,dd->bsd',X,self.wv)
         #value = tf.tensordot(x, self.wv, axes=(-1,0))
 
         # q,k,v shape == (batch_size, seq_len, d_model)
@@ -184,6 +190,8 @@ class MultiHead_QK_BlockAttention(layers.Layer):
 
         all_effects = tf.concat(tf.split(effect, self.head_num,axis=1), axis=-1)
         all_effects = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
+        if self.residual is True:
+            all_effects = tf.add(all_effects,residual_score)
 
         return all_effects
 
@@ -210,12 +218,9 @@ class MultiHead_Seq_BlockAttention(layers.Layer):
         
         query = tf.einsum('bsd,dd->bsd',x,self.wq)
         exquery = tf.expand_dims(query,axis=2) #shape = (b,s,1,d)
-        attention_value = tf.einsum('bsnd,nqd->bsqd',exquery,self.wk) #shape = (b,s,s,d)
-        #value = tf.einsum('bsd,dd->bsd',x,self.wv)
-        #value = tf.tensordot(x, self.wv, axes=(-1,0))
-        #key_trans = tf.transpose(key,perm=[0,2,1])
+        attention_value = tf.einsum('bsnd,nqd->bsqd',exquery,self.wk) #shape = (b,s,q(=s),d)
         attention_score = tf.nn.softmax(attention_value)
-        trans_attention_score = tf.transpose(attention_score,perm=[0,1,3,2])
+        trans_attention_score = tf.transpose(attention_score,perm=[0,1,3,2]) # shape: (b,s,d,q)
 
         return trans_attention_score,x #shape (batch,seq,embed,seq)
 
@@ -403,6 +408,7 @@ def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
         X = layers.BatchNormalization()(X)
 
     if downsample:
+        input_x = input
         if input.shape[-1] != X.shape[-1]:
             filter_n = X.shape[-1]
             input_x = layers.Conv1D(filter_n,1,1,padding='same')(X)
