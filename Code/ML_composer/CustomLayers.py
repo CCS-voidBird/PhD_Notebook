@@ -143,7 +143,7 @@ class MultiHead_BlockAttention(layers.Layer):
         return all_effects
 
 class MultiHead_QKV_BlockAttention(layers.Layer):
-    def __init__(self,head_num=1,residual=False, **kwargs):
+    def __init__(self,head_num=1,residual=True, **kwargs):
         super(MultiHead_QKV_BlockAttention, self).__init__(**kwargs)
         self.head_num = head_num
         self.residual = residual
@@ -190,9 +190,9 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
         all_effects = tf.concat(tf.split(effect, self.head_num,axis=1), axis=-1)
         all_effects = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
         if self.residual is True:
-            all_effects = tf.add(all_effects,residual_score)
+            return tf.add(all_effects,residual_score),tf.add(all_effects,residual_score)
 
-        return all_effects
+        return all_effects,tf.add(all_effects,residual_score)
 
 class MultiHead_Seq_BlockAttention(layers.Layer):
     def __init__(self, **kwargs):
@@ -410,10 +410,10 @@ def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
         input_x = input
         if input.shape[-1] != X.shape[-1]:
             filter_n = X.shape[-1]
-            input_x = layers.Conv1D(filter_n,1,1,padding='same')(X)
+            input_x = layers.Dense(filter_n,activation='relu')(X)
         out = layers.Add()([X, input_x])
         #out = activation(out)
-        return out
+        return activation(out)
     else:
         X = activation(X)
         return X
