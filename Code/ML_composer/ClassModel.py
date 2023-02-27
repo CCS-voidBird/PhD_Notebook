@@ -810,7 +810,7 @@ class MultiHeadAttentionLNN(NN):
 
     def __init__(self,args):
         super(MultiHeadAttentionLNN,self).__init__(args)
-        self.name = "Attention CNN"
+        self.name = "LocalRealFormer"
         self.rank = True  ##rank block value to 0 (zero),1 (low),2 (high).
         self.args = args
 
@@ -839,13 +839,14 @@ class MultiHeadAttentionLNN(NN):
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
 
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
-        V = layers.Conv1D(8,1,1,activation="relu")(V)
+        #V = layers.Conv1D(8,1,1,activation="relu")(V)
+        V = layers.Dense(8,activation='relu')(V)
 
         M1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=False)([V])
         M2 = layers.LayerNormalization()(M1)
         M = residual_fl_block(input=M2, width=8, downsample=True)
         #M2 = residual_fl_block(input=M1, width=self.args.width, downsample=True)
-        M = layers.Dropout(0.4)(M)
+        #M = layers.Dropout(0.4)(M)
         M3 = MultiHead_QKV_BlockAttention(args.num_heads,residual=True)([M, M1])
         M3 = layers.LayerNormalization()(M3)
         M3 = residual_fl_block(input=M3, width=8, downsample=True)

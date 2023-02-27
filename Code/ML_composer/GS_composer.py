@@ -56,7 +56,7 @@ def get_args():
     parser.set_defaults(plot=False)
     req_grp.add_argument('-residual', '--residual', dest='residual', action='store_true')
     parser.set_defaults(residual=True)
-    req_grp.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=0)
+    req_grp.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=2)
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=True)
     req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ./ML_composer.ini',
