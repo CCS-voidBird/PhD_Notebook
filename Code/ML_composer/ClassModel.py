@@ -834,24 +834,25 @@ class MultiHeadAttentionLNN(NN):
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         # init Q,K,V
         depth = args.depth
+        embed = args.embedding
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
 
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
 
         V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
         #V = layers.Conv1D(8,1,1,activation="relu")(V)
-        V = layers.Dense(8,activation='relu')(V)
+        V = layers.Dense(embed,activation='relu')(V)
 
         M1,AM1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=False)([V])
         M1 = layers.Add()([M1,V])
         M2 = layers.LayerNormalization()(M1)
-        M = residual_fl_block(input=M2, width=8, downsample=True)
+        M = residual_fl_block(input=M2, width=embed, downsample=True)
         #M2 = residual_fl_block(input=M1, width=self.args.width, downsample=True)
         #M = layers.Dropout(0.4)(M)
         M3,AM3 = MultiHead_QKV_BlockAttention(args.num_heads,residual=True)([M, AM1])
         M3 = layers.Add()([M3,M])
         M3 = layers.LayerNormalization()(M3)
-        M3 = residual_fl_block(input=M3, width=8, downsample=True)
+        M3 = residual_fl_block(input=M3, width=embed, downsample=True)
 
         M = layers.Flatten()(M3)
         #M = tf.reduce_sum(M3,axis=1)
