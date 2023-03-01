@@ -839,7 +839,7 @@ class MultiHeadAttentionLNN(NN):
 
         X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
 
-        V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
+        V = layers.LocallyConnected1D(8,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
         #V = layers.Conv1D(8,1,1,activation="relu")(V)
         V = layers.Dense(embed,activation='relu')(V)
 
