@@ -45,6 +45,60 @@ class PositionalEncoding(layers.Layer):
         #return inputs + self.pos_encoding[:, :tf.shape(inputs)[1], :]
         return self.pos_encoding[:, :tf.shape(inputs)[1], :]
 
+class SNPBlockLayer(layers.Layer):
+    """
+    A layer to calculate LD value based on given LD group files
+    Prograssing.
+    """
+    
+    def __init__(self, channels = , **kwargs):
+        super(SNPBlockLayer, self).__init__(**kwargs)
+        self.channels = args.channels
+        
+    def build(self, input_shape):
+        assert len(input_shape) >= 2
+        self.filters = input_shape[-1]
+        self.u = self.add_weight(name='Block_extension', shape=(self.filters,input_shape[-2]),
+                                  initializer='ones', trainable=False)
+        self.Wa = self.add_weight(name='Attention_context_vector', shape=(self.filters,input_shape[-2], input_shape[-2]),
+                                 initializer='normal', trainable=True)
+        self.We = self.add_weight(name='effect_context_vector', shape=(self.filters,input_shape[-2], input_shape[-2]),
+                                  initializer='normal', trainable=True)
+        #self.u = self.add_weight(shape=(input_shape[-2],),initializer='normal',name='Attention_u')
+        #self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim), initializer='normal', trainable=True)
+        self.built = True
+        super(BlockAttention, self).build(input_shape)
+
+    def call(self, x):
+        # require constant attention score from attention layer
+        # x shape == (batch_size, seq_len,seq_len, d_model
+        e = K.dot(x, self.u)
+        att = e * self.Wa
+        #sum by features
+        #eff = K.sum(e, axis=1)
+        att = K.softmax(att)
+        eff = att * e * self.We
+        #sum by time
+        eff = K.sum(eff, axis=1, keepdims=True)
+        #e = K.batch_dot(K.dot(x, self.Wa), K.permute_dimensions(x, (0, 2, 1)))
+        #uit = K.expand_dims(uit, axis=-1)
+        #ait = dot_product(uit, self.u)
+
+        #a = K.exp(ait)
+
+        #a /= K.cast(K.sum(a, axis=1, keepdims=True) + K.epsilon(), K.floatx())
+
+        #e = K.exp(e - K.max(e, axis=-1, keepdims=True))
+        #a = e / K.sum(e, axis=-1, keepdims=True)
+
+        # l_t = \sum_{t'} a_{t, t'} x_{t'}
+        #v = K.batch_dot(a, x)
+
+        if self.return_attention:
+            return [eff, att]
+        return eff
+        
+    
 class BlockAttention(layers.Layer):
     def __init__(self, **kwargs):
         super(BlockAttention, self).__init__(**kwargs)
