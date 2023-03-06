@@ -51,52 +51,34 @@ class SNPBlockLayer(layers.Layer):
     Prograssing.
     """
     
-    def __init__(self, channels = , **kwargs):
+    def __init__(self, reference, channels = 8, **kwargs):
         super(SNPBlockLayer, self).__init__(**kwargs)
         self.channels = args.channels
+        self.reference = reference ## An identifing matrix for SNP Blocking (0/1 Matrix)
         
     def build(self, input_shape):
-        assert len(input_shape) >= 2
-        self.filters = input_shape[-1]
-        self.u = self.add_weight(name='Block_extension', shape=(self.filters,input_shape[-2]),
-                                  initializer='ones', trainable=False)
-        self.Wa = self.add_weight(name='Attention_context_vector', shape=(self.filters,input_shape[-2], input_shape[-2]),
-                                 initializer='normal', trainable=True)
-        self.We = self.add_weight(name='effect_context_vector', shape=(self.filters,input_shape[-2], input_shape[-2]),
-                                  initializer='normal', trainable=True)
-        #self.u = self.add_weight(shape=(input_shape[-2],),initializer='normal',name='Attention_u')
-        #self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim), initializer='normal', trainable=True)
+        """
+        A weight matrix for SNP weights
+        
+        """
+        self.bweight = self.add_weight(name='Block_weightMatrix', shape=(self.channels,input_shape[1]),
+                                  initializer='normal')
         self.built = True
-        super(BlockAttention, self).build(input_shape)
+        super(SNPBlockLayer, self).build(input_shape)
 
     def call(self, x):
         # require constant attention score from attention layer
-        # x shape == (batch_size, seq_len,seq_len, d_model
-        e = K.dot(x, self.u)
-        att = e * self.Wa
-        #sum by features
-        #eff = K.sum(e, axis=1)
-        att = K.softmax(att)
-        eff = att * e * self.We
-        #sum by time
-        eff = K.sum(eff, axis=1, keepdims=True)
-        #e = K.batch_dot(K.dot(x, self.Wa), K.permute_dimensions(x, (0, 2, 1)))
-        #uit = K.expand_dims(uit, axis=-1)
-        #ait = dot_product(uit, self.u)
-
-        #a = K.exp(ait)
-
-        #a /= K.cast(K.sum(a, axis=1, keepdims=True) + K.epsilon(), K.floatx())
-
-        #e = K.exp(e - K.max(e, axis=-1, keepdims=True))
-        #a = e / K.sum(e, axis=-1, keepdims=True)
-
-        # l_t = \sum_{t'} a_{t, t'} x_{t'}
-        #v = K.batch_dot(a, x)
-
-        if self.return_attention:
-            return [eff, att]
-        return eff
+        # x shape == (batch_size, seq_len)
+        # reference shape == (seq_len, LD_len)
+        
+        extended_X = tf.einsum("bs,sd->bsd",x,self.reference) ##got shape == (batch,seq,LD)
+        
+        extended_LD = tf.einsum("bsl,slc->bslc",extended_X,self.bweight) ## (b,s,l) * (s,l,channel) -> (b,s,l,c)
+        
+        extended_LD = rf.reduce_sum(extended_LD,axis=1)  #(b,s,l,c) -> (b,sum(s),l,c) -> (b,l,c)
+        
+        return extended_LD
+        
         
     
 class BlockAttention(layers.Layer):
