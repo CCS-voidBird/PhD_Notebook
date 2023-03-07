@@ -45,6 +45,42 @@ class PositionalEncoding(layers.Layer):
         #return inputs + self.pos_encoding[:, :tf.shape(inputs)[1], :]
         return self.pos_encoding[:, :tf.shape(inputs)[1], :]
 
+class SNPBlockLayer(layers.Layer):
+    """
+    A layer to calculate LD value based on given LD group files
+    Prograssing.
+    """
+    
+    def __init__(self, reference, channels = 8, **kwargs):
+        super(SNPBlockLayer, self).__init__(**kwargs)
+        self.channels = args.channels
+        self.reference = reference ## An identifing matrix for SNP Blocking (0/1 Matrix)
+        
+    def build(self, input_shape):
+        """
+        A weight matrix for SNP weights
+        
+        """
+        self.bweight = self.add_weight(name='Block_weightMatrix', shape=(self.channels,input_shape[1]),
+                                  initializer='normal')
+        self.built = True
+        super(SNPBlockLayer, self).build(input_shape)
+
+    def call(self, x):
+        # require constant attention score from attention layer
+        # x shape == (batch_size, seq_len)
+        # reference shape == (seq_len, LD_len)
+        
+        extended_X = tf.einsum("bs,sd->bsd",x,self.reference) ##got shape == (batch,seq,LD)
+        
+        extended_LD = tf.einsum("bsl,slc->bslc",extended_X,self.bweight) ## (b,s,l) * (s,l,channel) -> (b,s,l,c)
+        
+        extended_LD = rf.reduce_sum(extended_LD,axis=1)  #(b,s,l,c) -> (b,sum(s),l,c) -> (b,l,c)
+        
+        return extended_LD
+        
+        
+    
 class BlockAttention(layers.Layer):
     def __init__(self, **kwargs):
         super(BlockAttention, self).__init__(**kwargs)

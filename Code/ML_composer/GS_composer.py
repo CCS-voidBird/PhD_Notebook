@@ -25,7 +25,6 @@ import os
 ##Training by para-sets -- convolutional act function + full connected act function + optimizer + learningRate###
 ##Output format: an table with mean accuracy for each para set; A density plot for each accuracy##########
 #################################################################
-#Test command (Local): python GS_base.py --config ./test_config
 CNNs = ["CNN","TDCNN","DeepGS"]
 PATIENCE = 100
 """
@@ -142,15 +141,6 @@ class ML_composer:
         print("Get genotype shape:",self._raw_data["GENO"].iloc[:,6:].shape)
         print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
         self.plot = self.args.plot
-        """
-        #self.train_data = self._raw_data["GENO"].query('X.1 in @train_sample').query('X.1 not in @remove_list').iloc[:,6:]
-        #self.valid_data = self._raw_data["GENO"].query('X.1 in @valid_sample').iloc[:,6:]
-        #print(self.train_data.shape)
-        #print(self.valid_data.shape)
-
-        #self.train_data = filtered_data.query('Series in @train_year').query('Sample not in @remove_list').drop(["Series","Sample"], axis=1)
-        #self.valid_data = filtered_data.query('Series in @valid_year').drop(["Series","Sample"], axis=1)
-        """
         return
 
     def prepare_model(self):
@@ -245,20 +235,22 @@ class ML_composer:
             np.mean(np.gradient(history.history['val_loss'][-5:]))))
         print(' - Actual Training epochs: ', len(history.history['loss']))
         #print(self._model["TRAINED_MODEL"].predict(features_test).shape)
-        test_length = target_test.shape[0]
-        y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_test,batch_size=self.batchSize), (test_length,))
-        test_accuracy = np.corrcoef(y_pred, target_test)[0, 1]
+        test_length = target_train.shape[0]
+        y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_train,batch_size=self.batchSize), (test_length,))
+        test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
         print("Train End.")
         print("In-year accuracy (measured as Pearson's correlation) is: ", test_accuracy)
         endTime = datetime.now()
         runtime = endTime - startTime
         print("Training Runtime: ", runtime.seconds / 60, " min")
-
+        gpu_devices = tf.config.list_physical_devices('GPU')
+        if gpu_devices:
+            mem_usage = tf.config.experimental.get_memory_usage('GPU:0')
+            print("Currently using GPU memory: {} GB".format(mem_usage/1e9)
         return history,test_accuracy,runtime
 
     def compose(self,train_index:list,valid_index:list,val=1):
 
-        #features_train, features_test, target_train, target_test = train_test_split(self.train_data, self.train_pheno,test_size=0.2)
         features_train,target_train = self._model["INIT_MODEL"].data_transform(self.train_data,self.train_pheno, pheno_standard = self.args.rank)
         features_val,target_val = self._model["INIT_MODEL"].data_transform(self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
 
@@ -300,9 +292,10 @@ class ML_composer:
             self._model["TRAINED_MODEL"] = None
             keras.backend.clear_session()
             gc.collect()
+            if self.save == True:
+                self.export_record()
             round += 1
-        if self.save == True:
-            self.export_record()
+            
         return
 
     def model_validation(self):
@@ -318,7 +311,7 @@ class ML_composer:
         accuracy_valid = np.corrcoef(y_pred_valid, valid_pheno)[0, 1]
         mse = mean_squared_error(y_pred_valid, valid_pheno)
 
-        print("Future prediction accuracy (measured as Pearson's correlation) is: ",
+        print("Validate prediction accuracy (measured as Pearson's correlation) is: ",
               accuracy_valid)
         return accuracy_valid,mse
 
