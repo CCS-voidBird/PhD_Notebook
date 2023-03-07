@@ -41,6 +41,7 @@ def get_args():
     req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
     req_grp.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns (start with 1).", default=1)
     req_grp.add_argument('-index', '--index', type=str, help="index file", default = None)
+    req_grp.add_argument('-annotation', '--annotation', type=str, help="annotation file,1st row as colname", default=None)
     req_grp.add_argument('--model', type=str, help="Select training model.", required=True)
     req_grp.add_argument('--load', type=str, help="load model from file.", default=None)
     req_grp.add_argument('--trait', type=str, help="give trait a name.", default=None)
@@ -130,18 +131,44 @@ class ML_composer:
         self.config = configer
         self._model = {"INIT_MODEL":Model(self.args),"TRAINED_MODEL":Model(self.args)}
         self._raw_data["GENO"] = pd.read_table(args.ped+".ped",sep="\t",header=None)
+        self._raw_data["MAP"] = pd.read_table(args.ped + ".map", sep="\t", header=None)
+        self._raw_data["FAM"] = pd.read_table(args.ped + ".fam", sep="\t", header=None)
         self._raw_data["PHENO"] = pd.read_table(args.pheno, sep="\t", header=None)
         self._raw_data["INDEX"] = pd.read_table(args.index,sep="\t", header=None)
+        self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,sep="\t") if args.annotation is not None else None
         self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique())
         self.batchSize = args.batch
         print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
-        self._raw_data["INFO"] = self._raw_data["GENO"].iloc[:,0:6]  #Further using fam file instead.
+        self._raw_data["INFO"] = self._raw_data["FAM"].iloc[:,0:6]  #Further using fam file instead.
 
         print("Get genotype shape:",self._raw_data["GENO"].iloc[:,6:].shape)
         print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
         self.plot = self.args.plot
+        self.sort_data()
         return
+
+    def sort_data(self):
+        """
+        Sort raw data as plink manner
+        FID,IID,father,mother,sex,pheno --> fam
+        Chromosome, Variant ID, position, base pair --> map
+        """
+        # sort GENO by first col with reference FAM
+        print("Running data check")
+        sample_reference = self._raw_data["INFO"].iloc[:,1] ## Get fam IID as reference
+        snp_reference = self._raw_data["MAP"].iloc[:,:2]
+        for label in ["GENO","FAM","PHENO","INDEX"]:
+            if self._raw_data[label].iloc[:,1].equals(sample_reference) is False:
+                print("Samples are not aligned with same order")
+                exit()
+        if self._raw_data["GENO"].iloc[:,6:].shape[1] != snp_reference.shape[1]:
+            print("SNPs are not in same length in ped file and map file")
+            exit()
+        if self._raw_data["ANNOTATION"] is not None and self._raw_data["ANNOTATION"].iloc[:,:2].equals(snp_reference) is False:
+            print("SNPs in annotation file are not ordered by map file")
+            exit()
+
 
     def prepare_model(self):
         # create a Model object
@@ -246,7 +273,7 @@ class ML_composer:
         gpu_devices = tf.config.list_physical_devices('GPU')
         if gpu_devices:
             mem_usage = tf.config.experimental.get_memory_usage('GPU:0')
-            print("Currently using GPU memory: {} GB".format(mem_usage/1e9)
+            print("Currently using GPU memory: {} GB".format(mem_usage/1e9))
         return history,test_accuracy,runtime
 
     def compose(self,train_index:list,valid_index:list,val=1):

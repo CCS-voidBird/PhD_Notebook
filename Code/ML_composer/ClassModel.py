@@ -829,16 +829,23 @@ class MultiHeadAttentionLNN(NN):
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001,annotation=None):
         # init Q,K,V
         depth = args.depth
         embed = args.embedding
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
 
-        X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
+        if annotation is None:
 
-        V = layers.LocallyConnected1D(8,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
-        #V = layers.Conv1D(8,1,1,activation="relu")(V)
+            X = layers.ZeroPadding1D(padding=(0, input_shape[1] // 10))(input1)
+
+            V = layers.LocallyConnected1D(args.embedding, 10, strides=10, activation="relu", padding="valid",
+                                          use_bias=False)(X)
+
+        else:
+
+            V = SNPBlockLayer(annotation, channels=args.embedding)(input1)
+
         V = layers.Dense(embed,activation='relu')(V)
 
         M1,AM1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=False)([V])
@@ -924,11 +931,11 @@ class MultiLevelAttention(NN):
 
             X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
 
-            V = layers.LocallyConnected1D(args.eme,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
+            V = layers.LocallyConnected1D(args.embedding,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
             
         else:
             
-            V = SNPBlockLayer(self.args,embedding,annotation)(input)
+            V = SNPBlockLayer(annotation,channels=args.embedding)(input1)
 
         M = MultiHead_QKV_BlockAttention(args.num_heads)(V)
 
