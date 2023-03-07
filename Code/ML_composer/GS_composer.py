@@ -177,7 +177,7 @@ class ML_composer:
         if self._raw_data["GENO"].iloc[:,6:].shape[1] != snp_reference.shape[0]:
             print("SNPs are not in same length in ped file and map file")
             exit()
-        if self._raw_data["ANNOTATION"] is not None and self._raw_data["ANNOTATION"].iloc[:,:2].equals(snp_reference) is False:
+        if self._raw_data["ANNOTATION"] is not None and self._raw_data["ANNOTATION"].iloc[:,:1].equals(snp_reference) is False:
             print("SNPs in annotation file are not ordered by map file")
             #exit()
 
