@@ -1,3 +1,4 @@
+import keras.utils.vis_utils
 
 from Functions import *
 from ClassModel import *
@@ -250,6 +251,12 @@ class ML_composer:
         if round == 1:
             with open(os.path.abspath(self.args.output) + "/model_summary.txt", "w") as fh:
                 self._model["TRAINED_MODEL"].summary(print_fn=lambda x: fh.write(x + "\n"))
+            try:
+                keras.utils.vis_utils.plot_model(self._model["TRAINED_MODEL"],
+                                                 to_file=os.path.abspath(self.args.output) + "/model_summary.png",
+                                                 show_shapes=True, show_layer_names=True)
+            except:
+                "Model plotting function error"
 
         #callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=PATIENCE)
 
@@ -284,8 +291,11 @@ class ML_composer:
         print("Training Runtime: ", runtime.seconds / 60, " min")
         gpu_devices = tf.config.list_physical_devices('GPU')
         if gpu_devices:
-            mem_usage = tf.config.experimental.get_memory_usage('GPU:0')
-            print("Currently using GPU memory: {} GB".format(mem_usage/1e9))
+            try:
+                mem_usage = tf.config.experimental.get_memory_usage('GPU:0')
+                print("Currently using GPU memory: {} GB".format(mem_usage/1e9))
+            except:
+                print("Checking memory usage is not currently available.")
         return history,test_accuracy,runtime
 
     def compose(self,train_index:list,valid_index:list,val=1):
