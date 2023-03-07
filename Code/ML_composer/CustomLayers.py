@@ -54,7 +54,7 @@ class SNPBlockLayer(layers.Layer):
     def __init__(self, reference, channels = 8, **kwargs):
         super(SNPBlockLayer, self).__init__(**kwargs)
         self.channels = channels
-        self.reference = reference ## An identifing matrix for SNP Blocking (0/1 Matrix)
+        self.reference = tf.expand_dims(reference,axis=0) ## An identifing matrix for SNP Blocking (0/1 Matrix)
         
     def build(self, input_shape):
         """
@@ -71,9 +71,9 @@ class SNPBlockLayer(layers.Layer):
         # x shape == (batch_size, seq_len)
         # reference shape == (seq_len, LD_len)
         
-        extended_X = tf.einsum("bs,sd->bsd",x,self.reference) ##got shape == (batch,seq,LD)
+        extended_X = tf.einsum("bsn,nsd->bsd",x,self.reference) ##got shape == (batch,seq,LD)
         
-        extended_LD = tf.einsum("bsl,slc->bslc",extended_X,self.bweight) ## (b,s,l) * (s,l,channel) -> (b,s,l,c)
+        extended_LD = tf.einsum("bsl,cs->bslc",extended_X,self.bweight) ## (b,s,l) * (channel,s) -> (b,s,l,c)
         
         extended_LD = tf.reduce_sum(extended_LD,axis=1)  #(b,s,l,c) -> (b,sum(s),l,c) -> (b,l,c)
         

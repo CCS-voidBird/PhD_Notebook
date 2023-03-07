@@ -130,12 +130,12 @@ class ML_composer:
         self.args = args
         self.config = configer
         self._model = {"INIT_MODEL":Model(self.args),"TRAINED_MODEL":Model(self.args)}
-        self._raw_data["GENO"] = pd.read_table(args.ped+".ped",sep="\t",header=None)
-        self._raw_data["MAP"] = pd.read_table(args.ped + ".map", sep="\t", header=None)
-        self._raw_data["FAM"] = pd.read_table(args.ped + ".fam", sep="\t", header=None)
-        self._raw_data["PHENO"] = pd.read_table(args.pheno, sep="\t", header=None)
-        self._raw_data["INDEX"] = pd.read_table(args.index,sep="\t", header=None)
-        self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,sep="\t") if args.annotation is not None else None
+        self._raw_data["GENO"] = pd.read_table(args.ped+".ped",delim_whitespace=True,header=None)
+        self._raw_data["MAP"] = pd.read_table(args.ped + ".map", delim_whitespace=True,header=None)
+        self._raw_data["FAM"] = pd.read_table(args.ped + ".fam", delim_whitespace=True,header=None)
+        self._raw_data["PHENO"] = pd.read_table(args.pheno, delim_whitespace=True,header=None)
+        self._raw_data["INDEX"] = pd.read_table(args.index,delim_whitespace=True,header=None)
+        self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,delim_whitespace=True) if args.annotation is not None else None
         self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique())
         self.batchSize = args.batch
         print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
@@ -146,6 +146,16 @@ class ML_composer:
         print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
         self.plot = self.args.plot
         self.sort_data()
+
+        annotation_groups = self._raw_data["ANNOTATION"].iloc[:, -1].unique()
+        anno_dict = {annotation_groups[x]:x for x in range(len(annotation_groups))}
+        self.annotation = self._raw_data["ANNOTATION"]
+        self.annotation.iloc[:,-1] = self.annotation.iloc[:,-1].map(anno_dict)
+        self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
+
+        print("Got LD shape:")
+        print(self.annotation.shape)
+
         return
 
     def sort_data(self):
@@ -159,15 +169,16 @@ class ML_composer:
         sample_reference = self._raw_data["INFO"].iloc[:,1] ## Get fam IID as reference
         snp_reference = self._raw_data["MAP"].iloc[:,:2]
         for label in ["GENO","FAM","PHENO","INDEX"]:
+            print(label)
             if self._raw_data[label].iloc[:,1].equals(sample_reference) is False:
                 print("Samples are not aligned with same order")
-                exit()
-        if self._raw_data["GENO"].iloc[:,6:].shape[1] != snp_reference.shape[1]:
+                #exit()
+        if self._raw_data["GENO"].iloc[:,6:].shape[1] != snp_reference.shape[0]:
             print("SNPs are not in same length in ped file and map file")
             exit()
         if self._raw_data["ANNOTATION"] is not None and self._raw_data["ANNOTATION"].iloc[:,:2].equals(snp_reference) is False:
             print("SNPs in annotation file are not ordered by map file")
-            exit()
+            #exit()
 
 
     def prepare_model(self):
@@ -225,6 +236,7 @@ class ML_composer:
         #self.valid_data = np.asarray(self.valid_data).astype(np.float32)
         self.valid_pheno = np.asarray(self.valid_pheno).astype(np.float32)
 
+
         return
 
     def train(self,features_train, features_test, target_train, target_test,round=1):
@@ -234,7 +246,7 @@ class ML_composer:
         else:
             n_features = features_train.shape[1:]
         self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
-            input_shape = n_features,args = self.args, lr=float(self.args.lr))
+            input_shape = n_features,args = self.args, lr=float(self.args.lr),annotation = tf.convert_to_tensor(self.annotation))
         if round == 1:
             with open(os.path.abspath(self.args.output) + "/model_summary.txt", "w") as fh:
                 self._model["TRAINED_MODEL"].summary(print_fn=lambda x: fh.write(x + "\n"))

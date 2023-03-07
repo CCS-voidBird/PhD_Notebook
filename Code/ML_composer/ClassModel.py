@@ -352,7 +352,7 @@ class DoubleCNN(NN):
             pheno = stats.zscore(pheno)
         return [geno1,geno2],pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.0001):
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.0001,annotation=None):
 
         input1 = layers.Input(shape=input_shape)
         X1 = layers.Conv1D(64, kernel_size=25, strides=3, padding='same')(input1)
