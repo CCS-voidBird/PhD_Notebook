@@ -823,8 +823,6 @@ class MultiHeadAttentionLNN(NN):
         print("USE Attention CNN MODEL as training method")
         geno = decoding(geno)
         geno = np.expand_dims(geno, axis=2)
-        #pos = np.arrays(range(geno.shape[1]))
-        #pos = np.expand_dims(pos, axis=0)
         print("The transformed SNP shape:", geno.shape)
 
         if pheno_standard is True:
