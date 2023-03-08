@@ -78,6 +78,20 @@ class SNPBlockLayer(layers.Layer):
         extended_LD = tf.reduce_sum(extended_LD,axis=1)  #(b,s,l,c) -> (b,sum(s),l,c) -> (b,l,c)
         
         return extended_LD
+    
+    def get_config(self):
+        config = super(SNPBlockLayer, self).get_config()
+        config.update({
+            'channels':self.channels,
+            'reference':self.reference,
+            'built':self.built
+            })
+            
+        return config
+    
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
         
         
     
@@ -229,6 +243,21 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
             return tf.add(all_effects,residual_score),tf.add(all_effects,residual_score)
 
         return all_effects,tf.add(all_effects,residual_score)
+    
+    def get_config(self):
+        config = super(MultiHead_QKV_BlockAttention, self).get_config()
+        config.update({
+            'head_num':self.head_num,
+            'residual':self.residual,
+            'return_attention':self.return_attention,
+            'feature_dim':self.feature_dim,
+            'seq_len':self.seq_len})
+            
+        return config
+    
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
 class MultiHead_Seq_BlockAttention(layers.Layer):
     def __init__(self, **kwargs):
