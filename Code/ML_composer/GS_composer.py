@@ -1,4 +1,4 @@
-import keras.utils.vis_utils
+
 
 from Functions import *
 from ClassModel import *
@@ -147,15 +147,15 @@ class ML_composer:
         print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
         self.plot = self.args.plot
         self.sort_data()
+        if self.args.annotation is not None:
+            annotation_groups = self._raw_data["ANNOTATION"].iloc[:, -1].unique()
+            anno_dict = {annotation_groups[x]:x for x in range(len(annotation_groups))}
+            self.annotation = self._raw_data["ANNOTATION"]
+            self.annotation.iloc[:,-1] = self.annotation.iloc[:,-1].map(anno_dict)
+            self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
 
-        annotation_groups = self._raw_data["ANNOTATION"].iloc[:, -1].unique()
-        anno_dict = {annotation_groups[x]:x for x in range(len(annotation_groups))}
-        self.annotation = self._raw_data["ANNOTATION"]
-        self.annotation.iloc[:,-1] = self.annotation.iloc[:,-1].map(anno_dict)
-        self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
-
-        print("Got LD shape:")
-        print(self.annotation.shape)
+            print("Got LD shape:")
+            print(self.annotation.shape)
 
         return
 
@@ -177,7 +177,7 @@ class ML_composer:
         if self._raw_data["GENO"].iloc[:,6:].shape[1] != snp_reference.shape[0]:
             print("SNPs are not in same length in ped file and map file")
             exit()
-        if self._raw_data["ANNOTATION"] is not None and self._raw_data["ANNOTATION"].iloc[:,:1].equals(snp_reference) is False:
+        if self.args.annotation is not None and self._raw_data["ANNOTATION"].iloc[:,:1].equals(snp_reference) is False:
             print("SNPs in annotation file are not ordered by map file")
             #exit()
 
@@ -247,7 +247,8 @@ class ML_composer:
         else:
             n_features = features_train.shape[1:]
         self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
-            input_shape = n_features,args = self.args, lr=float(self.args.lr),annotation = tf.convert_to_tensor(self.annotation))
+            input_shape = n_features,args = self.args, lr=float(self.args.lr),annotation = tf.convert_to_tensor(self.annotation)) if self.args.annotation else self._model["INIT_MODEL"].modelling(
+            input_shape = n_features,args = self.args, lr=float(self.args.lr))
         if round == 1:
             with open(os.path.abspath(self.args.output) + "/model_summary.txt", "w") as fh:
                 self._model["TRAINED_MODEL"].summary(print_fn=lambda x: fh.write(x + "\n"))
