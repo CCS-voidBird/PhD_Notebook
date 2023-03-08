@@ -84,7 +84,7 @@ class SNPBlockLayer(layers.Layer):
         config.update({
             'channels':self.channels,
             'reference':self.reference,
-            'built':self.built
+            #'built':self.built
             })
             
         return config
@@ -197,6 +197,9 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
         super(MultiHead_QKV_BlockAttention, self).__init__(**kwargs)
         self.head_num = head_num
         self.residual = residual
+        #self.return_attention = False
+        #self.feature_dim = None
+        #self.seq_len = None
 
 
     def build(self, input_shape):
@@ -249,9 +252,10 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
         config.update({
             'head_num':self.head_num,
             'residual':self.residual,
-            'return_attention':self.return_attention,
-            'feature_dim':self.feature_dim,
-            'seq_len':self.seq_len})
+            #'return_attention':self.return_attention,
+            #'feature_dim':self.feature_dim,
+            #'seq_len':self.seq_len
+        })
             
         return config
     
