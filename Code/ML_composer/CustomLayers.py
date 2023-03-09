@@ -51,10 +51,10 @@ class SNPBlockLayer(layers.Layer):
     Prograssing.
     """
     
-    def __init__(self, reference, channels = 8, **kwargs):
+    def __init__(self, channels = 8, **kwargs):
         super(SNPBlockLayer, self).__init__(**kwargs)
         self.channels = channels
-        self.reference = reference ## An identifing matrix for SNP Blocking (0/1 Matrix)
+        #self.reference = reference ## An identifing matrix for SNP Blocking (0/1 Matrix)
         
     def build(self, input_shape):
         """
@@ -67,19 +67,18 @@ class SNPBlockLayer(layers.Layer):
 
         super(SNPBlockLayer, self).build(input_shape)
 
-    def call(self, x):
+    def call(self, x,annotation):
 
         # require constant attention score from attention layer
         # x shape == (batch_size, seq_len)
         # reference shape == (seq_len, LD_len)
-        annotation = tf.keras.utils.to_categorical(self.reference)
 
         #x = tf.squeeze(x)
 
         extended_X = tf.multiply(x,annotation)
         #tf.einsum("sn,sd->sd",x,annotation) ##got shape == (batch,seq,LD)
         
-        extended_LD = tf.multiply(tf.expand_dims(extended_X, axis=2), tf.expand_dims(self.bweight, axis=1))
+        extended_LD = tf.multiply(tf.expand_dims(extended_X, axis=2), tf.expand_dims(self.bweight, axis=0))
         #tf.einsum("sl,cs->slc",extended_X,self.bweight) ## (b,s,l) * (channel,s) -> (b,s,l,c)
         
         extended_LD = tf.reduce_sum(extended_LD,axis=1)  #(b,s,l,c) -> (b,sum(s),l,c) -> (b,l,c)
@@ -90,7 +89,7 @@ class SNPBlockLayer(layers.Layer):
         config = super(SNPBlockLayer, self).get_config()
         config.update({
             'channels':self.channels,
-            'reference':self.reference,
+            #'reference':self.reference,
             #'built':self.built
             })
             
@@ -231,31 +230,31 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
         else:
             X = x[0]
             residual_score = 0
-        query = tf.tensordot(X,self.wq)
+        query = tf.matmul(X,self.wq)
         #tf.einsum('sd,dd->sd',X,self.wq)
-        key = tf.tensordot(X,self.wk)
+        key = tf.matmul(X,self.wk)
         #tf.einsum('sd,dd->sd',X,self.wk)
-        value = tf.tensordot(X,self.wv)
+        value = tf.matmul(X,self.wv)
         #tf.einsum('sd,dd->sd',X,self.wv)
         #value = tf.tensordot(x, self.wv, axes=(-1,0))
 
         # q,k,v shape == (batch_size, seq_len, d_model)
-
-        query = tf.stack(tf.split(query, self.head_num, axis=2),axis=1)
-        key = tf.stack(tf.split(key, self.head_num, axis=2),axis=1)
-        value = tf.stack(tf.split(value, self.head_num, axis=2),axis=1)
+        if self.head_num > 1:
+            query = tf.stack(tf.split(query, self.head_num, axis=2),axis=1)
+            key = tf.stack(tf.split(key, self.head_num, axis=2),axis=1)
+            value = tf.stack(tf.split(value, self.head_num, axis=2),axis=1)
 
         inner_product = tf.matmul(query, key, transpose_b=True)/tf.math.sqrt(self.seq_len)
         attention_score = tf.nn.softmax(inner_product)
 
         effect = tf.matmul(attention_score, value)
-
-        all_effects = tf.concat(tf.split(effect, self.head_num,axis=1), axis=-1)
-        all_effects = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
+        if self.head_num > 1:
+            all_effects = tf.concat(tf.split(effect, self.head_num,axis=1), axis=-1)
+            effect = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
         if self.residual:
-            return tf.add(all_effects,residual_score),tf.add(all_effects,residual_score)
+            return tf.add(effect,residual_score),tf.add(effect,residual_score)
 
-        return all_effects,tf.add(all_effects,residual_score)
+        return effect,tf.add(effect,residual_score)
     
     def get_config(self):
         config = super(MultiHead_QKV_BlockAttention, self).get_config()
@@ -272,11 +271,11 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
     def from_config(cls, config):
         return cls(**config)
 
-    def compute_output_shape(self, input_shape):
-        input_shape = input_shape
+    def compute_output_shape(self, input_shapes):
+        input_shape,input_shape = input_shapes
         if self.residual:
             return [input_shape, input_shape]
-        return input_shape
+        return [input_shape, input_shape]
 
 class MultiHead_Seq_BlockAttention(layers.Layer):
     def __init__(self, **kwargs):

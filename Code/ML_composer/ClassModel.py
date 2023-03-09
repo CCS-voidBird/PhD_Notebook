@@ -844,7 +844,7 @@ class MultiHeadAttentionLNN(NN):
 
         else:
 
-            V = SNPBlockLayer(annotation, channels=args.embedding)(input1)
+            V = SNPBlockLayer(channels=args.embedding)(input1,annotation)
 
         V = layers.Dense(embed,activation='relu')(V)
 

@@ -152,10 +152,9 @@ class ML_composer:
             anno_dict = {annotation_groups[x]:x for x in range(len(annotation_groups))}
             self.annotation = self._raw_data["ANNOTATION"]
             self.annotation.iloc[:,-1] = self.annotation.iloc[:,-1].map(anno_dict)
-            #self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
-
+            self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
+            # self.annotation = np.asarray(self.annotation.iloc[:, 2]).astype(np.float32)
             print("Got LD shape:")
-            self.annotation = np.asarray(self.annotation.iloc[:, 2]).astype(np.float32)
             print(self.annotation.shape)
 
         return
@@ -313,16 +312,22 @@ class ML_composer:
         round = 1
         val_record = 0
         while round <= self.args.round:
+            self._model["TRAINED_MODEL"] = None
+            keras.backend.clear_session()
+            gc.collect()
             history, test_accuracy, runtime = self.train(features_train, features_val, target_train, target_val,round=round)
             valid_accuracy, mse = self.model_validation()
             if valid_accuracy > val_record:
                 val_record = valid_accuracy
                 if self.args.save is True:
                     print("Saving the model with higher accuracy...")
-                    self._model["TRAINED_MODEL"].save(
-                        os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,
-                                                                               val))
-                    print("Model saved.")
+                    try:
+                        self._model["TRAINED_MODEL"].save(
+                            os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,
+                                                                                   val))
+                        print("Model saved.")
+                    except:
+                        print("Saving model failed, tring directly save by using self._model[\"TRAINED_MODEL\"].save")
             self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
                                test_accuracy, valid_accuracy, mse, runtime.seconds / 60]
             check_usage()
@@ -340,9 +345,8 @@ class ML_composer:
                 plot_loss_history(history, self.args.trait, plot_name,round-self.args.round)
 
 
-            self._model["TRAINED_MODEL"] = None
-            keras.backend.clear_session()
-            gc.collect()
+
+
             if self.save == True:
                 self.export_record()
             round += 1
