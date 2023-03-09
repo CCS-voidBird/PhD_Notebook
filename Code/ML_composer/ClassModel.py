@@ -848,7 +848,7 @@ class MultiHeadAttentionLNN(NN):
 
         V = layers.Dense(embed,activation='relu')(V)
 
-        M1,AM1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=False)([V])
+        M1,AM1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=None)([V])
         M1 = layers.Add()([M1,V])
         M2 = layers.LayerNormalization()(M1)
         M = residual_fl_block(input=M2, width=embed, downsample=True)

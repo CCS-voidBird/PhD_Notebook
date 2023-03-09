@@ -54,7 +54,7 @@ class SNPBlockLayer(layers.Layer):
     def __init__(self, reference, channels = 8, **kwargs):
         super(SNPBlockLayer, self).__init__(**kwargs)
         self.channels = channels
-        self.reference = tf.expand_dims(reference,axis=0) ## An identifing matrix for SNP Blocking (0/1 Matrix)
+        self.reference = reference ## An identifing matrix for SNP Blocking (0/1 Matrix)
         
     def build(self, input_shape):
         """
@@ -64,16 +64,23 @@ class SNPBlockLayer(layers.Layer):
         self.bweight = self.add_weight(name='Block_weightMatrix', shape=(self.channels,input_shape[1]),
                                   initializer='normal')
         self.built = True
+
         super(SNPBlockLayer, self).build(input_shape)
 
     def call(self, x):
+
         # require constant attention score from attention layer
         # x shape == (batch_size, seq_len)
         # reference shape == (seq_len, LD_len)
+        annotation = tf.keras.utils.to_categorical(self.reference)
+
+        #x = tf.squeeze(x)
+
+        extended_X = tf.multiply(x,annotation)
+        #tf.einsum("sn,sd->sd",x,annotation) ##got shape == (batch,seq,LD)
         
-        extended_X = tf.einsum("bsn,nsd->bsd",x,self.reference) ##got shape == (batch,seq,LD)
-        
-        extended_LD = tf.einsum("bsl,cs->bslc",extended_X,self.bweight) ## (b,s,l) * (channel,s) -> (b,s,l,c)
+        extended_LD = tf.multiply(tf.expand_dims(extended_X, axis=2), tf.expand_dims(self.bweight, axis=1))
+        #tf.einsum("sl,cs->slc",extended_X,self.bweight) ## (b,s,l) * (channel,s) -> (b,s,l,c)
         
         extended_LD = tf.reduce_sum(extended_LD,axis=1)  #(b,s,l,c) -> (b,sum(s),l,c) -> (b,l,c)
         
@@ -203,7 +210,7 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
 
 
     def build(self, input_shape):
-        assert len(input_shape[0]) >= 2
+        #assert len(input_shape[0]) >= 2
         self.return_attention = False
         self.feature_dim = input_shape[0][-1]
         self.seq_len = input_shape[0][1] / self.head_num
@@ -224,9 +231,12 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
         else:
             X = x[0]
             residual_score = 0
-        query = tf.einsum('bsd,dd->bsd',X,self.wq)
-        key = tf.einsum('bsd,dd->bsd',X,self.wk)
-        value = tf.einsum('bsd,dd->bsd',X,self.wv)
+        query = tf.tensordot(X,self.wq)
+        #tf.einsum('sd,dd->sd',X,self.wq)
+        key = tf.tensordot(X,self.wk)
+        #tf.einsum('sd,dd->sd',X,self.wk)
+        value = tf.tensordot(X,self.wv)
+        #tf.einsum('sd,dd->sd',X,self.wv)
         #value = tf.tensordot(x, self.wv, axes=(-1,0))
 
         # q,k,v shape == (batch_size, seq_len, d_model)
@@ -242,7 +252,7 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
 
         all_effects = tf.concat(tf.split(effect, self.head_num,axis=1), axis=-1)
         all_effects = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
-        if self.residual is True:
+        if self.residual:
             return tf.add(all_effects,residual_score),tf.add(all_effects,residual_score)
 
         return all_effects,tf.add(all_effects,residual_score)
