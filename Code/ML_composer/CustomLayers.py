@@ -256,12 +256,17 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
             #'feature_dim':self.feature_dim,
             #'seq_len':self.seq_len
         })
-            
         return config
     
     @classmethod
     def from_config(cls, config):
         return cls(**config)
+
+    def compute_output_shape(self, input_shape):
+        input_shape = input_shape
+        if self.residual:
+            return [input_shape, input_shape]
+        return input_shape
 
 class MultiHead_Seq_BlockAttention(layers.Layer):
     def __init__(self, **kwargs):
