@@ -347,7 +347,7 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
         effect = tf.matmul(attention_score, value)
 
         if self.head_num > 1:
-            effect = self._reshape_attention_from_batches(effect,self.head_num)
+            effect = self._reshape_from_batches(effect,self.head_num)
             #effect = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
         effect += self.bo
         if self.residual:
