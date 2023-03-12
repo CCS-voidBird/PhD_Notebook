@@ -281,17 +281,18 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
         return K.reshape(x, (batch_size * head_num, seq_len, head_dim))
 
     @staticmethod
-    def _reshape_attention_from_batches(x, head_num):
+    def _reshape_from_batches(x, head_num):
         input_shape = K.shape(x)
         batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
         x = K.reshape(x, (batch_size // head_num, head_num, seq_len, feature_dim))
-        return K.permute_dimensions(x, [0, 2, 1, 3])
+        x = K.permute_dimensions(x, [0, 2, 1, 3])
+        return K.reshape(x, (batch_size // head_num, seq_len, feature_dim * head_num))
 
     def build(self, input_shape):
         #assert len(input_shape[0]) >= 2
         self.return_attention = False
         self.feature_dim = input_shape[0][-1]
-        self.seq_len = input_shape[0][1] // self.head_num
+        self.seq_len = input_shape[0][1] / self.head_num
 
         self.wq = self.add_weight(name='query', shape=(self.feature_dim,self.feature_dim),
                                   initializer='normal', trainable=True)
