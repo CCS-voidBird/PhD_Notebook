@@ -61,7 +61,7 @@ class SNPBlockLayer(layers.Layer):
         A weight matrix for SNP weights
         
         """
-        self.bweight = self.add_weight(name='Block_weightMatrix', shape=(self.channels,input_shape[1]),
+        self.bweight = self.add_weight(name='Block_weightMatrix', shape=(input_shape[1],self.channels),
                                   initializer='normal')
         self.built = True
 
@@ -78,8 +78,8 @@ class SNPBlockLayer(layers.Layer):
         extended_X = tf.multiply(x,annotation)
         #tf.einsum("sn,sd->sd",x,annotation) ##got shape == (batch,seq,LD)
         
-        extended_LD = tf.multiply(tf.expand_dims(extended_X, axis=2), tf.expand_dims(self.bweight, axis=0))
-        #tf.einsum("sl,cs->slc",extended_X,self.bweight) ## (b,s,l) * (channel,s) -> (b,s,l,c)
+        extended_LD = tf.multiply(tf.expand_dims(extended_X, axis=-1), tf.expand_dims(self.bweight, axis=1))
+        #tf.einsum("sl,cs->slc",extended_X,self.bweight) ## (b,s,l,1) * (s,1,channel) -> (b,s,l,c)
         
         extended_LD = tf.reduce_sum(extended_LD,axis=1)  #(b,s,l,c) -> (b,sum(s),l,c) -> (b,l,c)
         
@@ -591,7 +591,7 @@ def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
         input_x = input
         if input.shape[-1] != X.shape[-1]:
             filter_n = X.shape[-1]
-            input_x = layers.Dense(filter_n,activation='relu')(X)
+            input_x = layers.Dense(filter_n,activation=activation)(X)
         out = layers.Add()([X, input_x])
         #out = activation(out)
         return activation(out)

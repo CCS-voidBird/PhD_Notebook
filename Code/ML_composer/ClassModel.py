@@ -829,7 +829,7 @@ class MultiHeadAttentionLNN(NN):
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001,annotation=None):
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001,annotation=None,activation="elu"):
         # init Q,K,V
         depth = args.depth
         embed = args.embedding
@@ -839,14 +839,14 @@ class MultiHeadAttentionLNN(NN):
 
             X = layers.ZeroPadding1D(padding=(0, input_shape[1] // 10))(input1)
 
-            V = layers.LocallyConnected1D(args.embedding, 10, strides=10, activation="relu", padding="valid",
+            V = layers.LocallyConnected1D(args.embedding, 10, strides=10, activation=activation, padding="valid",
                                           use_bias=False)(X)
 
         else:
 
             V = SNPBlockLayer(channels=args.embedding)(input1,annotation)
 
-        V = layers.Dense(embed,activation='relu')(V)
+        V = layers.Dense(embed,activation=activation)(V)
 
         M1,AM1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=None)([V])
         M1 = layers.Add()([M1,V])
@@ -863,7 +863,7 @@ class MultiHeadAttentionLNN(NN):
         #M = tf.reduce_sum(M3,axis=1)
         M = layers.Dropout(0.2)(M)
         while depth > 0:
-            M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
+            M = residual_fl_block(input=M, width=self.args.width,activation=layers.ELU(), downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1
         QV_output = layers.Dense(1, activation="linear")(M)
 

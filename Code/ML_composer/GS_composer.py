@@ -363,6 +363,9 @@ class ML_composer:
         print("Testing prediction:")
         print("Predicted: ", y_pred_valid[:10])
         print("observed: ", valid_pheno[:10])
+        print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))
+        print("Prediction mean: {} Var: {}".format(np.mean(y_pred_valid),np.var(y_pred_valid)))
+
         accuracy_valid = np.corrcoef(y_pred_valid, valid_pheno)[0, 1]
         mse = mean_squared_error(y_pred_valid, valid_pheno)
 
