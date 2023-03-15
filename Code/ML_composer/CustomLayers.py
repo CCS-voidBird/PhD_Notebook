@@ -581,10 +581,11 @@ class PosAttention(layers.Layer):
         return super(PosAttention, self).get_config()
 
 
-def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
+def residual_fl_block(input, width, activation='relu',downsample=False):
     #residual fully connected layers block
+    activation_function = layers.Activation(activation=activation)
     X = layers.Dense(width)(input)
-    if activation == layers.ReLU():
+    if activation == 'relu':
         X = layers.BatchNormalization()(X)
 
     if downsample:
@@ -594,9 +595,9 @@ def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
             input_x = layers.Dense(filter_n,activation=activation)(X)
         out = layers.Add()([X, input_x])
         #out = activation(out)
-        return activation(out)
+        return activation_function(out)
     else:
-        X = activation(X)
+        X = activation_function(X)
         return X
 
 

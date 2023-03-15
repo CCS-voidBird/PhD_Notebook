@@ -829,10 +829,11 @@ class MultiHeadAttentionLNN(NN):
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001,annotation=None,activation="elu"):
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001,annotation=None):
         # init Q,K,V
         depth = args.depth
         embed = args.embedding
+        activation = args.activation
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
 
         if annotation is None:
@@ -851,19 +852,19 @@ class MultiHeadAttentionLNN(NN):
         M1,AM1 = MultiHead_QKV_BlockAttention(args.num_heads,residual=None)([V])
         M1 = layers.Add()([M1,V])
         M2 = layers.LayerNormalization()(M1)
-        M = residual_fl_block(input=M2, width=embed, downsample=True)
+        M = residual_fl_block(input=M2, width=embed,activation=activation, downsample=True)
         #M2 = residual_fl_block(input=M1, width=self.args.width, downsample=True)
         #M = layers.Dropout(0.4)(M)
         M3,AM3 = MultiHead_QKV_BlockAttention(args.num_heads,residual=True)([M, AM1])
         M3 = layers.Add()([M3,M])
         M3 = layers.LayerNormalization()(M3)
-        M3 = residual_fl_block(input=M3, width=embed, downsample=True)
+        M3 = residual_fl_block(input=M3,activation=activation, width=embed, downsample=True)
 
         M = layers.Flatten()(M3)
         #M = tf.reduce_sum(M3,axis=1)
         M = layers.Dropout(0.2)(M)
         while depth > 0:
-            M = residual_fl_block(input=M, width=self.args.width,activation=layers.ELU(), downsample=(depth % 2 == 0 & self.args.residual))
+            M = residual_fl_block(input=M, width=self.args.width,activation=activation, downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1
         QV_output = layers.Dense(1, activation="linear")(M)
 
@@ -895,6 +896,8 @@ class MultiLevelAttention(NN):
     """
     Need work
     SNP (by LD mask) * LD Attention = Global averaging GEBVs
+    self attention - encoding - additive
+    cross attention - decoding (with raw SNP/LD map) assume to estimate global effect.
     """
 
     def __init__(self,args):
@@ -925,13 +928,14 @@ class MultiLevelAttention(NN):
         depth = args.depth
         Annotation_shape = annotation.shape
         annotation = annotation
+        activation = args.activation
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
         
         if annotation is None:
 
             X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
 
-            V = layers.LocallyConnected1D(args.embedding,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
+            V = layers.LocallyConnected1D(args.embedding,10,strides=10, activation=activation,padding="valid",use_bias=False)(X)
             
         else:
             
@@ -941,7 +945,7 @@ class MultiLevelAttention(NN):
 
         M = layers.Flatten()(M)
         while depth > 0:
-            M = residual_fl_block(input=M, width=self.args.width, downsample=(depth % 2 == 0 & self.args.residual))
+            M = residual_fl_block(input=M, width=self.args.width,activation=activation, downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1
         QV_output = layers.Dense(1, activation="linear")(M)
 
