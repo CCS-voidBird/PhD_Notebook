@@ -19,6 +19,30 @@ def dot_product(x, kernel):
     else:
         return K.dot(x, kernel)
 
+from tensorflow.keras import layers
+
+class OrdinalOutputLayer(layers.Layer):
+    def __init__(self, num_classes, **kwargs):
+        super().__init__(**kwargs)
+        self.num_classes = num_classes
+
+    def build(self, input_shape):
+        self.kernel = self.add_weight(
+            shape=(input_shape[-1], self.num_classes),
+            initializer='glorot_uniform',
+            name='kernel'
+        )
+        self.bias = self.add_weight(
+            shape=(self.num_classes,),
+            initializer='zeros',
+            name='bias'
+        )
+
+    def call(self, inputs):
+        logits = tf.matmul(inputs, self.kernel) + self.bias
+        probabilities = tf.math.sigmoid(logits)
+        return probabilities
+
 class PositionalEncoding(layers.Layer):
     def __init__(self, position, d_model):
         super(PositionalEncoding, self).__init__()
