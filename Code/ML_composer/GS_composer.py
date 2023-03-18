@@ -222,7 +222,7 @@ class ML_composer:
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
         print("Mean of train phenotype:",np.mean(self.train_pheno))
         self.mean_pheno = np.mean(self.train_pheno)
-        if self.args.mean is not True:
+        if self.args.mean is not True or self.args.data_type == "ordinal":
             print("Use raw phenotype as the target")
             self.mean_pheno = 0
         self.train_pheno = self.train_pheno - self.mean_pheno
@@ -292,8 +292,14 @@ class ML_composer:
         print(' - Actual Training epochs: ', len(history.history['loss']))
         #print(self._model["TRAINED_MODEL"].predict(features_test).shape)
         test_length = target_train.shape[0]
-        y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_train,batch_size=self.batchSize), (test_length,))
-        test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
+        y_pred = self._model["TRAINED_MODEL"].predict(features_train,batch_size=self.batchSize)
+        if self.args.data_type == "ordinal":
+            y_pred = tf.reduce_sum(y_pred,axis=-1)
+            test = tf.reduce_sum(target_train,axis=-1)
+            test_accuracy = np.corrcoef(y_pred, test)[0, 1]
+        else:
+            y_pred = np.reshape(y_pred, (test_length,))
+            test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
         print("Train End.")
         print("In-year accuracy (measured as Pearson's correlation) is: ", test_accuracy)
         endTime = datetime.now()
@@ -353,9 +359,6 @@ class ML_composer:
                 # plot_name = os.path.abspath(self.args.output) + "/" + self.args.model + "_" + self.args.trait + "_" + str(round) + ".png"
                 plot_loss_history(history, self.args.trait, plot_name,round-self.args.round)
 
-
-
-
             if self.save == True:
                 self.export_record()
             round += 1
@@ -368,14 +371,20 @@ class ML_composer:
             self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
         print("Predicting valid set..")
         val_length = valid_pheno.shape[0]
-        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize), (val_length,))+self.mean_pheno
+
+        y_pred_valid = self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize)+self.mean_pheno
+        if self.args.data_type == "ordinal":
+            y_pred = tf.reduce_sum(y_pred_valid,axis=-1)
+            test = tf.reduce_sum(valid_data,axis=-1)
+            accuracy_valid = np.corrcoef(y_pred, test)[0, 1]
+        else:
+            y_pred = np.reshape(y_pred_valid, (val_length,))
+            accuracy_valid = np.corrcoef(y_pred, valid_data)[0, 1]
         print("Testing prediction:")
         print("Predicted: ", y_pred_valid[:10])
         print("observed: ", valid_pheno[:10])
         print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))
         print("Prediction mean: {} Var: {}".format(np.mean(y_pred_valid),np.var(y_pred_valid)))
-
-        accuracy_valid = np.corrcoef(y_pred_valid, valid_pheno)[0, 1]
         mse = mean_squared_error(y_pred_valid, valid_pheno)
 
         print("Validate prediction accuracy (measured as Pearson's correlation) is: ",
