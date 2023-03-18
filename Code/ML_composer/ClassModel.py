@@ -947,7 +947,10 @@ class MultiLevelAttention(NN):
         while depth > 0:
             M = residual_fl_block(input=M, width=self.args.width,activation=activation, downsample=(depth % 2 == 0 & self.args.residual))
             depth -= 1
-        QV_output = layers.Dense(1, activation="linear")(M)
+        if self.args.data_type == "ordinal":
+            QV_output = OrdinalOutputLayer(num_classes=self.args.classes)(M)
+        else:
+            QV_output = layers.Dense(1, activation="linear")(M)
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
@@ -963,7 +966,10 @@ class MultiLevelAttention(NN):
                       "SGD": sgd}
 
         model = keras.Model(inputs=input1, outputs=QV_output)
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+        if self.args.data_type == "ordinal":
+            model.compile(optimizer=optimizers[optimizer], loss=Ordinal_loss(self.args.classes).loss)
+        else:
+            model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
 
         #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
         #QK = layers.Softmax(axis=-1)(QK)

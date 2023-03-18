@@ -1,10 +1,11 @@
 #import dask.array
 from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow.keras import layers,utils
 import tensorflow as tf
 import numpy as np
 import pandas as pd
 import tensorflow.keras.backend as K
+
 """
 This file contains custom layers for ML_composer
 """
@@ -19,12 +20,53 @@ def dot_product(x, kernel):
     else:
         return K.dot(x, kernel)
 
-from tensorflow.keras import layers
+def is_label_valid(labels):
+    """Returns a boolean `Tensor` for label validity."""
+    labels = tf.convert_to_tensor(value=labels)
+    return tf.greater_equal(labels, 0.)
+
+def calculate_ordinal_loss(y_true, y_pred):
+    pass
+
+class Ordinal_loss:
+    def __init__(self,num_classes):
+        self.num_classes = num_classes
+        self.loss = self._calculate_loss
+
+    def _to_classes(self,labels,mask):
+        one_to_n = tf.range(1, self.num_classes + 1, dtype=tf.float32)
+        unsqueezed = tf.repeat(
+            tf.expand_dims(labels, axis=2), self.num_classes, axis=-1)
+        ordinals = tf.where(unsqueezed >= one_to_n, tf.ones_like(unsqueezed), 0.0)
+        return tf.where(tf.expand_dims(mask, axis=-1), ordinals, 0.0)
+
+    def is_label_valid(self,labels):
+        """Returns a boolean `Tensor` for label validity."""
+        labels = tf.convert_to_tensor(value=labels)
+        return tf.greater_equal(labels, 0.)
+
+    def _calculate_loss(self,labels, logits, mask=None):
+        if logits.shape.rank != 3:
+            raise ValueError('Predictions for ordinal loss must have rank 3.')
+        if mask is None:
+            mask = self.is_label_valid(labels)
+        labels = tf.where(mask, labels, 0.0)
+        logits = tf.where(tf.expand_dims(mask, -1), logits, 0.0)
+        ordinals = self._to_classes(labels, mask)
+        losses = tf.where(
+            tf.expand_dims(mask, -1),
+            tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
+                labels=ordinals,
+                logits=logits),
+            0.0)
+        return tf.reduce_sum(losses, axis=-1), tf.cast(mask, dtype=tf.float32)
+
 
 class OrdinalOutputLayer(layers.Layer):
     def __init__(self, num_classes, **kwargs):
         super().__init__(**kwargs)
         self.num_classes = num_classes
+
 
     def build(self, input_shape):
         self.kernel = self.add_weight(
@@ -99,6 +141,8 @@ class SNPBlockLayer(layers.Layer):
 
         #x = tf.squeeze(x)
 
+        LD_mask = is_label_valid(annotation)
+        annotation = tf.where(LD_mask, annotation, 0.0) #See if it works
         extended_X = tf.multiply(x,annotation)
         #tf.einsum("sn,sd->sd",x,annotation) ##got shape == (batch,seq,LD)
         

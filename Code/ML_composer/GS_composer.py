@@ -1,4 +1,5 @@
-
+import keras.utils
+import sklearn.preprocessing
 
 from Functions import *
 from ClassModel import *
@@ -18,6 +19,7 @@ from sklearn.preprocessing import OneHotEncoder
 import platform
 from datetime import datetime
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import OrdinalEncoder
 import configparser
 import gc
 import os
@@ -46,6 +48,7 @@ def get_args():
     req_grp.add_argument('--model', type=str, help="Select training model.", required=True)
     req_grp.add_argument('--load', type=str, help="load model from file.", default=None)
     req_grp.add_argument('--trait', type=str, help="give trait a name.", default=None)
+    req_grp.add_argument('--data-type', type=str, help="Trait type (numerous, ordinal, binary)", default="numerous")
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=10)
     req_grp.add_argument('-lr', '--lr', type=float, help="Learning rate.", default=0.0001)
@@ -131,7 +134,7 @@ class ML_composer:
     def get_data(self,configer,args):
         self.args = args
         self.config = configer
-        self._model = {"INIT_MODEL":Model(self.args),"TRAINED_MODEL":Model(self.args)}
+
         self._raw_data["GENO"] = pd.read_table(args.ped+".ped",delim_whitespace=True,header=None)
         self._raw_data["MAP"] = pd.read_table(args.ped + ".map", delim_whitespace=True,header=None)
         self._raw_data["FAM"] = pd.read_table(args.ped + ".fam", delim_whitespace=True,header=None)
@@ -226,18 +229,23 @@ class ML_composer:
         self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
         #self.valid_pheno = self.valid_pheno - self.mean_pheno
         print(self.valid_pheno.head(5))
-
-        #label_encoder = LabelEncoder()
-
-        self.prepare_model()
-        #self.train_data,self.train_pheno = self._model["INIT_MODEL"].data_transform(self.train_data,self.train_pheno, pheno_standard = self.args.rank) ## The raw data to transform include geno, pheno, annotations
-        #self.valid_data,self.valid_pheno = self._model["INIT_MODEL"].data_transform(self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
-
-        #self.train_data = np.asarray(self.train_data).astype(np.float32)
         self.train_pheno = np.asarray(self.train_pheno).astype(np.float32)
-        #self.valid_data = np.asarray(self.valid_data).astype(np.float32)
         self.valid_pheno = np.asarray(self.valid_pheno).astype(np.float32)
-
+        if self.args.data_type == "ordinal":
+            self.args.classes = np.max(self.train_pheno) + 1
+            #encoder = OrdinalEncoder()
+            try:
+                self.args.classes = max(np.max(self.train_pheno),np.max(self.valid_pheno))
+                self.train_pheno = keras.utils.to_ordinal(self.train_pheno)
+                self.valid_pheno = keras.utils.to_ordinal(self.valid_pheno)
+            except:
+                print("Using backup function inherited from keras source code. "
+                      "You may need to use code 'pip install tf-nightly' to install the actual module.")
+                self.args.classes = max(np.max(self.train_pheno), np.max(self.valid_pheno))
+                self.train_pheno = to_ordinal(self.train_pheno)
+                self.valid_pheno = to_ordinal(self.valid_pheno)
+        self._model = {"INIT_MODEL": Model(self.args), "TRAINED_MODEL": Model(self.args)}
+        self.prepare_model()
 
         return
 
