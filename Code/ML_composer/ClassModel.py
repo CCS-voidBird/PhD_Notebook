@@ -820,13 +820,18 @@ class MultiHeadAttentionLNN(NN):
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
 
-        print("USE Attention CNN MODEL as training method")
+        print("USE LocalRealFormer MODEL as training method")
         geno = decoding(geno)
         geno = np.expand_dims(geno, axis=2)
+        geno = tf.convert_to_tensor(geno)
+        geno = tf.cast(geno,dtype=tf.float32)
         print("The transformed SNP shape:", geno.shape)
 
         if pheno_standard is True:
             pheno = stats.zscore(pheno)
+        pheno = tf.convert_to_tensor(pheno)
+        pheno = tf.cast(pheno, dtype=tf.float32)
+        print("The transformed SNP shape:", pheno.shape,pheno.dtype)
         return geno,pheno
 
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001,annotation=None):
@@ -835,6 +840,7 @@ class MultiHeadAttentionLNN(NN):
         embed = args.embedding
         activation = args.activation
         input1 = layers.Input(shape=input_shape,name="input_layer_1")
+        print(input1.shape)
 
         if annotation is None:
 
@@ -859,14 +865,23 @@ class MultiHeadAttentionLNN(NN):
         M3 = layers.Add()([M3,M])
         M3 = layers.LayerNormalization()(M3)
         M3 = residual_fl_block(input=M3,activation=activation, width=embed, downsample=True)
-
         M = layers.Flatten()(M3)
-        #M = tf.reduce_sum(M3,axis=1)
+        # M = tf.reduce_sum(M3,axis=1)
         M = layers.Dropout(0.2)(M)
-        while depth > 0:
-            M = residual_fl_block(input=M, width=self.args.width,activation=activation, downsample=(depth % 2 == 0 & self.args.residual))
-            depth -= 1
-        QV_output = layers.Dense(1, activation="linear")(M)
+
+        if self.args.data_type == "ordinal":
+
+            while depth > 0:
+                M = residual_fl_block(input=M, width=self.args.width, activation=activation,
+                                      downsample=(depth % 2 == 0 & self.args.residual))
+                depth -= 1
+            QV_output = OrdinalOutputLayer(num_classes=self.args.classes)(M)
+        else:
+            while depth > 0:
+                M = residual_fl_block(input=M, width=self.args.width, activation=activation,
+                                      downsample=(depth % 2 == 0 & self.args.residual))
+                depth -= 1
+            QV_output = layers.Dense(1, activation="linear")(M)
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
@@ -882,7 +897,11 @@ class MultiHeadAttentionLNN(NN):
                       "SGD": sgd}
 
         model = keras.Model(inputs=input1, outputs=QV_output)
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+        loss_class = Ordinal_loss(self.args.classes)
+        if self.args.data_type == "ordinal":
+            model.compile(optimizer=optimizers[optimizer], loss=loss_class.loss,metrics=['acc'])
+        else:
+            model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error",metrics=['acc'])
 
         #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
         #QK = layers.Softmax(axis=-1)(QK)

@@ -22,11 +22,15 @@ def dot_product(x, kernel):
 
 def is_label_valid(labels):
     """Returns a boolean `Tensor` for label validity."""
-    labels = tf.convert_to_tensor(value=labels)
-    return tf.greater_equal(labels, 0.)
+    #labels = tf.convert_to_tensor(value=labels)
+    #labels = tf.cast(labels,dtype=tf.float32)
+    #print(labels.dtype)
+    return tf.greater_equal(labels, tf.constant(0.0))
 
 def calculate_ordinal_loss(y_true, y_pred):
     pass
+
+
 
 class Ordinal_loss:
     def __init__(self,num_classes):
@@ -42,16 +46,21 @@ class Ordinal_loss:
 
     def is_label_valid(self,labels):
         """Returns a boolean `Tensor` for label validity."""
-        labels = tf.convert_to_tensor(value=labels)
+        #labels = tf.convert_to_tensor(value=labels)
         return tf.greater_equal(labels, 0.)
 
-    def _calculate_loss(self,labels, logits, mask=None):
+    def _calculate_loss(self,labels, logits):
+        #print("checking dtypes")
+        #print(labels.dtype)
+        #print(logits.dtype)
         if logits.shape.rank != 3:
             raise ValueError('Predictions for ordinal loss must have rank 3.')
-        if mask is None:
-            mask = self.is_label_valid(labels)
+        #labels = tf.convert_to_tensor(value=labels)
+        #labels = tf.cast(labels, dtype=tf.float32)
+        mask = is_label_valid(labels)
         labels = tf.where(mask, labels, 0.0)
-        logits = tf.where(tf.expand_dims(mask, -1), logits, 0.0)
+        #logits = tf.cast(logits,dtype=tf.float32)
+        logits = tf.where(tf.expand_dims(mask, -1), logits, 0.0)###
         ordinals = self._to_classes(labels, mask)
         losses = tf.where(
             tf.expand_dims(mask, -1),
@@ -72,18 +81,26 @@ class OrdinalOutputLayer(layers.Layer):
         self.kernel = self.add_weight(
             shape=(input_shape[-1], self.num_classes),
             initializer='glorot_uniform',
-            name='kernel'
+            name='Ordinal kernel'
         )
         self.bias = self.add_weight(
             shape=(self.num_classes,),
             initializer='zeros',
-            name='bias'
+            name='Ordinal bias'
         )
 
     def call(self, inputs):
         logits = tf.matmul(inputs, self.kernel) + self.bias
-        probabilities = tf.math.sigmoid(logits)
-        return probabilities
+        logits = tf.reshape(logits,(-1,1,self.num_classes))
+        probabilities = tf.nn.sigmoid(logits)
+        #scores = tf.argmax(probabilities,axis=1,output_type=tf.float32)
+        #scores = tf.cast(scores,dtype=tf.float32)
+        #scores = tf.expand_dims(probabilities,axis=1)
+        scores = probabilities
+        #probabilities = tf.argmax(probabilities,axis=-1)
+        #scores = tf.reduce_sum(probabilities,axis=1)
+        #scores = tf.expand_dims(scores,axis=-1)
+        return scores
 
 class PositionalEncoding(layers.Layer):
     def __init__(self, position, d_model):
@@ -358,6 +375,7 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
 
     def build(self, input_shape):
         #assert len(input_shape[0]) >= 2
+        print(input_shape)
         self.return_attention = False
         self.feature_dim = input_shape[0][-1]
         self.seq_len = input_shape[0][1] / self.head_num
@@ -667,7 +685,6 @@ def residual_fl_block(input, width, activation='relu',downsample=False):
     else:
         X = activation_function(X)
         return X
-
 
 
 def residual_conv1D_block(input,filters,kernel_size,activation=layers.ReLU(),downsample=False):

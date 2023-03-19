@@ -1,5 +1,4 @@
-import keras.utils
-import sklearn.preprocessing
+
 
 from Functions import *
 from ClassModel import *
@@ -8,8 +7,10 @@ import matplotlib.pyplot as plt
 try:
     import tensorflow as tf
     from tensorflow.keras.utils import to_categorical
+    import keras.utils
+    import sklearn.preprocessing
 except:
-    print("This a CPU-only platform.")
+    print("Something error happened while importing subfunction from tf")
 import pickle
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -235,15 +236,17 @@ class ML_composer:
             self.args.classes = np.max(self.train_pheno) + 1
             #encoder = OrdinalEncoder()
             try:
-                self.args.classes = max(np.max(self.train_pheno),np.max(self.valid_pheno))
-                self.train_pheno = keras.utils.to_ordinal(self.train_pheno)
-                self.valid_pheno = keras.utils.to_ordinal(self.valid_pheno)
+                self.args.classes = int(max(np.max(self.train_pheno),np.max(self.valid_pheno)))
+                #self.train_pheno = keras.utils.to_ordinal(self.train_pheno)
+                #self.valid_pheno = keras.utils.to_ordinal(self.valid_pheno)
             except:
                 print("Using backup function inherited from keras source code. "
                       "You may need to use code 'pip install tf-nightly' to install the actual module.")
-                self.args.classes = max(np.max(self.train_pheno), np.max(self.valid_pheno))
-                self.train_pheno = to_ordinal(self.train_pheno)
-                self.valid_pheno = to_ordinal(self.valid_pheno)
+                self.args.classes = int(max(np.max(self.train_pheno), np.max(self.valid_pheno)))
+                print(self.args.classes)
+                #self.train_pheno = to_ordinal(self.train_pheno)
+                #self.valid_pheno = to_ordinal(self.valid_pheno)
+                print(self.valid_pheno.shape)
         self._model = {"INIT_MODEL": Model(self.args), "TRAINED_MODEL": Model(self.args)}
         self.prepare_model()
 
@@ -255,6 +258,8 @@ class ML_composer:
             n_features = features_train[0].shape[1:]
         else:
             n_features = features_train.shape[1:]
+
+        print("Got input shape:",n_features)
         self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
             input_shape = n_features,args = self.args, lr=float(self.args.lr),annotation = tf.convert_to_tensor(self.annotation)) if self.args.annotation else self._model["INIT_MODEL"].modelling(
             input_shape = n_features,args = self.args, lr=float(self.args.lr))
@@ -294,9 +299,12 @@ class ML_composer:
         test_length = target_train.shape[0]
         y_pred = self._model["TRAINED_MODEL"].predict(features_train,batch_size=self.batchSize)
         if self.args.data_type == "ordinal":
-            y_pred = tf.reduce_sum(y_pred,axis=-1)
-            test = tf.reduce_sum(target_train,axis=-1)
-            test_accuracy = np.corrcoef(y_pred, test)[0, 1]
+            y_pred = tf.reduce_sum(tf.round(y_pred),axis=-1)
+            y_pred = np.reshape(y_pred, (test_length,))
+            print(y_pred.shape)
+            print(target_train.shape)
+            #test = tf.reduce_sum(target_train,axis=-1)
+            test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
         else:
             y_pred = np.reshape(y_pred, (test_length,))
             test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
@@ -374,12 +382,15 @@ class ML_composer:
 
         y_pred_valid = self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize)+self.mean_pheno
         if self.args.data_type == "ordinal":
-            y_pred = tf.reduce_sum(y_pred_valid,axis=-1)
-            test = tf.reduce_sum(valid_data,axis=-1)
-            accuracy_valid = np.corrcoef(y_pred, test)[0, 1]
+            y_pred_valid = tf.reduce_sum(tf.round(y_pred_valid),axis=-1)
+            y_pred_valid = np.reshape(y_pred_valid, (val_length,))
+            print(y_pred_valid.shape)
+            print(valid_pheno.shape)
+            #test = tf.reduce_sum(valid_data,axis=-1)
+            accuracy_valid = np.corrcoef(y_pred_valid, valid_pheno)[0, 1]
         else:
             y_pred = np.reshape(y_pred_valid, (val_length,))
-            accuracy_valid = np.corrcoef(y_pred, valid_data)[0, 1]
+            accuracy_valid = np.corrcoef(y_pred, valid_pheno)[0, 1]
         print("Testing prediction:")
         print("Predicted: ", y_pred_valid[:10])
         print("observed: ", valid_pheno[:10])
@@ -466,7 +477,7 @@ def main():
 
     composer = ML_composer()
     composer.get_data(configer=None,args=args)
-    composer.prepare_model()
+    #composer.prepare_model()
 
 
     index_ref = composer.prepare_cross_validate()
