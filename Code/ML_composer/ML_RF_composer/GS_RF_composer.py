@@ -263,11 +263,16 @@ class ML_composer:
                 history, test_accuracy, runtime = self.train(features_train, features_test, target_train, target_test,
                                                              round=round)
                 valid_accuracy, mse = self.model_validation()
-                new_record = [self.args.trait, train_index, valid_index, self.model_name,
+                new_record = [self.args.trait, train_index, valid_index[0], self.model_name,
                                                      test_accuracy, valid_accuracy, mse, runtime.seconds / 60,self.rf_hp["leaves"],self.rf_hp["trees"]]
                 print(new_record)
                 self.record.loc[len(self.record)] = new_record
                 check_usage()
+                if self.record[self.record.ValidSet.isin(valid_index)].Valid_Accuracy.max == valid_accuracy:
+                    if self.args.save is True:
+                        print("saving model>.")
+                        saved_rf_model_fn = os.path.abspath(self.args.output)+"/{}_{}_{}.json".format(self.args.trait, self.model_name,val)
+                        pickle.dump(self._model["TRAINED_MODEL"], open(saved_rf_model_fn, "wb"))
                 if self.plot is True and self.model_name != "RF":
                     # create a folder to save the plot, folder name: trait, model
                     print("Plotting the training process...")
