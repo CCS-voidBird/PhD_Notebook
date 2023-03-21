@@ -7,8 +7,10 @@ import matplotlib.pyplot as plt
 try:
     import tensorflow as tf
     from tensorflow.keras.utils import to_categorical
+    import keras.utils
+    import sklearn.preprocessing
 except:
-    print("This a CPU-only platform.")
+    print("Something error happened while importing subfunction from tf")
 import pickle
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -18,6 +20,7 @@ from sklearn.preprocessing import OneHotEncoder
 import platform
 from datetime import datetime
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import OrdinalEncoder
 import configparser
 import gc
 import os
@@ -46,11 +49,13 @@ def get_args():
     req_grp.add_argument('--model', type=str, help="Select training model.", required=True)
     req_grp.add_argument('--load', type=str, help="load model from file.", default=None)
     req_grp.add_argument('--trait', type=str, help="give trait a name.", default=None)
+    req_grp.add_argument('--data-type', type=str, help="Trait type (numerous, ordinal, binary)", default="numerous")
     req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=10)
     req_grp.add_argument('-lr', '--lr', type=float, help="Learning rate.", default=0.0001)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
     req_grp.add_argument('--num-heads', type=int, help="(Only for multi-head attention)Number of heads.", default=10)
+    req_grp.add_argument('--activation', type=str, help="Activation function for hidden Dense layer.", default='relu')
     req_grp.add_argument('--embedding', type=int, help="(Only for multi-head attention)Embedding length (default as 8)", default=8)
     req_grp.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
@@ -130,7 +135,7 @@ class ML_composer:
     def get_data(self,configer,args):
         self.args = args
         self.config = configer
-        self._model = {"INIT_MODEL":Model(self.args),"TRAINED_MODEL":Model(self.args)}
+
         self._raw_data["GENO"] = pd.read_table(args.ped+".ped",delim_whitespace=True,header=None)
         self._raw_data["MAP"] = pd.read_table(args.ped + ".map", delim_whitespace=True,header=None)
         self._raw_data["FAM"] = pd.read_table(args.ped + ".fam", delim_whitespace=True,header=None)
@@ -218,25 +223,32 @@ class ML_composer:
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
         print("Mean of train phenotype:",np.mean(self.train_pheno))
         self.mean_pheno = np.mean(self.train_pheno)
-        if self.args.mean is not True:
+        if self.args.mean is not True or self.args.data_type == "ordinal":
             print("Use raw phenotype as the target")
             self.mean_pheno = 0
         self.train_pheno = self.train_pheno - self.mean_pheno
         self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
         #self.valid_pheno = self.valid_pheno - self.mean_pheno
         print(self.valid_pheno.head(5))
-
-        #label_encoder = LabelEncoder()
-
-        self.prepare_model()
-        #self.train_data,self.train_pheno = self._model["INIT_MODEL"].data_transform(self.train_data,self.train_pheno, pheno_standard = self.args.rank) ## The raw data to transform include geno, pheno, annotations
-        #self.valid_data,self.valid_pheno = self._model["INIT_MODEL"].data_transform(self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
-
-        #self.train_data = np.asarray(self.train_data).astype(np.float32)
         self.train_pheno = np.asarray(self.train_pheno).astype(np.float32)
-        #self.valid_data = np.asarray(self.valid_data).astype(np.float32)
         self.valid_pheno = np.asarray(self.valid_pheno).astype(np.float32)
-
+        if self.args.data_type == "ordinal":
+            self.args.classes = np.max(self.train_pheno) + 1
+            #encoder = OrdinalEncoder()
+            try:
+                self.args.classes = int(max(np.max(self.train_pheno),np.max(self.valid_pheno)))
+                #self.train_pheno = keras.utils.to_ordinal(self.train_pheno)
+                #self.valid_pheno = keras.utils.to_ordinal(self.valid_pheno)
+            except:
+                print("Using backup function inherited from keras source code. "
+                      "You may need to use code 'pip install tf-nightly' to install the actual module.")
+                self.args.classes = int(max(np.max(self.train_pheno), np.max(self.valid_pheno)))
+                print(self.args.classes)
+                #self.train_pheno = to_ordinal(self.train_pheno)
+                #self.valid_pheno = to_ordinal(self.valid_pheno)
+                print(self.valid_pheno.shape)
+        self._model = {"INIT_MODEL": Model(self.args), "TRAINED_MODEL": Model(self.args)}
+        self.prepare_model()
 
         return
 
@@ -246,6 +258,8 @@ class ML_composer:
             n_features = features_train[0].shape[1:]
         else:
             n_features = features_train.shape[1:]
+
+        print("Got input shape:",n_features)
         self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
             input_shape = n_features,args = self.args, lr=float(self.args.lr),annotation = tf.convert_to_tensor(self.annotation)) if self.args.annotation else self._model["INIT_MODEL"].modelling(
             input_shape = n_features,args = self.args, lr=float(self.args.lr))
@@ -283,8 +297,17 @@ class ML_composer:
         print(' - Actual Training epochs: ', len(history.history['loss']))
         #print(self._model["TRAINED_MODEL"].predict(features_test).shape)
         test_length = target_train.shape[0]
-        y_pred = np.reshape(self._model["TRAINED_MODEL"].predict(features_train,batch_size=self.batchSize), (test_length,))
-        test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
+        y_pred = self._model["TRAINED_MODEL"].predict(features_train,batch_size=self.batchSize)
+        if self.args.data_type == "ordinal":
+            y_pred = tf.reduce_sum(tf.round(y_pred),axis=-1)
+            y_pred = np.reshape(y_pred, (test_length,))
+            print(y_pred.shape)
+            print(target_train.shape)
+            #test = tf.reduce_sum(target_train,axis=-1)
+            test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
+        else:
+            y_pred = np.reshape(y_pred, (test_length,))
+            test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
         print("Train End.")
         print("In-year accuracy (measured as Pearson's correlation) is: ", test_accuracy)
         endTime = datetime.now()
@@ -344,9 +367,6 @@ class ML_composer:
                 # plot_name = os.path.abspath(self.args.output) + "/" + self.args.model + "_" + self.args.trait + "_" + str(round) + ".png"
                 plot_loss_history(history, self.args.trait, plot_name,round-self.args.round)
 
-
-
-
             if self.save == True:
                 self.export_record()
             round += 1
@@ -359,11 +379,23 @@ class ML_composer:
             self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
         print("Predicting valid set..")
         val_length = valid_pheno.shape[0]
-        y_pred_valid = np.reshape(self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize), (val_length,))+self.mean_pheno
+
+        y_pred_valid = self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize)+self.mean_pheno
+        if self.args.data_type == "ordinal":
+            y_pred_valid = tf.reduce_sum(tf.round(y_pred_valid),axis=-1)
+            y_pred_valid = np.reshape(y_pred_valid, (val_length,))
+            print(y_pred_valid.shape)
+            print(valid_pheno.shape)
+            #test = tf.reduce_sum(valid_data,axis=-1)
+            accuracy_valid = np.corrcoef(y_pred_valid, valid_pheno)[0, 1]
+        else:
+            y_pred = np.reshape(y_pred_valid, (val_length,))
+            accuracy_valid = np.corrcoef(y_pred, valid_pheno)[0, 1]
         print("Testing prediction:")
         print("Predicted: ", y_pred_valid[:10])
         print("observed: ", valid_pheno[:10])
-        accuracy_valid = np.corrcoef(y_pred_valid, valid_pheno)[0, 1]
+        print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))
+        print("Prediction mean: {} Var: {}".format(np.mean(y_pred_valid),np.var(y_pred_valid)))
         mse = mean_squared_error(y_pred_valid, valid_pheno)
 
         print("Validate prediction accuracy (measured as Pearson's correlation) is: ",
@@ -445,7 +477,7 @@ def main():
 
     composer = ML_composer()
     composer.get_data(configer=None,args=args)
-    composer.prepare_model()
+    #composer.prepare_model()
 
 
     index_ref = composer.prepare_cross_validate()

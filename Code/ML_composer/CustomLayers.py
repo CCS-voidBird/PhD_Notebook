@@ -1,10 +1,11 @@
 #import dask.array
 from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow.keras import layers,utils
 import tensorflow as tf
 import numpy as np
 import pandas as pd
 import tensorflow.keras.backend as K
+
 """
 This file contains custom layers for ML_composer
 """
@@ -18,6 +19,88 @@ def dot_product(x, kernel):
         return K.squeeze(K.dot(x, K.expand_dims(kernel)),axis=-1)
     else:
         return K.dot(x, kernel)
+
+def is_label_valid(labels):
+    """Returns a boolean `Tensor` for label validity."""
+    #labels = tf.convert_to_tensor(value=labels)
+    #labels = tf.cast(labels,dtype=tf.float32)
+    #print(labels.dtype)
+    return tf.greater_equal(labels, tf.constant(0.0))
+
+def calculate_ordinal_loss(y_true, y_pred):
+    pass
+
+
+
+class Ordinal_loss:
+    def __init__(self,num_classes):
+        self.num_classes = num_classes
+        self.loss = self._calculate_loss
+
+    def _to_classes(self,labels,mask):
+        one_to_n = tf.range(1, self.num_classes + 1, dtype=tf.float32)
+        unsqueezed = tf.repeat(
+            tf.expand_dims(labels, axis=2), self.num_classes, axis=-1)
+        ordinals = tf.where(unsqueezed >= one_to_n, tf.ones_like(unsqueezed), 0.0)
+        return tf.where(tf.expand_dims(mask, axis=-1), ordinals, 0.0)
+
+    def is_label_valid(self,labels):
+        """Returns a boolean `Tensor` for label validity."""
+        #labels = tf.convert_to_tensor(value=labels)
+        return tf.greater_equal(labels, 0.)
+
+    def _calculate_loss(self,labels, logits):
+        #print("checking dtypes")
+        #print(labels.dtype)
+        #print(logits.dtype)
+        if logits.shape.rank != 3:
+            raise ValueError('Predictions for ordinal loss must have rank 3.')
+        #labels = tf.convert_to_tensor(value=labels)
+        #labels = tf.cast(labels, dtype=tf.float32)
+        mask = is_label_valid(labels)
+        labels = tf.where(mask, labels, 0.0)
+        #logits = tf.cast(logits,dtype=tf.float32)
+        logits = tf.where(tf.expand_dims(mask, -1), logits, 0.0)###
+        ordinals = self._to_classes(labels, mask)
+        losses = tf.where(
+            tf.expand_dims(mask, -1),
+            tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
+                labels=ordinals,
+                logits=logits),
+            0.0)
+        return tf.reduce_sum(losses, axis=-1), tf.cast(mask, dtype=tf.float32)
+
+
+class OrdinalOutputLayer(layers.Layer):
+    def __init__(self, num_classes, **kwargs):
+        super().__init__(**kwargs)
+        self.num_classes = num_classes
+
+
+    def build(self, input_shape):
+        self.kernel = self.add_weight(
+            shape=(input_shape[-1], self.num_classes),
+            initializer='glorot_uniform',
+            name='Ordinal kernel'
+        )
+        self.bias = self.add_weight(
+            shape=(self.num_classes,),
+            initializer='zeros',
+            name='Ordinal bias'
+        )
+
+    def call(self, inputs):
+        logits = tf.matmul(inputs, self.kernel) + self.bias
+        logits = tf.reshape(logits,(-1,1,self.num_classes))
+        probabilities = tf.nn.sigmoid(logits)
+        #scores = tf.argmax(probabilities,axis=1,output_type=tf.float32)
+        #scores = tf.cast(scores,dtype=tf.float32)
+        #scores = tf.expand_dims(probabilities,axis=1)
+        scores = probabilities
+        #probabilities = tf.argmax(probabilities,axis=-1)
+        #scores = tf.reduce_sum(probabilities,axis=1)
+        #scores = tf.expand_dims(scores,axis=-1)
+        return scores
 
 class PositionalEncoding(layers.Layer):
     def __init__(self, position, d_model):
@@ -61,7 +144,7 @@ class SNPBlockLayer(layers.Layer):
         A weight matrix for SNP weights
         
         """
-        self.bweight = self.add_weight(name='Block_weightMatrix', shape=(self.channels,input_shape[1]),
+        self.bweight = self.add_weight(name='Block_weightMatrix', shape=(input_shape[1],self.channels),
                                   initializer='normal')
         self.built = True
 
@@ -75,11 +158,13 @@ class SNPBlockLayer(layers.Layer):
 
         #x = tf.squeeze(x)
 
+        LD_mask = is_label_valid(annotation)
+        annotation = tf.where(LD_mask, annotation, 0.0) #See if it works
         extended_X = tf.multiply(x,annotation)
         #tf.einsum("sn,sd->sd",x,annotation) ##got shape == (batch,seq,LD)
         
-        extended_LD = tf.multiply(tf.expand_dims(extended_X, axis=2), tf.expand_dims(self.bweight, axis=0))
-        #tf.einsum("sl,cs->slc",extended_X,self.bweight) ## (b,s,l) * (channel,s) -> (b,s,l,c)
+        extended_LD = tf.multiply(tf.expand_dims(extended_X, axis=-1), tf.expand_dims(self.bweight, axis=1))
+        #tf.einsum("sl,cs->slc",extended_X,self.bweight) ## (b,s,l,1) * (s,1,channel) -> (b,s,l,c)
         
         extended_LD = tf.reduce_sum(extended_LD,axis=1)  #(b,s,l,c) -> (b,sum(s),l,c) -> (b,l,c)
         
@@ -98,21 +183,56 @@ class SNPBlockLayer(layers.Layer):
     @classmethod
     def from_config(cls, config):
         return cls(**config)
-        
-        
+
+class BaseAttention(layers.Layer):
+  def __init__(self, **kwargs):
+    super().__init__()
+    self.mha = BlockAttention(**kwargs)
+    self.layernorm = tf.keras.layers.LayerNormalization()
+    self.add = tf.keras.layers.Add()
     
 class BlockAttention(layers.Layer):
-    def __init__(self, **kwargs):
+    """
+    A backup code trunk for multi-head attention from tensorflow 2.11, using tensorflow 2.2-2.5
+    """
+
+    def __init__(self,
+        num_heads,
+        key_dim,
+        value_dim=None,
+        dropout=0.0,
+        use_bias=True,
+        output_shape=None,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
+        **kwargs,):
         super(BlockAttention, self).__init__(**kwargs)
+        self.supports_masking = True
+        self._num_heads = num_heads
+        self._key_dim = key_dim
+        self._value_dim = value_dim if value_dim else key_dim
+        self._dropout = dropout
+        self._use_bias = use_bias
+        self._output_shape = output_shape
+        self._kernel_initializer = keras.initializers.get(kernel_initializer)
+        self._bias_initializer = keras.initializers.get(bias_initializer)
+        self._kernel_regularizer = keras.regularizers.get(kernel_regularizer)
+        self._bias_regularizer = keras.regularizers.get(bias_regularizer)
+        self._activity_regularizer = keras.regularizers.get(activity_regularizer)
+        self._kernel_constraint = keras.constraints.get(kernel_constraint)
+        self._bias_constraint = keras.constraints.get(bias_constraint)
+
+        self._query_shape, self._key_shape, self._value_shape = None, None, None
 
 
     def build(self, input_shape):
         assert len(input_shape) >= 2
         self.return_attention = False
-        #attention_dim = [input_shape[-1]]
-        #amount_size = input_shape[1:-1]
-        #input_shape = tf.TensorShape(input_shape)
-        #input_channel = self._get_input_channel(input_shape)
         self.filters = input_shape[-1]
         self.u = self.add_weight(name='Block_extension', shape=(self.filters,input_shape[-2]),
                                   initializer='ones', trainable=False)
@@ -153,6 +273,34 @@ class BlockAttention(layers.Layer):
         if self.return_attention:
             return [eff, att]
         return eff
+
+    def get_config(self):
+        config = {
+            "num_heads": self._num_heads,
+            "key_dim": self._key_dim,
+            "value_dim": self._value_dim,
+            "dropout": self._dropout,
+            "use_bias": self._use_bias,
+            "output_shape": self._output_shape,
+            "kernel_initializer": keras.initializers.serialize(
+                self._kernel_initializer
+            ),
+            "bias_initializer": keras.initializers.serialize(self._bias_initializer),
+            "kernel_regularizer": keras.regularizers.serialize(
+                self._kernel_regularizer
+            ),
+            "bias_regularizer": keras.regularizers.serialize(self._bias_regularizer),
+            "activity_regularizer": keras.regularizers.serialize(
+                self._activity_regularizer
+            ),
+            "kernel_constraint": keras.constraints.serialize(self._kernel_constraint),
+            "bias_constraint": keras.constraints.serialize(self._bias_constraint),
+            "query_shape": self._query_shape,
+            "key_shape": self._key_shape,
+            "value_shape": self._value_shape,
+        }
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
 
 class MultiHead_BlockAttention(layers.Layer):
     def __init__(self,head_num, **kwargs):
@@ -199,17 +347,35 @@ class MultiHead_BlockAttention(layers.Layer):
         return all_effects
 
 class MultiHead_QKV_BlockAttention(layers.Layer):
-    def __init__(self,head_num=1,residual=True, **kwargs):
+    def __init__(self,head_num=1,residual=True,bias=True, **kwargs):
         super(MultiHead_QKV_BlockAttention, self).__init__(**kwargs)
         self.head_num = head_num
         self.residual = residual
+        self.bias = bias
         #self.return_attention = False
         #self.feature_dim = None
         #self.seq_len = None
 
+    @staticmethod
+    def _reshape_to_batches(x, head_num):
+        input_shape = K.shape(x)
+        batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
+        head_dim = feature_dim // head_num
+        x = K.reshape(x, (batch_size, seq_len, head_num, head_dim))
+        x = K.permute_dimensions(x, [0, 2, 1, 3])
+        return K.reshape(x, (batch_size * head_num, seq_len, head_dim))
+
+    @staticmethod
+    def _reshape_from_batches(x, head_num):
+        input_shape = K.shape(x)
+        batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
+        x = K.reshape(x, (batch_size // head_num, head_num, seq_len, feature_dim))
+        x = K.permute_dimensions(x, [0, 2, 1, 3])
+        return K.reshape(x, (batch_size // head_num, seq_len, feature_dim * head_num))
 
     def build(self, input_shape):
         #assert len(input_shape[0]) >= 2
+        print(input_shape)
         self.return_attention = False
         self.feature_dim = input_shape[0][-1]
         self.seq_len = input_shape[0][1] / self.head_num
@@ -220,6 +386,15 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
                                   initializer='normal', trainable=True)
         self.wv = self.add_weight(name='value', shape=(self.feature_dim,self.feature_dim),
                                   initializer='normal', trainable=True)
+        if self.bias:
+            self.bq = self.add_weight(name='query_bias', shape=(self.feature_dim,),
+                                  initializer='normal', trainable=True)
+            self.bk = self.add_weight(name='key_bias', shape=(self.feature_dim,),
+                                      initializer='normal', trainable=True)
+            self.bv = self.add_weight(name='value_bias', shape=(self.feature_dim,),
+                                      initializer='normal', trainable=True)
+            self.bo = self.add_weight(name='output_bias', shape=(self.feature_dim,),
+                                      initializer='normal', trainable=True)
 
         self.built = True
         super(MultiHead_QKV_BlockAttention, self).build(input_shape)
@@ -238,19 +413,29 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
         #tf.einsum('sd,dd->sd',X,self.wv)
         #value = tf.tensordot(x, self.wv, axes=(-1,0))
 
+        if self.bias:
+            query += self.bq
+            key += self.bk
+            value += self.bv
+
         # q,k,v shape == (batch_size, seq_len, d_model)
         if self.head_num > 1:
-            query = tf.stack(tf.split(query, self.head_num, axis=2),axis=1)
-            key = tf.stack(tf.split(key, self.head_num, axis=2),axis=1)
-            value = tf.stack(tf.split(value, self.head_num, axis=2),axis=1)
+            query = self._reshape_to_batches(query,self.head_num)
+            key = self._reshape_to_batches(key,self.head_num)
+            value = self._reshape_to_batches(value,self.head_num)
 
+            #query = tf.stack(tf.split(split_q, self.head_num, axis=2),axis=1)
+            #key = tf.stack(tf.split(split_k, self.head_num, axis=2),axis=1)
+            #value = tf.stack(tf.split(split_v, self.head_num, axis=2),axis=1)
         inner_product = tf.matmul(query, key, transpose_b=True)/tf.math.sqrt(self.seq_len)
+        #overall_score = tf.add([inner_product,self.b])
         attention_score = tf.nn.softmax(inner_product)
-
         effect = tf.matmul(attention_score, value)
+
         if self.head_num > 1:
-            all_effects = tf.concat(tf.split(effect, self.head_num,axis=1), axis=-1)
-            effect = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
+            effect = self._reshape_from_batches(effect,self.head_num)
+            #effect = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
+        effect += self.bo
         if self.residual:
             return tf.add(effect,residual_score),tf.add(effect,residual_score)
 
@@ -359,7 +544,6 @@ class MultiHead_conv_BlockAttention(layers.Layer):
 
     def get_config(self):
         return super(MultiHead_conv_BlockAttention, self).get_config()
-
 
 class MultiLevel_BlockAttention(layers.Layer):
     """
@@ -483,24 +667,24 @@ class PosAttention(layers.Layer):
         return super(PosAttention, self).get_config()
 
 
-def residual_fl_block(input, width, activation=layers.ReLU(),downsample=False):
+def residual_fl_block(input, width, activation='relu',downsample=False):
     #residual fully connected layers block
+    activation_function = layers.Activation(activation=activation)
     X = layers.Dense(width)(input)
-    if activation == layers.ReLU():
+    if activation == 'relu':
         X = layers.BatchNormalization()(X)
 
     if downsample:
         input_x = input
         if input.shape[-1] != X.shape[-1]:
             filter_n = X.shape[-1]
-            input_x = layers.Dense(filter_n,activation='relu')(X)
+            input_x = layers.Dense(filter_n,activation=activation)(X)
         out = layers.Add()([X, input_x])
         #out = activation(out)
-        return activation(out)
+        return activation_function(out)
     else:
-        X = activation(X)
+        X = activation_function(X)
         return X
-
 
 
 def residual_conv1D_block(input,filters,kernel_size,activation=layers.ReLU(),downsample=False):
