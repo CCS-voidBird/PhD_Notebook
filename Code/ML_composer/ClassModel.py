@@ -594,6 +594,51 @@ class MLP():
 
         return model
 
+class Double_MLP():
+
+    def __init__(self):
+        self.name = "Double_MLP"
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+        print("USE Numeric CNN MODEL as training method")
+        geno = decoding(geno)
+        #geno = np.expand_dims(geno, axis=2)
+        print("The transformed SNP shape:", geno.shape)
+        if pheno_standard is True:
+            pheno = stats.zscore(pheno)
+        return geno,pheno
+
+    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+
+        input1 = layers.Input(shape=input_shape)
+        X = fullyConnectted_block(input1, args.width, args.depth,activation=args.activation)
+        non_linear_output = layers.Dense(1, activation="linear")(X)
+        linear_output = layers.Dense(1, activation="linear")(input1)
+        output = layers.Add()([non_linear_output, linear_output])
+
+        model = keras.Model(inputs=input1, outputs=output)
+
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+
+        return model
+
 class ResMLP(NN):
 
     def __init__(self,args):
@@ -923,13 +968,14 @@ class MultiLevelAttention(NN):
         super(MultiLevelAttention,self).__init__(args)
         self.name = "MultiLevelAttention"
         self.rank = False  ##rank block value to 0 (zero),1 (low),2 (high).
+        self.attention_block = 2
         self.args = args
 
     def model_name(self):
         #get class name
         return self.__class__.__name__
 
-    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
+    def data_transform(self,geno,phenos,anno=None,pheno_standard = False):
 
         print("USE Attention CNN MODEL as training method")
         geno = decoding(geno)
@@ -937,39 +983,62 @@ class MultiLevelAttention(NN):
         #pos = np.arrays(range(geno.shape[1]))
         #pos = np.expand_dims(pos, axis=0)
         print("The transformed SNP shape:", geno.shape)
+        # for multiple phenos
+        if isinstance(phenos, list):
+            for i in range(len(phenos)):
+                if pheno_standard is True:
+                    phenos[i] = stats.zscore(phenos[i])
+        return geno,phenos
 
-        if pheno_standard is True:
-            pheno = stats.zscore(pheno)
-        return geno,pheno
-
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001,annotation=None):
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001, annotation=None):
         # init Q,K,V
         depth = args.depth
-        Annotation_shape = annotation.shape
-        annotation = annotation
+        embed = args.embedding
         activation = args.activation
-        input1 = layers.Input(shape=input_shape,name="input_layer_1")
-        
+        input1 = layers.Input(shape=input_shape, name="input_layer_1")
+        print(input1.shape)
+
         if annotation is None:
 
-            X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
+            X = layers.ZeroPadding1D(padding=(0, input_shape[1] // 10))(input1)
 
-            V = layers.LocallyConnected1D(args.embedding,10,strides=10, activation=activation,padding="valid",use_bias=False)(X)
-            
+            V = layers.LocallyConnected1D(args.embedding, 10, strides=10, activation=activation, padding="valid",
+                                          use_bias=False)(X)
+
         else:
-            
-            V = SNPBlockLayer(annotation,channels=args.embedding)(input1)
 
-        M = MultiHead_QKV_BlockAttention(args.num_heads)(V)
+            V = SNPBlockLayer(channels=args.embedding)(input1, annotation)
 
+        V = layers.Dense(embed, activation=activation)(V)
+
+        # train and get guide attention for bin phenotypes
+        bin_M1,bin_res,attention_score = MultiLevel_BlockAttention(args.num_heads,return_attention=True)([V])
+        bin_M = layers.Add()([bin_M1, V])
+        bin_M = layers.Flatten()(bin_M)
+
+        bin_output1 = OrdinalOutputLayer(num_classes=self.args.classes)(bin_M)
+        bin_output2 = fullyConnectted_block(input=bin_M, width=self.args.width,depth=self.args.depth, activation='sigmoid')
+        bin_output2 = OrdinalOutputLayer(num_classes=self.args.classes)(bin_output2)
+        bin_output = layers.Add()([bin_output1,bin_output2])
+
+        # train and get guide attention for actual phenotypes
+        M1, AM1 = MultiHead_QKV_BlockAttention(args.num_heads, residual=None)([V])
+        M = layers.Add()([M1, V])
         M = layers.Flatten()(M)
-        while depth > 0:
-            M = residual_fl_block(input=M, width=self.args.width,activation=activation, downsample=(depth % 2 == 0 & self.args.residual))
-            depth -= 1
+
         if self.args.data_type == "ordinal":
+
+            while depth > 0:
+                M = residual_fl_block(input=M, width=self.args.width, activation=activation,
+                                      downsample=(depth % 2 == 0 & self.args.residual))
+                depth -= 1
             QV_output = OrdinalOutputLayer(num_classes=self.args.classes)(M)
         else:
-            QV_output = layers.Dense(1, activation="linear")(M)
+            QV_output1 = layers.Dense(1, activation="linear")(M)
+            QV_output2 = fullyConnectted_block(input=M, width=self.args.width,depth=self.args.depth, activation='sigmoid')
+            QV_output2 = layers.Dense(1,activation="linear")(QV_output2)
+            QV_output = layers.Add()([QV_output1,QV_output2])
+
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
@@ -984,17 +1053,18 @@ class MultiLevelAttention(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        model = keras.Model(inputs=input1, outputs=QV_output)
+        model = keras.Model(inputs=input1, outputs=[QV_output,bin_output])
+        loss_class = Ordinal_loss(self.args.classes)
         if self.args.data_type == "ordinal":
-            model.compile(optimizer=optimizers[optimizer], loss=Ordinal_loss(self.args.classes).loss)
+            model.compile(optimizer=optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
         else:
-            model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+            model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error", metrics=['acc'])
 
-        #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
-        #QK = layers.Softmax(axis=-1)(QK)
-        #QKV = layers.Dot(axes=[2, 1])([QK, V_encoding])
-        #QKV = layers.Flatten()(QKV)
-        #QKV = layers.Dense(1, activation="linear")(QKV)
+        # QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
+        # QK = layers.Softmax(axis=-1)(QK)
+        # QKV = layers.Dot(axes=[2, 1])([QK, V_encoding])
+        # QKV = layers.Flatten()(QKV)
+        # QKV = layers.Dense(1, activation="linear")(QKV)
 
         return model
 

@@ -552,9 +552,10 @@ class MultiLevel_BlockAttention(layers.Layer):
     LD: categorical embedding (dict length, LDs+1, individual SNP grouped as LD 0 (labelled as 1)
     """
 
-    def __init__(self,num_heads=2, **kwargs):
+    def __init__(self,num_heads=2,return_attention=False, **kwargs):
         super(MultiLevel_BlockAttention, self).__init__(**kwargs)
         self.head_num=num_heads
+        self.return_attention = return_attention
 
     def build(self, input_shape, annotation=False):
         assert len(input_shape) >= 2
@@ -588,11 +589,15 @@ class MultiLevel_BlockAttention(layers.Layer):
         super(MultiLevel_BlockAttention, self).build(input_shape)
 
     def call(self, x):
-
+        # x could be a list, while x[0] is the qkv, x[1] is the guiding attention score
         #query = tf.einsum('bsd,dd->bsd', x, self.q_ld)
         #key = tf.einsum('bsd,dd->bsd', x, self.k_ld)
         #value = tf.einsum('bsd,dd->bsd', x, self.v_ld)
-
+        if isinstance(x,list):
+            x,attention_guide = x
+        else:
+            attention_guide = tf.ones_like(x)
+        attention_guide = tf.math.abs(attention_guide) ##abs value of the attention guide
         query = tf.tensordot(x, self.q_ld, axes=(-1, 0))
         key = tf.tensordot(x, self.k_ld, axes=(-1, 0))
         value = tf.tensordot(x, self.v_ld, axes=(-1, 0))
@@ -606,10 +611,16 @@ class MultiLevel_BlockAttention(layers.Layer):
         inner_product = tf.matmul(query, key, transpose_b=True)
         attention_score = tf.nn.softmax(inner_product)
 
+        ##read attention mask from another variable, scaling the attention score
+        attention_score = tf.multiply(attention_score, attention_guide)
+
         effect = tf.matmul(attention_score, value)
 
-        all_effects = tf.concat(tf.split(effect, self.head_num, ), axis=-1)
+        all_effects = tf.concat(tf.split(effect, self.head_num), axis=-1)
         all_effects = tf.squeeze(all_effects, axis=0)  # (batch_size, seq_len, d_model)\
+
+        if self.return_attention:
+            return all_effects,x, attention_score
 
         return all_effects, x  # shape (batch,seq,embed,seq)
 
@@ -667,10 +678,28 @@ class PosAttention(layers.Layer):
         return super(PosAttention, self).get_config()
 
 
+#fully connected layers block with residual connection, downsample and batch normalization (only for relu)
+def fullyConnectted_block(input, width,depth=1, activation='relu',residual=False):
+
+    activation_function = layers.Activation(activation=activation)
+    for i in range(depth):
+        X = layers.Dense(width,activation=activation)(input)
+        if activation == 'relu':
+            X = layers.BatchNormalization()(X)
+        if residual:
+            X = layers.Add()([X, input])
+            #out = activation(out)
+            input = X
+        else:
+            input = X
+    return activation_function(X)
+
+
+
 def residual_fl_block(input, width, activation='relu',downsample=False):
     #residual fully connected layers block
     activation_function = layers.Activation(activation=activation)
-    X = layers.Dense(width)(input)
+    X = layers.Dense(width,activation=activation)(input)
     if activation == 'relu':
         X = layers.BatchNormalization()(X)
 
@@ -685,7 +714,6 @@ def residual_fl_block(input, width, activation='relu',downsample=False):
     else:
         X = activation_function(X)
         return X
-
 
 def residual_conv1D_block(input,filters,kernel_size,activation=layers.ReLU(),downsample=False):
     X = layers.Conv1D(filters, kernel_size, padding="same")(input)
