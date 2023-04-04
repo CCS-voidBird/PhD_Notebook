@@ -1022,7 +1022,7 @@ class MultiLevelAttention(NN):
         bin_output = layers.Add()([bin_output1,bin_output2])
 
         # train and get guide attention for actual phenotypes
-        M1, AM1 = MultiHead_QKV_BlockAttention(args.num_heads, residual=None)([V])
+        M1, AM1 = MultiLevel_BlockAttention(args.num_heads, return_attention=True)([V])
         M = layers.Add()([M1, V])
         M = layers.Flatten()(M)
 

@@ -557,6 +557,23 @@ class MultiLevel_BlockAttention(layers.Layer):
         self.head_num=num_heads
         self.return_attention = return_attention
 
+    @staticmethod
+    def _reshape_to_batches(x, head_num):
+        input_shape = K.shape(x)
+        batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
+        head_dim = feature_dim // head_num
+        x = K.reshape(x, (batch_size, seq_len, head_num, head_dim))
+        x = K.permute_dimensions(x, [0, 2, 1, 3])
+        return K.reshape(x, (batch_size * head_num, seq_len, head_dim))
+
+    @staticmethod
+    def _reshape_from_batches(x, head_num):
+        input_shape = K.shape(x)
+        batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
+        x = K.reshape(x, (batch_size // head_num, head_num, seq_len, feature_dim))
+        x = K.permute_dimensions(x, [0, 2, 1, 3])
+        return K.reshape(x, (batch_size // head_num, seq_len, feature_dim * head_num))
+
     def build(self, input_shape, annotation=False):
         assert len(input_shape) >= 2
         self.return_attention = False
