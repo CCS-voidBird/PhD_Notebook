@@ -1,0 +1,2 @@
+	Trait	TrainSet	ValidSet	Model	Test_Accuracy	Valid_Accuracy	MSE	Runtime
+0		[2, 3, 4, 5]	[1]	ResNCNN	0.911903658660787	0.2759422905390464	3.8624492	0.43333333333333335

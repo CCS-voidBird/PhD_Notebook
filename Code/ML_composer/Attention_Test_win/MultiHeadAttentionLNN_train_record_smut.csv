@@ -1,0 +1,2 @@
+	Trait	TrainSet	ValidSet	Model	Test_Accuracy	Valid_Accuracy	MSE	Runtime
+0	smut	[2, 3, 4, 5]	[1]	MultiHeadAttentionLNN	0.31310838726289714	0.06828376861739202	4.070358	0.9166666666666666
