@@ -719,7 +719,7 @@ class LNN(NN):
 
         input = layers.Input(shape=input_shape)
         X = layers.ZeroPadding1D(padding=(0, input_shape[1] // 5))(input)
-        X = layers.LocallyConnected1D(128, kernel_size=5, strides=5, padding='valid', activation='elu')(X)
+        X = layers.LocallyConnected1D(args.locallyConnect, kernel_size=5, strides=5, padding='valid', activation='elu')(X) # recommend to have 128 LNN channels
         X = layers.Conv1D(256, kernel_size=20, strides=2, padding='valid', activation='elu')(X)
 
         #X = layers.LocallyConnected1D(128, kernel_size=3, strides=3, padding='valid', activation='elu')(X)
@@ -921,6 +921,7 @@ class MultiHeadAttentionLNN(NN):
                                       downsample=(depth % 2 == 0 & self.args.residual))
                 depth -= 1
             QV_output = OrdinalOutputLayer(num_classes=self.args.classes)(M)
+            loss_class = Ordinal_loss(self.args.classes)
         else:
             while depth > 0:
                 M = residual_fl_block(input=M, width=self.args.width, activation=activation,
@@ -942,7 +943,7 @@ class MultiHeadAttentionLNN(NN):
                       "SGD": sgd}
 
         model = keras.Model(inputs=input1, outputs=QV_output)
-        loss_class = Ordinal_loss(self.args.classes)
+
         if self.args.data_type == "ordinal":
             model.compile(optimizer=optimizers[optimizer], loss=loss_class.loss,metrics=['acc'])
         else:
@@ -1002,7 +1003,7 @@ class MultiLevelAttention(NN):
 
             X = layers.ZeroPadding1D(padding=(0, input_shape[1] // 10))(input1)
 
-            V = layers.LocallyConnected1D(args.embedding, 10, strides=10, activation=activation, padding="valid",
+            V = layers.LocallyConnected1D(args.locallyConnect, 10, strides=10, activation=activation, padding="valid",
                                           use_bias=False)(X)
 
         else:

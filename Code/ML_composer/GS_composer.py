@@ -57,6 +57,7 @@ def get_args():
     req_grp.add_argument('--num-heads', type=int, help="(Only for multi-head attention)Number of heads.", default=10)
     req_grp.add_argument('--activation', type=str, help="Activation function for hidden Dense layer.", default='relu')
     req_grp.add_argument('--embedding', type=int, help="(Only for multi-head attention)Embedding length (default as 8)", default=8)
+    req_grp.add_argument('--locallyConnect', type=int, help="(Only work with locally connected layers)locallyConnect channel (default as 1)", default=8)
     req_grp.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     req_grp.add_argument('-plot', '--plot', dest='plot', action='store_true')

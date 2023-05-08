@@ -16,9 +16,7 @@ class CustomDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-    
-    
-    
+
 
 class TransformerModel(nn.Module):
     def __init__(self, input_dim, nhead, nhid, nlayers, dropout=0.5):
