@@ -102,6 +102,8 @@ class OrdinalOutputLayer(layers.Layer):
         #scores = tf.expand_dims(scores,axis=-1)
         return scores
 
+
+
 class PositionalEncoding(layers.Layer):
     def __init__(self, position, d_model):
         super(PositionalEncoding, self).__init__()

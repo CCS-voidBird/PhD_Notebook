@@ -54,7 +54,7 @@ def get_args():
     req_grp.add_argument('-r', '--round', type=int, help="training round.", default=10)
     req_grp.add_argument('-lr', '--lr', type=float, help="Learning rate.", default=0.0001)
     req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
-    req_grp.add_argument('--num-heads', type=int, help="(Only for multi-head attention)Number of heads.", default=10)
+    req_grp.add_argument('--num-heads', type=int, help="(Only for multi-head attention)Number of heads.", default=1)
     req_grp.add_argument('--activation', type=str, help="Activation function for hidden Dense layer.", default='relu')
     req_grp.add_argument('--embedding', type=int, help="(Only for multi-head attention)Embedding length (default as 8)", default=8)
     req_grp.add_argument('--locallyConnect', type=int, help="(Only work with locally connected layers)locallyConnect channel (default as 1)", default=8)

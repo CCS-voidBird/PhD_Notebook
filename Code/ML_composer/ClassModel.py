@@ -64,6 +64,21 @@ class NN:
         #get class name
         return self.__class__.__name__
 
+    def data_transform(self,geno,phenos,anno=None,pheno_standard = False):
+
+        print("USE Attention CNN MODEL as training method")
+        geno = decoding(geno)
+        geno = np.expand_dims(geno, axis=2)
+        #pos = np.arrays(range(geno.shape[1]))
+        #pos = np.expand_dims(pos, axis=0)
+        print("The transformed SNP shape:", geno.shape)
+        # for multiple phenos
+        if isinstance(phenos, list):
+            for i in range(len(phenos)):
+                if pheno_standard is True:
+                    phenos[i] = stats.zscore(phenos[i])
+        return geno,phenos
+
     def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
         pass
 
@@ -730,7 +745,11 @@ class LNN(NN):
         for i in range(args.depth):
             X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
 
-        output = layers.Dense(1, activation="linear")(X)
+
+        output1 = layers.Dense(1, activation="linear")(X)
+        output2 = fullyConnectted_block(X, args.width, args.depth, "sigmoid")
+        output2 = layers.Dense(1, activation="linear")(output2)
+        output = layers.Add()([output1,output2])
         model = keras.Model(inputs=input, outputs=output)
 
         try:
@@ -746,7 +765,7 @@ class LNN(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error",metrics=[tf.keras.metrics.CosineSimilarity(axis=1)])
 
         """
         Optimizers: Adam, RMSProp, SGD 
@@ -1069,6 +1088,75 @@ class MultiLevelAttention(NN):
 
         return model
 
+class MultiLevelNN(NN):
+    def __init__(self,args):
+        super(MultiLevelNN,self).__init__(args)
+        self.name = "MultiLevel NN"
+        self.args = args
+
+    def model_name(self):
+        #get class name
+        return self.__class__.__name__
+
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
+
+        input = layers.Input(input_shape)
+        X1 = layers.Conv1D(filters=80,kernel_size=160,strides=12,padding="same")(input)
+        X2 = layers.Conv1D(filters=80,kernel_size=12,strides=4,padding="same")(input)
+        X3 = layers.Conv1D(filters=80,kernel_size=4,strides=2,padding="same")(input)
+
+        X1 = layers.MaxPooling1D()(X1)
+        X2 = layers.MaxPooling1D()(X2)
+        X3 = layers.MaxPooling1D()(X3)
+
+        Xl1 = layers.Conv1D(filters=1,kernel_size=1,strides=1, activation="linear")(X1)
+        Xl2 = layers.Conv1D(filters=1,kernel_size=1,strides=1, activation="linear")(X2)
+        Xl3 = layers.Conv1D(filters=1, kernel_size=1, strides=1, activation="linear")(X3)
+
+        Xl1 = layers.GlobalAvgPool1D()(Xl1)
+        Xl2 = layers.GlobalAvgPool1D()(Xl2)
+        Xl3 = layers.GlobalAvgPool1D()(Xl3)
+
+        Xn1 = layers.Conv1D(filters=1,kernel_size=1,strides=1,activation="sigmoid")(X1)
+        Xn2 = layers.Conv1D(filters=1,kernel_size=1,strides=1,activation="sigmoid")(X2)
+        Xn3 = layers.Conv1D(filters=1, kernel_size=1, strides=1,activation="sigmoid")(X3)
+
+        Xn1 = layers.Conv1D(filters=1, kernel_size=1, strides=1, activation="linear")(Xn1)
+        Xn2 = layers.Conv1D(filters=1, kernel_size=1, strides=1, activation="linear")(Xn2)
+        Xn3 = layers.Conv1D(filters=1, kernel_size=1, strides=1, activation="linear")(Xn3)
+
+        Xn1 = layers.GlobalAvgPool1D()(Xn1)
+        Xn2 = layers.GlobalAvgPool1D()(Xn2)
+        Xn3 = layers.GlobalAvgPool1D()(Xn3)
+
+        Xs = []
+        remove_last_axis = tf.keras.layers.Lambda(lambda x: x[..., 0])
+        for X in [Xl1,Xl2,Xl3,Xn1,Xn2,Xn3]:
+            Xs.append(X)
+
+        X = layers.Concatenate(axis=1)(Xs)
+        X = layers.Dropout(0.4)(X)
+        output = layers.Dense(1,activation='linear')(X)
+        model = keras.Model(inputs=input, outputs=output)
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error",
+                      metrics=[tf.keras.metrics.CosineSimilarity(axis=1)])
+
+        return model
+
+
 MODELS = {
     "MLP": MLP,
     "Numeric CNN": NCNN,
@@ -1080,7 +1168,8 @@ MODELS = {
     "MultiHead Attention LNN": MultiHeadAttentionLNN,
     "ResMLP": ResMLP,
     "LNN": LNN,
-    "MultiLevel Attention": MultiLevelAttention
+    "MultiLevel Attention": MultiLevelAttention,
+    "MultiLevelNN":MultiLevelNN
 }
 
 def main():
