@@ -1101,42 +1101,20 @@ class MultiLevelNN(NN):
     def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
 
         input = layers.Input(input_shape)
-        X1 = layers.Conv1D(filters=80,kernel_size=160,strides=12,padding="same")(input)
-        X2 = layers.Conv1D(filters=80,kernel_size=12,strides=4,padding="same")(input)
-        X3 = layers.Conv1D(filters=80,kernel_size=4,strides=2,padding="same")(input)
+        X = layers.Embedding(input_dim=3,output_dim=5)(input)
+        M1, AM1 = MultiHead_QKV_BlockAttention(args.num_heads, residual=None)([X])
+        M1 = layers.Add()([M1,X])
+        M1 = layers.LayerNormalization()(M1)
 
-        X1 = layers.MaxPooling1D()(X1)
-        X2 = layers.MaxPooling1D()(X2)
-        X3 = layers.MaxPooling1D()(X3)
-
-        Xl1 = layers.Conv1D(filters=1,kernel_size=1,strides=1, activation="linear")(X1)
-        Xl2 = layers.Conv1D(filters=1,kernel_size=1,strides=1, activation="linear")(X2)
-        Xl3 = layers.Conv1D(filters=1, kernel_size=1, strides=1, activation="linear")(X3)
-
-        Xl1 = layers.GlobalAvgPool1D()(Xl1)
-        Xl2 = layers.GlobalAvgPool1D()(Xl2)
-        Xl3 = layers.GlobalAvgPool1D()(Xl3)
-
-        Xn1 = layers.Conv1D(filters=1,kernel_size=1,strides=1,activation="sigmoid")(X1)
-        Xn2 = layers.Conv1D(filters=1,kernel_size=1,strides=1,activation="sigmoid")(X2)
-        Xn3 = layers.Conv1D(filters=1, kernel_size=1, strides=1,activation="sigmoid")(X3)
-
-        Xn1 = layers.Conv1D(filters=1, kernel_size=1, strides=1, activation="linear")(Xn1)
-        Xn2 = layers.Conv1D(filters=1, kernel_size=1, strides=1, activation="linear")(Xn2)
-        Xn3 = layers.Conv1D(filters=1, kernel_size=1, strides=1, activation="linear")(Xn3)
-
-        Xn1 = layers.GlobalAvgPool1D()(Xn1)
-        Xn2 = layers.GlobalAvgPool1D()(Xn2)
-        Xn3 = layers.GlobalAvgPool1D()(Xn3)
-
-        Xs = []
-        remove_last_axis = tf.keras.layers.Lambda(lambda x: x[..., 0])
-        for X in [Xl1,Xl2,Xl3,Xn1,Xn2,Xn3]:
-            Xs.append(X)
-
-        X = layers.Concatenate(axis=1)(Xs)
+        M2, AM2 = MultiHead_QKV_BlockAttention(args.num_heads, residual=None)([M1,AM1])
+        M2 = layers.Add()([M2, M1])
+        M2 = layers.LayerNormalization()(M2)
+        X = layers.Dense(1024, activation='relu')(M2)
         X = layers.Dropout(0.4)(X)
-        output = layers.Dense(1,activation='linear')(X)
+
+        X = layers.Dense(1,activation='linear')(X)
+        X = layers.Flatten()(X)
+        output = layers.Dense(1,activation="linear")(X)
         model = keras.Model(inputs=input, outputs=output)
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
@@ -1151,8 +1129,8 @@ class MultiLevelNN(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error",
-                      metrics=[tf.keras.metrics.CosineSimilarity(axis=1)])
+        model.compile(optimizer=optimizers[optimizer], loss="mean_absolute_error", #mean_squared_error
+                      metrics=[tf.keras.metrics.MeanAbsoluteError()])
 
         return model
 

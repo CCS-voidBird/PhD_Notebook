@@ -286,6 +286,13 @@ class ML_composer:
             validation_data=(features_test, target_test), verbose=int(self.args.quiet),
             callbacks=[lr_opt],batch_size = self.batchSize)
 
+        gpu_devices = tf.config.list_physical_devices('GPU')
+        if gpu_devices:
+            try:
+                mem_usage = tf.config.experimental.get_memory_usage('GPU:0')
+                print("Currently using GPU memory: {} GB".format(mem_usage / 1e9))
+            except:
+                print("Checking memory usage is not currently available.")
 
         # let's just print the final loss
         print(' - train loss     : ' + str(history.history['loss'][-1]))
@@ -311,13 +318,7 @@ class ML_composer:
         endTime = datetime.now()
         runtime = endTime - startTime
         print("Training Runtime: ", runtime.seconds / 60, " min")
-        gpu_devices = tf.config.list_physical_devices('GPU')
-        if gpu_devices:
-            try:
-                mem_usage = tf.config.experimental.get_memory_usage('GPU:0')
-                print("Currently using GPU memory: {} GB".format(mem_usage/1e9))
-            except:
-                print("Checking memory usage is not currently available.")
+
         return history,test_accuracy,runtime
 
     def compose(self,train_index:list,valid_index:list,val=1):
