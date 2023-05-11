@@ -431,7 +431,7 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
             #value = tf.stack(tf.split(split_v, self.head_num, axis=2),axis=1)
         inner_product = tf.matmul(query, key, transpose_b=True)/tf.math.sqrt(self.seq_len)
         #overall_score = tf.add([inner_product,self.b])
-        attention_score = tf.nn.softmax(inner_product)
+        attention_score = tf.nn.tanh(inner_product)
         effect = tf.matmul(attention_score, value)
 
         if self.head_num > 1:

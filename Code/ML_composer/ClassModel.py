@@ -1101,11 +1101,13 @@ class MultiLevelNN(NN):
     def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
 
         input = layers.Input(input_shape)
-        X = layers.Embedding(input_dim=3,output_dim=5)(input)
+        X = layers.Embedding(input_dim=3,output_dim=5,)(input)
+        #M1, AM1 = layers.MultiHeadAttention(num_heads=1, key_dim=8,return_attention_scores=True)([X,X,X])
         M1, AM1 = MultiHead_QKV_BlockAttention(args.num_heads, residual=None)([X])
         M1 = layers.Add()([M1,X])
         M1 = layers.LayerNormalization()(M1)
 
+        #M2, AM2 = layers.MultiHeadAttention(num_heads=1, key_dim=8,return_attention_scores=True)([X,X,X])
         M2, AM2 = MultiHead_QKV_BlockAttention(args.num_heads, residual=None)([M1,AM1])
         M2 = layers.Add()([M2, M1])
         M2 = layers.LayerNormalization()(M2)
