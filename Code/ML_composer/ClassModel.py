@@ -27,9 +27,17 @@ import numpy as np
 import configparser
 from Functions import *
 from tensorflow.keras.layers import Layer
+from tensorflow.keras.callbacks import LearningRateScheduler
 from CustomLayers import *
 tf.config.experimental_run_functions_eagerly(True)
 # Define the residual block as a new layer
+
+def step_decay(epoch):
+    initial_lr = 0.001
+    drop_rate = 0.5
+    epochs_drop = 10
+    lr = initial_lr * drop_rate ** (epoch // epochs_drop)
+    return lr
 
 class Residual(Layer):
     def __init__(self, channels_in,kernel,**kwargs):
@@ -59,6 +67,7 @@ class NN:
     def __init__(self,args):
         self.name = "NN"
         self.args = args
+        self.lr_schedule = LearningRateScheduler(step_decay)
 
     def model_name(self):
         #get class name
@@ -327,7 +336,7 @@ class DCNN():
                       "Adam": adm,
                       "SGD": sgd}
 
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+        model.compile(optimizer=optimizers[optimizer], loss=self.args.loss)
 
         """
         Optimizers: Adam, RMSProp, SGD 
@@ -465,18 +474,27 @@ class NCNN(NN):
         model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
         """
         input = layers.Input(shape=input_shape)
-        X = layers.Conv1D(64, kernel_size=5, strides=3, padding='same', activation='elu')(input)
-        X = layers.MaxPooling1D(pool_size=2)(X)
-        X = layers.Conv1D(128, kernel_size=3, strides=3, padding='same', activation='elu')(X)
-        X = layers.MaxPooling1D(pool_size=2)(X)
+        X = layers.Conv1D(64, kernel_size=50, strides=10, padding='same', activation='relu',use_bias=False)(input)
+        X = layers.BatchNormalization()(X)
+        X = layers.MaxPooling1D(pool_size=5)(X)
+       
 
-        X = layers.Dropout(rate=0.2)(X)
+        X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
+        X = layers.MaxPooling1D(pool_size=3)(X)
+        #X = layers.MaxPooling1D(pool_size=2)(X)
+        X = layers.Dense(128,activation='linear',use_bias=False)(X)
+        X = layers.Dense(5,activation='linear')(X)
         X = layers.Flatten()(X)
-
+        '''
         for i in range(args.depth):
             X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
+        '''
         X = layers.Dropout(rate=0.2)(X)
-        output = layers.Dense(1, activation="linear")(X)
+        X1 = fullyConnectted_block(X, args.width, args.depth,activation=args.activation,use_bias=False)
+        non_linear_output = layers.Dense(1, activation="linear")(X1)
+        linear_output = layers.Dense(1, activation="linear")(X)
+        output = layers.Add()([non_linear_output, linear_output])
+
         model = keras.Model(inputs=input, outputs=output)
 
         try:
@@ -492,7 +510,7 @@ class NCNN(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+        model.compile(optimizer=optimizers[optimizer], loss=self.args.loss)
 
         """
         Optimizers: Adam, RMSProp, SGD 
@@ -567,7 +585,8 @@ class BCNN():
 
 class MLP():
 
-    def __init__(self):
+    def __init__(self,args):
+        self.args = args
         self.name = "MLP"
 
     def model_name(self):
@@ -611,7 +630,8 @@ class MLP():
 
 class Double_MLP():
 
-    def __init__(self):
+    def __init__(self,args):
+        self.args = args
         self.name = "Double_MLP"
 
     def model_name(self):
@@ -650,7 +670,7 @@ class Double_MLP():
                       "Adam": adm,
                       "SGD": sgd}
 
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+        model.compile(optimizer=optimizers[optimizer], loss=self.args.loss)
 
         return model
 
@@ -772,7 +792,6 @@ class LNN(NN):
         """
 
         return model
-
 
 def RF(config = None,specific=False,n_features = 500,n_estimators = 200):
     if specific == True:
@@ -1138,7 +1157,7 @@ class MultiLevelNN(NN):
 
 
 MODELS = {
-    "MLP": MLP,
+    "MLP": Double_MLP,
     "Numeric CNN": NCNN,
     "Binary CNN": BCNN,
     "Test CNN":Transformer,

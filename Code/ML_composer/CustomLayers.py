@@ -698,11 +698,11 @@ class PosAttention(layers.Layer):
 
 
 #fully connected layers block with residual connection, downsample and batch normalization (only for relu)
-def fullyConnectted_block(input, width,depth=1, activation='relu',residual=False):
+def fullyConnectted_block(input, width,depth=1, activation='relu',residual=False,use_bias=True):
 
     activation_function = layers.Activation(activation=activation)
     for i in range(depth):
-        X = layers.Dense(width,activation=activation)(input)
+        X = layers.Dense(width,activation=activation,use_bias=use_bias)(input)
         if activation == 'relu':
             X = layers.BatchNormalization()(X)
         if residual:

@@ -59,6 +59,7 @@ def get_args():
     req_grp.add_argument('--embedding', type=int, help="(Only for multi-head attention)Embedding length (default as 8)", default=8)
     req_grp.add_argument('--locallyConnect', type=int, help="(Only work with locally connected layers)locallyConnect channel (default as 1)", default=8)
     req_grp.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
+    req_grp.add_argument('-loss', '--loss', type=str, help="loss founction.", default="mse")
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     req_grp.add_argument('-plot', '--plot', dest='plot', action='store_true')
     parser.set_defaults(plot=False)
@@ -122,7 +123,7 @@ class ML_composer:
         self.mean_pheno = 0
         self.subset_ratio = 1
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
-                          "Valid_Accuracy", "MSE", "Runtime"])
+                          "Valid_Accuracy", "self.args.loss", "Runtime"])
         self.model_name = None
 
     def load_data(self,raw_data,raw_model,raw_info):
@@ -136,7 +137,8 @@ class ML_composer:
     def get_data(self,configer,args):
         self.args = args
         self.config = configer
-
+        self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
+                          "Valid_Accuracy", self.args.loss, "Runtime"])
         self._raw_data["GENO"] = pd.read_table(args.ped+".ped",delim_whitespace=True,header=None)
         self._raw_data["MAP"] = pd.read_table(args.ped + ".map", delim_whitespace=True,header=None)
         self._raw_data["FAM"] = pd.read_table(args.ped + ".fam", delim_whitespace=True,header=None)
@@ -287,7 +289,7 @@ class ML_composer:
             features_train, target_train,
             epochs=int(self.args.epoch),
             validation_data=(features_test, target_test), verbose=int(self.args.quiet),
-            callbacks=[lr_opt],batch_size = self.batchSize)
+            callbacks=[self._model["INIT_MODEL"].lr_schedule],batch_size = self.batchSize)
 
 
         # let's just print the final loss
@@ -418,6 +420,7 @@ class Model:
 
         self.args = args
         self._init_model = NN(args)
+        self.lr_schedule = self._init_model.lr_schedule
         self._data_requirements = None
         self.modelling = None
         self.data_transform = None
@@ -430,6 +433,7 @@ class Model:
         self._init_model = MODELS[self.args.model](self.args)
         self.data_transform = self._init_model.data_transform
         self.modelling = self._init_model.model
+        self.lr_schedule = self._init_model.lr_schedule
 
         return
 
@@ -439,6 +443,7 @@ class Model:
         self.data_transform = self._init_model.data_transform
         self.modelling = self._init_model.model
         self.modelling = keras.models.load_model(path)
+        self.lr_schedule = self._init_model.lr_schedule
 
         #self._init_model = load(path)
         return
