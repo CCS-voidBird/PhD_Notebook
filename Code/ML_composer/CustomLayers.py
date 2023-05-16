@@ -554,10 +554,13 @@ class MultiLevel_BlockAttention(layers.Layer):
     LD: categorical embedding (dict length, LDs+1, individual SNP grouped as LD 0 (labelled as 1)
     """
 
-    def __init__(self,num_heads=2,return_attention=False, **kwargs):
+    def __init__(self,num_heads=2,return_attention=False,annotation=False,use_bias=True,**kwargs):
         super(MultiLevel_BlockAttention, self).__init__(**kwargs)
         self.head_num=num_heads
         self.return_attention = return_attention
+        self.annotation = annotation
+        self.use_bias=use_bias
+
 
     @staticmethod
     def _reshape_to_batches(x, head_num):
@@ -576,34 +579,35 @@ class MultiLevel_BlockAttention(layers.Layer):
         x = K.permute_dimensions(x, [0, 2, 1, 3])
         return K.reshape(x, (batch_size // head_num, seq_len, feature_dim * head_num))
 
-    def build(self, input_shape, annotation=False):
-        assert len(input_shape) >= 2
-        self.return_attention = False
-        self.ld_embedding = input_shape[1][-1]
+    def build(self, input_shape):
+        print(input_shape)
+        #assert len(input_shape[0]) >= 2
+        self.return_attention = self.return_attention
         self.seq_embedding = input_shape[0][-1]
-        self.seq_dim = input_shape[1]
-        self.embedding = input_shape[-1]
+        self.seq_length = input_shape[0][1]
+        self.embedding = input_shape[0][-1]
 
-        self.Wq_ld = self.add_weight(name='Annotation_embedding_q_weights', shape=(self.ld_embedding, self.ld_embedding),
+        self.Wq_ld = self.add_weight(name='Annotation_embedding_q_weights', shape=(self.seq_embedding, self.seq_embedding),
                                   initializer='normal', trainable=True)
 
-        self.Wk_ld = self.add_weight(name='Annotation_embedding_k_weights', shape=(self.ld_embedding, self.ld_embedding),
+        self.Wk_ld = self.add_weight(name='Annotation_embedding_k_weights', shape=(self.seq_embedding, self.seq_embedding),
                                     initializer='normal', trainable=True)
 
-        self.Wv_ld = self.add_weight(name='Annotation_embedding_v_weights', shape=(self.ld_embedding, self.ld_embedding),
+        self.Wv_ld = self.add_weight(name='Annotation_embedding_v_weights', shape=(self.seq_embedding, self.seq_embedding),
                                     initializer='normal', trainable=True)
-
-        self.Wq_seq = self.add_weight(name='Sequence_embedding_q_weights', shape=(self.seq_embedding, self.seq_embedding),
+            
+        self.Wepigenome = self.add_weight(name='Epigenome_embedding_weights', shape=(self.seq_length, self.seq_length),
                                    initializer='normal', trainable=True)
-
-        self.Wk_seq = self.add_weight(name='Sequence_embedding_k_weights', shape=(self.seq_embedding, self.seq_embedding),
+        
+        if self.use_bias:
+            self.bq = self.add_weight(name='query_bias', shape=(self.seq_length,1),
+                                  initializer='normal', trainable=True)
+            self.bk = self.add_weight(name='key_bias', shape=(self.seq_length,1),
                                       initializer='normal', trainable=True)
-
-        self.wq = self.add_weight(name='query', shape=(self.embedding, self.embedding),
-                                  initializer='normal', trainable=True)
-        self.wk = self.add_weight(name='key', shape=(1, self.seq_dim, self.embedding),
-                                  initializer='normal', trainable=True)
-
+            self.bv = self.add_weight(name='value_bias', shape=(self.seq_length,1),
+                                      initializer='normal', trainable=True)
+            self.bo = self.add_weight(name='output_bias', shape=(self.seq_length,1),
+                                      initializer='normal', trainable=True)
         self.built = True
         super(MultiLevel_BlockAttention, self).build(input_shape)
 
@@ -612,36 +616,59 @@ class MultiLevel_BlockAttention(layers.Layer):
         #query = tf.einsum('bsd,dd->bsd', x, self.q_ld)
         #key = tf.einsum('bsd,dd->bsd', x, self.k_ld)
         #value = tf.einsum('bsd,dd->bsd', x, self.v_ld)
-        if isinstance(x,list):
-            x,attention_guide = x
+        if isinstance(x,list) and len(x) >= 2:
+            X,residual_score,attention_guide = x
         else:
-            attention_guide = tf.ones_like(x)
-        attention_guide = tf.math.abs(attention_guide) ##abs value of the attention guide
-        query = tf.tensordot(x, self.q_ld, axes=(-1, 0))
-        key = tf.tensordot(x, self.k_ld, axes=(-1, 0))
-        value = tf.tensordot(x, self.v_ld, axes=(-1, 0))
+            X = x[0]
+            residual_score = None
+            attention_guide = None
+        query = tf.matmul(X,self.Wq_ld)
+        #tf.einsum('sd,dd->sd',X,self.wq)
+        key = tf.matmul(X,self.Wk_ld)
+        #tf.einsum('sd,dd->sd',X,self.wk)
+        value = tf.matmul(X,self.Wv_ld)
+        #tf.einsum('sd,dd->sd',X,self.wv)
+        #value = tf.tensordot(x, self.wv, axes=(-1,0))
+
+        if self.use_bias:
+            query += self.bq
+            key += self.bk
+            value += self.bv
 
         # q,k,v shape == (batch_size, seq_len, d_model)
+        if self.head_num > 1:
+            query = self._reshape_to_batches(query,self.head_num)
+            key = self._reshape_to_batches(key,self.head_num)
+            value = self._reshape_to_batches(value,self.head_num)
 
-        query = tf.stack(tf.split(query, self.head_num, axis=2))
-        key = tf.stack(tf.split(key, self.head_num, axis=2))
-        value = tf.stack(tf.split(value, self.head_num, axis=2))
+            #query = tf.stack(tf.split(split_q, self.head_num, axis=2),axis=1)
+            #key = tf.stack(tf.split(split_k, self.head_num, axis=2),axis=1)
+            #value = tf.stack(tf.split(split_v, self.head_num, axis=2),axis=1)
+        attention = tf.matmul(query, key, transpose_b=True)/tf.math.sqrt(tf.cast(self.seq_length,dtype=tf.float32))
+        #overall_score = tf.add([inner_product,self.b])
+        
+        if residual_score is not None:
+            # add attention score with residual score
+            attention = tf.add(attention, residual_score)
 
-        inner_product = tf.matmul(query, key, transpose_b=True)
-        attention_score = tf.nn.softmax(inner_product)
+        attention_score = tf.nn.softmax(attention)
 
-        ##read attention mask from another variable, scaling the attention score
-        attention_score = tf.multiply(attention_score, attention_guide)
-
+        #if attention_guide is not None:
+        #    attention_score = tf.add(attention_score, attention_guide)
+        # multiply last two dimensions with Wepigenome
+        attention_score = tf.multiply(attention_score, self.Wepigenome)
         effect = tf.matmul(attention_score, value)
 
-        all_effects = tf.concat(tf.split(effect, self.head_num), axis=-1)
-        all_effects = tf.squeeze(all_effects, axis=0)  # (batch_size, seq_len, d_model)\
+        if self.head_num > 1:
+            effect = self._reshape_from_batches(effect,self.head_num)
+            #effect = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
+        if self.use_bias:
+            effect += self.bo
 
         if self.return_attention:
-            return all_effects,x, attention_score
+            return effect,attention
 
-        return all_effects, x  # shape (batch,seq,embed,seq)
+        return effect, attention  # shape (batch,seq,embed,seq)
 
     def compute_output_shape(self, output_shape):
         input_shape = output_shape
@@ -653,6 +680,37 @@ class MultiLevel_BlockAttention(layers.Layer):
     def get_config(self):
         return super(MultiLevel_BlockAttention, self).get_config()
 
+class GroupedLocallyConnectedLayer(layers.Layer):
+    def __init__(self, channels,reference, **kwargs):
+        super(GroupedLocallyConnectedLayer, self).__init__(**kwargs)
+        self.num_groups = len(reference)
+        self.channels = channels
+        self.group_reference = reference ## reference format: [[0,1,2],[3,4,5],[6,7,8]...]
+
+    def build(self, input_shape):
+        input_dim = input_shape[-1]
+        #sum_channels = sum(self.group_sizes)
+        self.group_sizes = [len(x) for x in self.group_reference]  #[input_dim // self.num_groups] * self.num_groups
+        #remainder = input_dim % self.num_groups
+        #for i in range(remainder):
+        #    self.group_sizes[i] += 1
+        self.kernels = [self.add_weight(shape=(self.channels,self.group_sizes[i],input_dim), 
+                                        initializer='glorot_uniform', 
+                                        name='kernel_{}'.format(i)) for i in range(self.num_groups)]
+
+    def call(self, inputs):
+        groups = []
+        for i,pos in enumerate(self.group_reference):
+            selected_input = tf.gather(inputs, pos, axis=1)
+            group_cal = tf.matmul(selected_input, self.kernels[i],transpose_b=True)
+            groups.append(group_cal)
+        output = tf.concat(groups, axis=1)
+        return output
+
+    def compute_output_shape(self, input_shape):
+        output_features = len(self.group_sizes)
+        return (input_shape[0], output_features + 1, self.channels)
+    
 
 
 class PosAttention(layers.Layer):

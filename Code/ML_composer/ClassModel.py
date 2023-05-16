@@ -1039,17 +1039,18 @@ class MultiLevelAttention(NN):
 
         if annotation is None:
 
-            X = layers.ZeroPadding1D(padding=(0, input_shape[1] // 10))(input1)
+            X = layers.ZeroPadding1D(padding=(0, input_shape[1] % 10))(input1)
 
             V = layers.LocallyConnected1D(args.locallyConnect, 10, strides=10, activation=activation, padding="valid",
                                           use_bias=False)(X)
 
         else:
 
-            V = SNPBlockLayer(channels=args.embedding)(input1, annotation)
+            V = GroupedLocallyConnectedLayer(channels=args.embedding)(input1, annotation)
 
         V = layers.Dense(embed, activation=activation)(V)
 
+        """
         # train and get guide attention for bin phenotypes
         bin_M1,bin_res,attention_score = MultiLevel_BlockAttention(args.num_heads,return_attention=True)([V])
         bin_M = layers.Add()([bin_M1, V])
@@ -1059,11 +1060,13 @@ class MultiLevelAttention(NN):
         bin_output2 = fullyConnectted_block(input=bin_M, width=self.args.width,depth=self.args.depth, activation='sigmoid')
         bin_output2 = OrdinalOutputLayer(num_classes=self.args.classes)(bin_output2)
         bin_output = layers.Add()([bin_output1,bin_output2])
-
+        """
         # train and get guide attention for actual phenotypes
         M1, AM1 = MultiLevel_BlockAttention(args.num_heads, return_attention=True)([V])
-        M = layers.Add()([M1, V])
-        M = layers.Flatten()(M)
+        #M = layers.Add()([M1, V])
+        #M = layers.Flatten()(M)
+
+        
 
         if self.args.data_type == "ordinal":
 
@@ -1073,10 +1076,14 @@ class MultiLevelAttention(NN):
                 depth -= 1
             QV_output = OrdinalOutputLayer(num_classes=self.args.classes)(M)
         else:
-            QV_output1 = layers.Dense(1, activation="linear")(M)
-            QV_output2 = fullyConnectted_block(input=M, width=self.args.width,depth=self.args.depth, activation='sigmoid')
-            QV_output2 = layers.Dense(1,activation="linear")(QV_output2)
-            QV_output = layers.Add()([QV_output1,QV_output2])
+            M = layers.Conv1D(filters=1, kernel_size=1, strides=1, padding="valid", use_bias=False)(M1)
+            D = layers.Activation("sigmoid")(M)
+            D = layers.Flatten()(D)
+            D = layers.Dense(1, activation="linear")(D)
+
+            M = layers.GlobalAveragePooling1D()(M)
+            M = layers.Flatten()(M)
+            QV_output = layers.Add()([M, D])
 
 
         try:
@@ -1092,9 +1099,10 @@ class MultiLevelAttention(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        model = keras.Model(inputs=input1, outputs=[QV_output,bin_output])
-        loss_class = Ordinal_loss(self.args.classes)
+        model = keras.Model(inputs=input1, outputs=[QV_output])
+        
         if self.args.data_type == "ordinal":
+            loss_class = Ordinal_loss(self.args.classes)
             model.compile(optimizer=optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
         else:
             model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error", metrics=['acc'])
