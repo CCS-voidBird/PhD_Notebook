@@ -160,7 +160,10 @@ class ML_composer:
             anno_dict = {annotation_groups[x]:x for x in range(len(annotation_groups))}
             self.annotation = self._raw_data["ANNOTATION"]
             self.annotation.iloc[:,-1] = self.annotation.iloc[:,-1].map(anno_dict)
-            self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
+            if self.args.model == "MultiLevel Attention":
+                pass
+            else:
+                self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
             # self.annotation = np.asarray(self.annotation.iloc[:, 2]).astype(np.float32)
             print("Got LD shape:")
             print(self.annotation.shape)

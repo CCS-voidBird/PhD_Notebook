@@ -680,36 +680,42 @@ class MultiLevel_BlockAttention(layers.Layer):
     def get_config(self):
         return super(MultiLevel_BlockAttention, self).get_config()
 
+    
 class GroupedLocallyConnectedLayer(layers.Layer):
-    def __init__(self, channels,reference, **kwargs):
+    def __init__(self, kernel_para,pos,index=0,**kwargs):
         super(GroupedLocallyConnectedLayer, self).__init__(**kwargs)
-        self.num_groups = len(reference)
-        self.channels = channels
-        self.group_reference = reference ## reference format: [[0,1,2],[3,4,5],[6,7,8]...]
+        #self.num_groups = len(reference)
+        self.kernel_para = kernel_para
+        print(kernel_para)
+        self.pos = pos.numpy().tolist()
+        print(self.pos)
+        self.index = index
+        #self.group_reference = reference ## reference format: [[0,1,2],[3,4,5],[6,7,8]...]
 
     def build(self, input_shape):
-        input_dim = input_shape[-1]
-        #sum_channels = sum(self.group_sizes)
-        self.group_sizes = [len(x) for x in self.group_reference]  #[input_dim // self.num_groups] * self.num_groups
-        #remainder = input_dim % self.num_groups
-        #for i in range(remainder):
-        #    self.group_sizes[i] += 1
-        self.kernels = [self.add_weight(shape=(self.channels,self.group_sizes[i],input_dim), 
+        #input_dim = input_shape[-1]
+        self.kernel = self.add_weight(shape=self.kernel_para, 
                                         initializer='glorot_uniform', 
-                                        name='kernel_{}'.format(i)) for i in range(self.num_groups)]
-
+                                        name='kernel_{}'.format(self.index))
+     
+        
     def call(self, inputs):
-        groups = []
-        for i,pos in enumerate(self.group_reference):
+        #groups = []
+        """
+        #for i,pos in enumerate(self.group_reference):
+        for i,pos in tf.data.Dataset.from_tensor_slices((indices, self.group_reference)):
+            pos = pos.numpy().tolist()
             selected_input = tf.gather(inputs, pos, axis=1)
             group_cal = tf.matmul(selected_input, self.kernels[i],transpose_b=True)
             groups.append(group_cal)
-        output = tf.concat(groups, axis=1)
+        """
+        selected_input = tf.gather(inputs, self.pos, axis=1)
+        output = tf.matmul(selected_input, self.kernel,transpose_b=True)
         return output
 
     def compute_output_shape(self, input_shape):
-        output_features = len(self.group_sizes)
-        return (input_shape[0], output_features + 1, self.channels)
+        output_features = len(self.pos)
+        return (input_shape[0], output_features + 1, self.kernel_para[0])
     
 
 

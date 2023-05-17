@@ -1045,8 +1045,12 @@ class MultiLevelAttention(NN):
                                           use_bias=False)(X)
 
         else:
+            groups_sizes = [len(x) for x in annotation]
+            #V = GroupedLocallyConnectedLayer(channels=args.embedding,reference=annotation)(input1)
 
-            V = GroupedLocallyConnectedLayer(channels=args.embedding)(input1, annotation)
+            kernel_paras = [(args.embedding,groups_sizes[i],input_shape[-1]) for i in range(len(annotation))]
+            Xs = [GroupedLocallyConnectedLayer(kernel_para,annotation[index],index)(input1) for index,kernel_para in enumerate(annotation)]
+            V = layers.Concatenate(axis=1)(Xs)
 
         V = layers.Dense(embed, activation=activation)(V)
 
