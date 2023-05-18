@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 import tensorflow.keras.backend as K
+tf.config.experimental_run_functions_eagerly(True)
 
 """
 This file contains custom layers for ML_composer
@@ -361,6 +362,7 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
     @staticmethod
     def _reshape_to_batches(x, head_num):
         input_shape = K.shape(x)
+        print(input_shape[0])
         batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
         head_dim = feature_dim // head_num
         x = K.reshape(x, (batch_size, seq_len, head_num, head_dim))
@@ -370,6 +372,7 @@ class MultiHead_QKV_BlockAttention(layers.Layer):
     @staticmethod
     def _reshape_from_batches(x, head_num):
         input_shape = K.shape(x)
+        print(input_shape[0])
         batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
         x = K.reshape(x, (batch_size // head_num, head_num, seq_len, feature_dim))
         x = K.permute_dimensions(x, [0, 2, 1, 3])
@@ -554,7 +557,7 @@ class MultiLevel_BlockAttention(layers.Layer):
     LD: categorical embedding (dict length, LDs+1, individual SNP grouped as LD 0 (labelled as 1)
     """
 
-    def __init__(self,num_heads=2,return_attention=False,annotation=False,use_bias=True,**kwargs):
+    def __init__(self,num_heads=1,return_attention=False,annotation=False,use_bias=True,**kwargs):
         super(MultiLevel_BlockAttention, self).__init__(**kwargs)
         self.head_num=num_heads
         self.return_attention = return_attention
@@ -564,20 +567,25 @@ class MultiLevel_BlockAttention(layers.Layer):
 
     @staticmethod
     def _reshape_to_batches(x, head_num):
-        input_shape = K.shape(x)
+        input_shape = tf.shape(x)
+        print("test K shape")
+        print(input_shape)
         batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
         head_dim = feature_dim // head_num
-        x = K.reshape(x, (batch_size, seq_len, head_num, head_dim))
-        x = K.permute_dimensions(x, [0, 2, 1, 3])
-        return K.reshape(x, (batch_size * head_num, seq_len, head_dim))
+        x = tf.reshape(x, (batch_size, seq_len, head_num, head_dim))
+        print(K.int_shape(x))
+        #x = K.permute_dimensions(x, [0, 2, 1, 3])
+        x = tf.transpose(x, perm=[0, 2, 1, 3])
+        return tf.reshape(x, (batch_size * head_num, seq_len, head_dim))
 
     @staticmethod
     def _reshape_from_batches(x, head_num):
-        input_shape = K.shape(x)
+        input_shape = tf.shape(x)
         batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
-        x = K.reshape(x, (batch_size // head_num, head_num, seq_len, feature_dim))
-        x = K.permute_dimensions(x, [0, 2, 1, 3])
-        return K.reshape(x, (batch_size // head_num, seq_len, feature_dim * head_num))
+        x = tf.reshape(x, (batch_size // head_num, head_num, seq_len, feature_dim))
+        #x = K.permute_dimensions(x, [0, 2, 1, 3])
+        x = tf.transpose(x, perm=[0, 2, 1, 3])
+        return tf.reshape(x, (batch_size // head_num, seq_len, feature_dim * head_num))
 
     def build(self, input_shape):
         print(input_shape)
@@ -634,10 +642,15 @@ class MultiLevel_BlockAttention(layers.Layer):
             query += self.bq
             key += self.bk
             value += self.bv
-
+        print("test query shape before head")
+        print(tf.shape(query))
         # q,k,v shape == (batch_size, seq_len, d_model)
         if self.head_num > 1:
+            print("test query shape")
+            print(K.shape(query))
             query = self._reshape_to_batches(query,self.head_num)
+            print("test query shape")
+            print(query.shape)
             key = self._reshape_to_batches(key,self.head_num)
             value = self._reshape_to_batches(value,self.head_num)
 
@@ -711,7 +724,7 @@ class GroupedLocallyConnectedLayer(layers.Layer):
         """
         selected_input = tf.gather(inputs, self.pos, axis=1)
 
-        output = tf.nn.conv1d(selected_input, self.kernel, stride=1, padding='VALID')
+        output = tf.keras.backend.conv1d(selected_input, self.kernel,strides=1,padding='valid')
         return output
 
     def compute_output_shape(self, input_shape):
