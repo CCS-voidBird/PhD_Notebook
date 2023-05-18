@@ -686,17 +686,17 @@ class GroupedLocallyConnectedLayer(layers.Layer):
         super(GroupedLocallyConnectedLayer, self).__init__(**kwargs)
         #self.num_groups = len(reference)
         self.kernel_para = kernel_para
-        print(kernel_para)
-        self.pos = pos.numpy().tolist()
-        print(self.pos)
+        self.pos = pos
         self.index = index
         #self.group_reference = reference ## reference format: [[0,1,2],[3,4,5],[6,7,8]...]
 
     def build(self, input_shape):
         #input_dim = input_shape[-1]
-        self.kernel = self.add_weight(shape=self.kernel_para, 
-                                        initializer='glorot_uniform', 
-                                        name='kernel_{}'.format(self.index))
+        channels,seq_length,input_dim = self.kernel_para
+        self.kernel = self.add_weight(shape=(seq_length, input_dim, channels), 
+                                        initializer='random_normal', 
+                                        name='kernel_{}'.format(self.index)) #kernel shape (channel,seq,dim)
+        super(GroupedLocallyConnectedLayer, self).build(input_shape)
      
         
     def call(self, inputs):
@@ -710,12 +710,13 @@ class GroupedLocallyConnectedLayer(layers.Layer):
             groups.append(group_cal)
         """
         selected_input = tf.gather(inputs, self.pos, axis=1)
-        output = tf.matmul(selected_input, self.kernel,transpose_b=True)
+
+        output = tf.nn.conv1d(selected_input, self.kernel, stride=1, padding='VALID')
         return output
 
     def compute_output_shape(self, input_shape):
         output_features = len(self.pos)
-        return (input_shape[0], output_features + 1, self.kernel_para[0])
+        return (input_shape[0], output_features, self.kernel_para[0])
     
 
 

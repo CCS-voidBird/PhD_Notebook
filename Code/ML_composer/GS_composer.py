@@ -160,13 +160,16 @@ class ML_composer:
             anno_dict = {annotation_groups[x]:x for x in range(len(annotation_groups))}
             self.annotation = self._raw_data["ANNOTATION"]
             self.annotation.iloc[:,-1] = self.annotation.iloc[:,-1].map(anno_dict)
+            print(self.annotation.head(10))
             if self.args.model == "MultiLevel Attention":
-                pass
+                LD_index = self.annotation.groupby('LID')
+                self.annotation = np.array([x.values for x in LD_index.groups.values()])
+                print(self.annotation)
             else:
                 self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
             # self.annotation = np.asarray(self.annotation.iloc[:, 2]).astype(np.float32)
-            print("Got LD shape:")
-            print(self.annotation.shape)
+                print("Got LD shape:")
+                print(self.annotation.shape)
 
         return
 
@@ -267,7 +270,7 @@ class ML_composer:
 
         print("Got input shape:",n_features)
         self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
-            input_shape = n_features,args = self.args, lr=float(self.args.lr),annotation = tf.convert_to_tensor(self.annotation)) if self.args.annotation else self._model["INIT_MODEL"].modelling(
+            input_shape = n_features,args = self.args, lr=float(self.args.lr),annotation = self.annotation) if self.args.annotation else self._model["INIT_MODEL"].modelling(
             input_shape = n_features,args = self.args, lr=float(self.args.lr))
         if round == 1:
             with open(os.path.abspath(self.args.output) + "/model_summary.txt", "w") as fh:

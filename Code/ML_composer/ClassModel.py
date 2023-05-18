@@ -1049,7 +1049,7 @@ class MultiLevelAttention(NN):
             #V = GroupedLocallyConnectedLayer(channels=args.embedding,reference=annotation)(input1)
 
             kernel_paras = [(args.embedding,groups_sizes[i],input_shape[-1]) for i in range(len(annotation))]
-            Xs = [GroupedLocallyConnectedLayer(kernel_para,annotation[index],index)(input1) for index,kernel_para in enumerate(annotation)]
+            Xs = [GroupedLocallyConnectedLayer(kernel_para,annotation[index],index)(input1) for index,kernel_para in enumerate(kernel_paras)]
             V = layers.Concatenate(axis=1)(Xs)
 
         V = layers.Dense(embed, activation=activation)(V)
