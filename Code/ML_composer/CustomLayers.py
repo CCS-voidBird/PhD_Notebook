@@ -188,11 +188,11 @@ class SNPBlockLayer(layers.Layer):
         return cls(**config)
 
 class BaseAttention(layers.Layer):
-  def __init__(self, **kwargs):
-    super().__init__()
-    self.mha = BlockAttention(**kwargs)
-    self.layernorm = tf.keras.layers.LayerNormalization()
-    self.add = tf.keras.layers.Add()
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.mha = BlockAttention(**kwargs)
+        self.layernorm = tf.keras.layers.LayerNormalization()
+        self.add = tf.keras.layers.Add()
     
 class BlockAttention(layers.Layer):
     """
@@ -568,12 +568,9 @@ class MultiLevel_BlockAttention(layers.Layer):
     @staticmethod
     def _reshape_to_batches(x, head_num):
         input_shape = tf.shape(x)
-        print("test K shape")
-        print(input_shape)
         batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
         head_dim = feature_dim // head_num
         x = tf.reshape(x, (batch_size, seq_len, head_num, head_dim))
-        print(K.int_shape(x))
         #x = K.permute_dimensions(x, [0, 2, 1, 3])
         x = tf.transpose(x, perm=[0, 2, 1, 3])
         return tf.reshape(x, (batch_size * head_num, seq_len, head_dim))
@@ -588,7 +585,6 @@ class MultiLevel_BlockAttention(layers.Layer):
         return tf.reshape(x, (batch_size // head_num, seq_len, feature_dim * head_num))
 
     def build(self, input_shape):
-        print(input_shape)
         #assert len(input_shape[0]) >= 2
         self.return_attention = self.return_attention
         self.seq_embedding = input_shape[0][-1]
@@ -642,15 +638,10 @@ class MultiLevel_BlockAttention(layers.Layer):
             query += self.bq
             key += self.bk
             value += self.bv
-        print("test query shape before head")
-        print(tf.shape(query))
         # q,k,v shape == (batch_size, seq_len, d_model)
         if self.head_num > 1:
-            print("test query shape")
-            print(K.shape(query))
+
             query = self._reshape_to_batches(query,self.head_num)
-            print("test query shape")
-            print(query.shape)
             key = self._reshape_to_batches(key,self.head_num)
             value = self._reshape_to_batches(value,self.head_num)
 

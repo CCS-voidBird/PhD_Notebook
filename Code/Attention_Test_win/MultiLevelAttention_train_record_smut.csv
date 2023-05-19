@@ -1,0 +1,2 @@
+	Trait	TrainSet	ValidSet	Model	Test_Accuracy	Valid_Accuracy	mae	Runtime
+0	smut	[2, 3, 4, 5]	[1]	MultiLevelAttention	0.3490161690268713	0.104689755885802	3.9122984	0.48333333333333334
