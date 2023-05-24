@@ -4,68 +4,36 @@ ________________________________________________________________________________
 ==================================================================================================
  input_layer_1 (InputLayer)     [(None, 100, 1)]     0           []                               
                                                                                                   
- grouped_locally_connected_laye  (None, 1, 12)       1032        ['input_layer_1[0][0]']          
- r (GroupedLocallyConnectedLaye                                                                   
- r)                                                                                               
+ zero_padding1d (ZeroPadding1D)  (None, 101, 1)      0           ['input_layer_1[0][0]']          
                                                                                                   
- grouped_locally_connected_laye  (None, 1, 12)       60          ['input_layer_1[0][0]']          
- r_1 (GroupedLocallyConnectedLa                                                                   
- yer)                                                                                             
+ locally_connected1d (LocallyCo  (None, 10, 12)      1200        ['zero_padding1d[0][0]']         
+ nnected1D)                                                                                       
                                                                                                   
- grouped_locally_connected_laye  (None, 1, 12)       60          ['input_layer_1[0][0]']          
- r_2 (GroupedLocallyConnectedLa                                                                   
- yer)                                                                                             
+ dense (Dense)                  (None, 10, 12)       156         ['locally_connected1d[0][0]']    
                                                                                                   
- grouped_locally_connected_laye  (None, 1, 12)       24          ['input_layer_1[0][0]']          
- r_3 (GroupedLocallyConnectedLa                                                                   
- yer)                                                                                             
+ multi_level__block_attention (  ((None, 10, 12),    572         ['dense[0][0]']                  
+ MultiLevel_BlockAttention)      (None, 10, 10))                                                  
                                                                                                   
- grouped_locally_connected_laye  (None, 1, 12)       12          ['input_layer_1[0][0]']          
- r_4 (GroupedLocallyConnectedLa                                                                   
- yer)                                                                                             
-                                                                                                  
- grouped_locally_connected_laye  (None, 1, 12)       12          ['input_layer_1[0][0]']          
- r_5 (GroupedLocallyConnectedLa                                                                   
- yer)                                                                                             
-                                                                                                  
- concatenate (Concatenate)      (None, 6, 12)        0           ['grouped_locally_connected_layer
-                                                                 [0][0]',                         
-                                                                  'grouped_locally_connected_layer
-                                                                 _1[0][0]',                       
-                                                                  'grouped_locally_connected_layer
-                                                                 _2[0][0]',                       
-                                                                  'grouped_locally_connected_layer
-                                                                 _3[0][0]',                       
-                                                                  'grouped_locally_connected_layer
-                                                                 _4[0][0]',                       
-                                                                  'grouped_locally_connected_layer
-                                                                 _5[0][0]']                       
-                                                                                                  
- dense (Dense)                  (None, 6, 12)        156         ['concatenate[0][0]']            
-                                                                                                  
- multi_level__block_attention (  ((None, 6, 12),     492         ['dense[0][0]']                  
- MultiLevel_BlockAttention)      (None, 6, 6))                                                    
-                                                                                                  
- conv1d (Conv1D)                (None, 6, 1)         12          ['multi_level__block_attention[0]
+ conv1d (Conv1D)                (None, 10, 1)        12          ['multi_level__block_attention[0]
                                                                  [0]']                            
                                                                                                   
- activation (Activation)        (None, 6, 1)         0           ['conv1d[0][0]']                 
+ activation (Activation)        (None, 10, 1)        0           ['conv1d[0][0]']                 
                                                                                                   
  global_average_pooling1d (Glob  (None, 1)           0           ['conv1d[0][0]']                 
  alAveragePooling1D)                                                                              
                                                                                                   
- flatten (Flatten)              (None, 6)            0           ['activation[0][0]']             
+ flatten (Flatten)              (None, 10)           0           ['activation[0][0]']             
                                                                                                   
  flatten_1 (Flatten)            (None, 1)            0           ['global_average_pooling1d[0][0]'
                                                                  ]                                
                                                                                                   
- dense_1 (Dense)                (None, 1)            7           ['flatten[0][0]']                
+ dense_1 (Dense)                (None, 1)            11          ['flatten[0][0]']                
                                                                                                   
  add (Add)                      (None, 1)            0           ['flatten_1[0][0]',              
                                                                   'dense_1[0][0]']                
                                                                                                   
 ==================================================================================================
-Total params: 1,867
-Trainable params: 1,867
+Total params: 1,951
+Trainable params: 1,951
 Non-trainable params: 0
 __________________________________________________________________________________________________

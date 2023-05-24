@@ -557,7 +557,7 @@ class MultiLevel_BlockAttention(layers.Layer):
     LD: categorical embedding (dict length, LDs+1, individual SNP grouped as LD 0 (labelled as 1)
     """
 
-    def __init__(self,num_heads=1,return_attention=False,annotation=False,use_bias=True,**kwargs):
+    def __init__(self,num_heads=1,return_attention=True,annotation=False,use_bias=True,**kwargs):
         super(MultiLevel_BlockAttention, self).__init__(**kwargs)
         self.head_num=num_heads
         self.return_attention = return_attention
@@ -674,12 +674,15 @@ class MultiLevel_BlockAttention(layers.Layer):
 
         return effect, attention  # shape (batch,seq,embed,seq)
 
-    def compute_output_shape(self, output_shape):
-        input_shape = output_shape
+    def compute_output_shape(self, input_shape):
+        print(input_shape)
+        print("From compute output shape")
+        snp_len = input_shape[1]
+        assert snp_len == self.seq_length
         if self.return_attention:
             attention_shape = (input_shape[0], output_shape[1], input_shape[1])
-            return [output_shape, attention_shape]
-        return output_shape
+            return [(input_shape[0],self.seq_length,self.embedding), attention_shape]
+        return (input_shape[0],self.seq_length,self.embedding)
 
     def get_config(self):
         return super(MultiLevel_BlockAttention, self).get_config()
@@ -721,6 +724,9 @@ class GroupedLocallyConnectedLayer(layers.Layer):
     def compute_output_shape(self, input_shape):
         output_features = len(self.pos)
         return (input_shape[0], output_features, self.kernel_para[0])
+    
+    def get_config(self):
+        return super(GroupedLocallyConnectedLayer, self).get_config()
     
 
 

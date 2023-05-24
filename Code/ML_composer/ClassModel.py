@@ -1069,7 +1069,8 @@ class MultiLevelAttention(NN):
         M1, AM1 = MultiLevel_BlockAttention(args.num_heads, return_attention=True)([V])
         #M = layers.Add()([M1, V])
         #M = layers.Flatten()(M)
-
+        print(M1.shape)
+        print("From model")
         
 
         if self.args.data_type == "ordinal":
@@ -1080,7 +1081,9 @@ class MultiLevelAttention(NN):
                 depth -= 1
             QV_output = OrdinalOutputLayer(num_classes=self.args.classes)(M)
         else:
-            M = layers.Conv1D(filters=1, kernel_size=1, strides=1, padding="valid", use_bias=False)(M1)
+            print(M1.shape)
+            print("From model")
+            M = layers.Conv1D(filters=1, kernel_size=1, padding="same", use_bias=False,input_shape=M1.shape)(M1)
             D = layers.Activation("sigmoid")(M)
             D = layers.Flatten()(D)
             D = layers.Dense(1, activation="linear")(D)
