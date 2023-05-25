@@ -1,10 +1,11 @@
 #import dask.array
 from tensorflow import keras
-from tensorflow.keras import layers,utils
+from keras import backend as K
+from keras import layers,utils
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-import tensorflow.keras.backend as K
+#import tensorflow.keras.backend as K
 tf.config.experimental_run_functions_eagerly(True)
 
 """
@@ -586,10 +587,13 @@ class MultiLevel_BlockAttention(layers.Layer):
 
     def build(self, input_shape):
         #assert len(input_shape[0]) >= 2
+        print(input_shape)
+        print("from buiild")
+        super(MultiLevel_BlockAttention, self).build(input_shape)
         self.return_attention = self.return_attention
-        self.seq_embedding = input_shape[0][-1]
-        self.seq_length = input_shape[0][1]
-        self.embedding = input_shape[0][-1]
+        self.seq_embedding = input_shape[-1]
+        self.seq_length = input_shape[1]
+        self.embedding = input_shape[-1]
 
         self.Wq_ld = self.add_weight(name='Annotation_embedding_q_weights', shape=(self.seq_embedding, self.seq_embedding),
                                   initializer='normal', trainable=True)
@@ -613,7 +617,7 @@ class MultiLevel_BlockAttention(layers.Layer):
             self.bo = self.add_weight(name='output_bias', shape=(self.seq_length,1),
                                       initializer='normal', trainable=True)
         self.built = True
-        super(MultiLevel_BlockAttention, self).build(input_shape)
+        
 
     def call(self, x):
         # x could be a list, while x[0] is the qkv, x[1] is the guiding attention score
@@ -623,14 +627,17 @@ class MultiLevel_BlockAttention(layers.Layer):
         if isinstance(x,list) and len(x) >= 2:
             X,residual_score,attention_guide = x
         else:
-            X = x[0]
+            X = x
             residual_score = None
             attention_guide = None
-        query = tf.matmul(X,self.Wq_ld)
+        query = X
+        key = X
+        value = X
+        query = tf.matmul(query,self.Wq_ld)
         #tf.einsum('sd,dd->sd',X,self.wq)
-        key = tf.matmul(X,self.Wk_ld)
+        key = tf.matmul(key,self.Wk_ld)
         #tf.einsum('sd,dd->sd',X,self.wk)
-        value = tf.matmul(X,self.Wv_ld)
+        value = tf.matmul(value,self.Wv_ld)
         #tf.einsum('sd,dd->sd',X,self.wv)
         #value = tf.tensordot(x, self.wv, axes=(-1,0))
 
@@ -672,20 +679,30 @@ class MultiLevel_BlockAttention(layers.Layer):
         if self.return_attention:
             return effect,attention
 
-        return effect, attention  # shape (batch,seq,embed,seq)
+        return effect 
 
     def compute_output_shape(self, input_shape):
+        super(MultiLevel_BlockAttention, self).compute_output_shape(input_shape)
         print(input_shape)
         print("From compute output shape")
         snp_len = input_shape[1]
         assert snp_len == self.seq_length
         if self.return_attention:
-            attention_shape = (input_shape[0], output_shape[1], input_shape[1])
-            return [(input_shape[0],self.seq_length,self.embedding), attention_shape]
-        return (input_shape[0],self.seq_length,self.embedding)
+            attention_shape = (input_shape[0], input_shape[1], input_shape[1])
+            return [input_shape[0]+(self.seq_length,self.embedding), attention_shape]
+        return input_shape[0]+(self.seq_length,self.embedding)
 
     def get_config(self):
-        return super(MultiLevel_BlockAttention, self).get_config()
+        config = super(MultiLevel_BlockAttention, self).get_config()
+        config = {'annotation': self.annotation,
+                  'num_heads': self.head_num,
+                  'use_bias': self.use_bias,
+                  'return_attention': self.return_attention}
+        return config
+    
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
     
 class GroupedLocallyConnectedLayer(layers.Layer):
@@ -726,7 +743,9 @@ class GroupedLocallyConnectedLayer(layers.Layer):
         return (input_shape[0], output_features, self.kernel_para[0])
     
     def get_config(self):
-        return super(GroupedLocallyConnectedLayer, self).get_config()
+        config = super(GroupedLocallyConnectedLayer, self).get_config()
+        config.update({"kernel_para": self.kernel_para,"pos":self.pos,"index":self.index})
+        return config
     
 
 
@@ -793,21 +812,21 @@ def fullyConnectted_block(input, width,depth=1, activation='relu',residual=False
 def residual_fl_block(input, width, activation='relu',downsample=False):
     #residual fully connected layers block
     activation_function = layers.Activation(activation=activation)
-    X = layers.Dense(width,activation=activation)(input)
+    x = layers.Dense(width,activation=activation)(input)
     if activation == 'relu':
-        X = layers.BatchNormalization()(X)
+        x = layers.BatchNormalization()(x)
 
     if downsample:
         input_x = input
-        if input.shape[-1] != X.shape[-1]:
-            filter_n = X.shape[-1]
-            input_x = layers.Dense(filter_n,activation=activation)(X)
-        out = layers.Add()([X, input_x])
+        if input.shape[-1] != x.shape[-1]:
+            filter_n = x.shape[-1]
+            input_x = layers.Dense(filter_n,activation=activation)(x)
+        out = layers.Add()([x, input_x])
         #out = activation(out)
         return activation_function(out)
     else:
-        X = activation_function(X)
-        return X
+        x = activation_function(x)
+        return x
 
 def residual_conv1D_block(input,filters,kernel_size,activation=layers.ReLU(),downsample=False):
     X = layers.Conv1D(filters, kernel_size, padding="same")(input)

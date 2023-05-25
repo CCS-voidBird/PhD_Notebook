@@ -1,41 +1,21 @@
-try:
-    import keras
-    from keras.models import Sequential
-    from tensorflow.keras import layers
-    from keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D
-    from keras.layers import Dropout
-    from tensorflow.keras.utils import to_categorical
-    import tensorflow as tf
-    import keras.metrics
-except:
-    try:
-        from tensorflow import keras
-        from tensorflow.keras import layers
-        from tensorflow.keras.models import Sequential
-        from tensorflow.keras.utils import to_categorical
-        from tensorflow.keras.layers import MaxPooling1D, Flatten, Dense, Conv1D,MaxPooling2D, Conv2D, Dropout
-        import tensorflow as tf
-        from keras_self_attention import SeqSelfAttention
-
-        print("Use tensorflow backend keras module")
-    except:
-        print("This is not a GPU env.")
+from tensorflow import keras
+from keras import layers
+from keras.layers import Layer
 from sklearn.datasets import make_regression
 from sklearn.ensemble import RandomForestRegressor
 from scipy import stats
 import numpy as np
-import configparser
 from Functions import *
-from tensorflow.keras.layers import Layer
-from tensorflow.keras.callbacks import LearningRateScheduler
+#from tensorflow.keras.layers import Layer
+from keras.callbacks import LearningRateScheduler
 from CustomLayers import *
 tf.config.experimental_run_functions_eagerly(True)
 # Define the residual block as a new layer
 
 def step_decay(epoch):
-    initial_lr = 0.001
+    initial_lr = 0.0001
     drop_rate = 0.5
-    epochs_drop = 10
+    epochs_drop = 5
     lr = initial_lr * drop_rate ** (epoch // epochs_drop)
     return lr
 
@@ -480,7 +460,8 @@ class NCNN(NN):
        
 
         X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
-        X = layers.MaxPooling1D(pool_size=3)(X)
+        X = layers.MaxPooling1D(pool_size=2)(X)
+        print(X.shape)
         #X = layers.MaxPooling1D(pool_size=2)(X)
         X = layers.Dense(128,activation='linear',use_bias=False)(X)
         X = layers.Dense(5,activation='linear')(X)
@@ -1066,24 +1047,26 @@ class MultiLevelAttention(NN):
         bin_output = layers.Add()([bin_output1,bin_output2])
         """
         # train and get guide attention for actual phenotypes
-        M1, AM1 = MultiLevel_BlockAttention(args.num_heads, return_attention=True)([V])
+        M1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False)(V)
         #M = layers.Add()([M1, V])
         #M = layers.Flatten()(M)
         print(M1.shape)
-        print("From model")
+        print("From model attention")
         
-
+        """
         if self.args.data_type == "ordinal":
 
             while depth > 0:
-                M = residual_fl_block(input=M, width=self.args.width, activation=activation,
+                M = residual_fl_block(input=M1, width=self.args.width, activation=activation,
                                       downsample=(depth % 2 == 0 & self.args.residual))
                 depth -= 1
             QV_output = OrdinalOutputLayer(num_classes=self.args.classes)(M)
         else:
             print(M1.shape)
             print("From model")
-            M = layers.Conv1D(filters=1, kernel_size=1, padding="same", use_bias=False,input_shape=M1.shape)(M1)
+            M1 = layers.Dense(self.args.embedding, activation="linear")(M1)
+            M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(M1)
+            #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
             D = layers.Activation("sigmoid")(M)
             D = layers.Flatten()(D)
             D = layers.Dense(1, activation="linear")(D)
@@ -1091,7 +1074,22 @@ class MultiLevelAttention(NN):
             M = layers.GlobalAveragePooling1D()(M)
             M = layers.Flatten()(M)
             QV_output = layers.Add()([M, D])
+        """
+        
+        M1 = layers.Dense(self.args.embedding, activation="linear")(M1)
+        print(M1.shape)
+        print("From model")
+        print(self.args.batch + M1.shape[1:])
+        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(M1)
+        #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
+        D = layers.Activation("sigmoid")(M)
+        D = layers.Flatten()(D)
+        D = layers.Dense(1, activation="linear")(D)
 
+        M = layers.GlobalAveragePooling1D()(M)
+        M = layers.Flatten()(M)
+        #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
+        QV_output = layers.Add()([M, D])
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
@@ -1107,12 +1105,11 @@ class MultiLevelAttention(NN):
                       "SGD": sgd}
 
         model = keras.Model(inputs=input1, outputs=[QV_output])
-        
         if self.args.data_type == "ordinal":
             loss_class = Ordinal_loss(self.args.classes)
             model.compile(optimizer=optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
         else:
-            model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error", metrics=['acc'])
+            model.compile(optimizer=optimizers[optimizer], loss=self.args.loss, metrics=['acc'])
 
         # QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
         # QK = layers.Softmax(axis=-1)(QK)

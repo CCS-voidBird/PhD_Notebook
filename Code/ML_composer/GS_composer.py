@@ -4,13 +4,10 @@ from Functions import *
 from ClassModel import *
 import pandas as pd
 import matplotlib.pyplot as plt
-try:
-    import tensorflow as tf
-    from tensorflow.keras.utils import to_categorical
-    import keras.utils
-    import sklearn.preprocessing
-except:
-    print("Something error happened while importing subfunction from tf")
+import tensorflow as tf
+from tensorflow.keras.utils import to_categorical
+import keras.utils
+import sklearn.preprocessing
 import pickle
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -57,7 +54,8 @@ def get_args():
     req_grp.add_argument('--num-heads', type=int, help="(Only for multi-head attention)Number of heads.", default=1)
     req_grp.add_argument('--activation', type=str, help="Activation function for hidden Dense layer.", default='relu')
     req_grp.add_argument('--embedding', type=int, help="(Only for multi-head attention)Embedding length (default as 8)", default=8)
-    req_grp.add_argument('--locallyConnect', type=int, help="(Only work with locally connected layers)locallyConnect channel (default as 1)", default=8)
+    req_grp.add_argument('--locallyConnect', type=int, help="(Only work with locally connected layers)locallyConnect channel (default as 1)", default=1)
+    req_grp.add_argument('--locallyBlock', type=int, help="(Only work with locally connected layers)locallyBlock length (default as 10)", default=10)
     req_grp.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
     req_grp.add_argument('-loss', '--loss', type=str, help="loss founction.", default="mse")
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
@@ -358,6 +356,11 @@ class ML_composer:
                             os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,
                                                                                    val))
                         print("Model saved.")
+
+                        self._model["TRAINED_MODEL"].save(
+                            os.path.abspath(self.args.output) + "/{}_{}_{}.h5".format(self.args.trait, self.model_name,
+                                                                                   val))
+                        print("h5 Model saved.")
                     except:
                         print("Saving model failed, tring directly save by using self._model[\"TRAINED_MODEL\"].save")
             self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
