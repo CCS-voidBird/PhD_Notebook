@@ -13,11 +13,18 @@ tf.config.experimental_run_functions_eagerly(True)
 # Define the residual block as a new layer
 
 def step_decay(epoch):
-    initial_lr = 0.0001
+    initial_lr = 0.001
     drop_rate = 0.5
     epochs_drop = 5
     lr = initial_lr * drop_rate ** (epoch // epochs_drop)
     return lr
+
+class LearningRateLogger(keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        lr = self.model.optimizer.lr(self.model.optimizer.iterations)
+        print(f"Learning rate: {lr:.6f}")
+
+lr_logger = LearningRateLogger()
 
 class Residual(Layer):
     def __init__(self, channels_in,kernel,**kwargs):
@@ -47,7 +54,11 @@ class NN:
     def __init__(self,args):
         self.name = "NN"
         self.args = args
-        self.lr_schedule = LearningRateScheduler(step_decay)
+        self.lr = args.lr
+        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=1000,decay_rate=0.5,staircase=True)
+        self.optimizers = {"rmsprop": keras.optimizers.RMSprop,
+                      "Adam": keras.optimizers.Adam,
+                      "SGD": keras.optimizers.SGD}
 
     def model_name(self):
         #get class name
@@ -70,6 +81,23 @@ class NN:
 
     def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
         pass
+
+    def modelCompile(self,model, optimizer="rmsprop"):
+        adm = keras.optimizers.Adam
+        rms = keras.optimizers.RMSprop
+        sgd = keras.optimizers.SGD
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        model.compile(optimizer=optimizers[optimizer](learning_rate=self.lr_schedule), loss=self.args.loss)
+
+        """
+        Optimizers: Adam, RMSProp, SGD 
+        """
+
+        return model
 
 class Transformer(NN):
     
@@ -1010,19 +1038,20 @@ class MultiLevelAttention(NN):
                     phenos[i] = stats.zscore(phenos[i])
         return geno,phenos
 
-    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001, annotation=None):
+    def model(self, input_shape, args, optimizer="rmsprop", lr=0.001, annotation=None):
         # init Q,K,V
         depth = args.depth
         embed = args.embedding
         activation = args.activation
         input1 = layers.Input(shape=input_shape, name="input_layer_1")
         print(input1.shape)
+        zero_padding = args.locallyBlock - input_shape[0] % args.locallyBlock
 
         if annotation is None:
 
-            X = layers.ZeroPadding1D(padding=(0, input_shape[1] % 10))(input1)
+            X = layers.ZeroPadding1D(padding=(0, zero_padding))(input1)
 
-            V = layers.LocallyConnected1D(args.locallyConnect, 10, strides=10, activation=activation, padding="valid",
+            V = layers.LocallyConnected1D(args.locallyConnect, args.locallyBlock, strides=args.locallyBlock, activation=activation, padding="valid",
                                           use_bias=False)(X)
 
         else:
@@ -1091,25 +1120,14 @@ class MultiLevelAttention(NN):
         #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
         QV_output = layers.Add()([M, D])
 
-        try:
-            adm = keras.optimizers.Adam(learning_rate=lr)
-            rms = keras.optimizers.RMSprop(learning_rate=lr)
-            sgd = keras.optimizers.SGD(learning_rate=lr)
-        except:
-            adm = keras.optimizers.Adam(lr=lr)
-            rms = keras.optimizers.RMSprop(lr=lr)
-            sgd = keras.optimizers.SGD(lr=lr)
-
-        optimizers = {"rmsprop": rms,
-                      "Adam": adm,
-                      "SGD": sgd}
-
         model = keras.Model(inputs=input1, outputs=[QV_output])
         if self.args.data_type == "ordinal":
             loss_class = Ordinal_loss(self.args.classes)
-            model.compile(optimizer=optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
         else:
-            model.compile(optimizer=optimizers[optimizer], loss=self.args.loss, metrics=['acc'])
+
+            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=self.args.loss, metrics=['acc'])
+            #model.compile(optimizer=optimizers[optimizer], loss=self.args.loss, metrics=['acc'])
 
         # QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
         # QK = layers.Softmax(axis=-1)(QK)

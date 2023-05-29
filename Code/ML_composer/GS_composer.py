@@ -100,7 +100,7 @@ lr_opt = keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=
 
 class ML_composer:
 
-    def __init__(self,silence=0):
+    def __init__(self,silence=0,args=None):
         self._raw_data = {"GENO":pd.DataFrame(),"PHENO":pd.DataFrame(),"INDEX":pd.DataFrame(),"ANNOTATION":pd.DataFrame()}
         self.train_data = None
         self.train_info = pd.DataFrame()
@@ -108,7 +108,7 @@ class ML_composer:
         self.valid_data = None
         self.valid_info = pd.DataFrame()
         self.valid_pheno = pd.DataFrame()
-        self._model = {"INIT_MODEL":Model(args=None),"TRAINED_MODEL":Model(args=None)}
+        self._model = {"INIT_MODEL":Model(args=args),"TRAINED_MODEL":Model(args=args)}
         self._info = {}
         self.method = None
         self.modelling = None
@@ -293,7 +293,7 @@ class ML_composer:
             features_train, target_train,
             epochs=int(self.args.epoch),
             validation_data=(features_test, target_test), verbose=int(self.args.quiet),
-            callbacks=[self._model["INIT_MODEL"].lr_schedule],batch_size = self.batchSize)
+            batch_size = self.batchSize,callbacks=[lr_logger]) #callbacks=[self._model["INIT_MODEL"].lr_schedule],
 
 
         # let's just print the final loss
@@ -490,7 +490,7 @@ def main():
     with open(locat + 'args.txt', 'w') as f:
         f.write(str(args))
 
-    composer = ML_composer()
+    composer = ML_composer(args=args)
     composer.get_data(configer=None,args=args)
     #composer.prepare_model()
 
