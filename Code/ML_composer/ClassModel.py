@@ -1105,10 +1105,10 @@ class MultiLevelAttention(NN):
             QV_output = layers.Add()([M, D])
         """
         
-        M1 = layers.Dense(self.args.embedding, activation="linear")(M1)
-        print(M1.shape)
-        print("From model")
-        print(self.args.batch + M1.shape[1:])
+        #M1 = layers.Dense(self.args.embedding, activation="linear")(M1)
+        #print(M1.shape)
+        #print("From model")
+        #print(self.args.batch + M1.shape[1:])
         M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(M1)
         #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
         D = layers.Activation("sigmoid")(M)
