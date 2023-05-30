@@ -1077,10 +1077,9 @@ class MultiLevelAttention(NN):
         """
         # train and get guide attention for actual phenotypes
         M1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False)(V)
+        M = layers.Dense(embed, activation=activation)(M1)
         #M = layers.Add()([M1, V])
         #M = layers.Flatten()(M)
-        print(M1.shape)
-        print("From model attention")
         
         """
         if self.args.data_type == "ordinal":
@@ -1104,11 +1103,6 @@ class MultiLevelAttention(NN):
             M = layers.Flatten()(M)
             QV_output = layers.Add()([M, D])
         """
-        
-        #M1 = layers.Dense(self.args.embedding, activation="linear")(M1)
-        #print(M1.shape)
-        #print("From model")
-        #print(self.args.batch + M1.shape[1:])
         M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(M1)
         #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
         D = layers.Activation("sigmoid")(M)
