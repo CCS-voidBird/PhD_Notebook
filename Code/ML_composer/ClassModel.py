@@ -11,14 +11,14 @@ from keras.callbacks import LearningRateScheduler
 from CustomLayers import *
 tf.config.experimental_run_functions_eagerly(True)
 # Define the residual block as a new layer
-
+'''
 def step_decay(epoch):
     initial_lr = 0.001
     drop_rate = 0.5
     epochs_drop = 5
     lr = initial_lr * drop_rate ** (epoch // epochs_drop)
     return lr
-
+'''
 class LearningRateLogger(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         lr = self.model.optimizer.lr(self.model.optimizer.iterations)
@@ -55,7 +55,7 @@ class NN:
         self.name = "NN"
         self.args = args
         self.lr = args.lr
-        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=1000,decay_rate=0.5,staircase=True)
+        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=10000//args.batch,decay_rate=0.9,staircase=True)
         self.optimizers = {"rmsprop": keras.optimizers.RMSprop,
                       "Adam": keras.optimizers.Adam,
                       "SGD": keras.optimizers.SGD}

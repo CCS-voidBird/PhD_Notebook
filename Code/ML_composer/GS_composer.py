@@ -42,6 +42,7 @@ def get_args():
     req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
     req_grp.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns (start with 1).", default=1)
     req_grp.add_argument('-index', '--index', type=str, help="index file", default = None)
+    req_grp.add_argument('-vindex', '--vindex', type=int, help="index for validate", default = None)
     req_grp.add_argument('-annotation', '--annotation', type=str, help="annotation file,1st row as colname", default=None)
     req_grp.add_argument('--model', type=str, help="Select training model.", required=True)
     req_grp.add_argument('--load', type=str, help="load model from file.", default=None)
@@ -208,11 +209,17 @@ class ML_composer:
         return
 
     def prepare_cross_validate(self):
+        ###Cross_validation;
+        ###if use binary validate, index 0 will be validate set, and anyother index will be training set
         index_ref = []
         for idx in self._info["CROSS_VALIDATE"]:
             train_index = [x for x in self._info["CROSS_VALIDATE"] if x is not idx]
             valid_index = [idx]
             index_ref.append((train_index,valid_index))
+            if self.args.vindex is not None and idx == self.args.vindex:
+                print("Detected manual validation index")
+                print(f"Binary validation; index {idx} will be validate set, and anyother indexes will be training set")
+                return [(train_index,valid_index)]
 
         return index_ref
 
@@ -333,7 +340,10 @@ class ML_composer:
 
         features_train,target_train = self._model["INIT_MODEL"].data_transform(self.train_data,self.train_pheno, pheno_standard = self.args.rank)
         features_val,target_val = self._model["INIT_MODEL"].data_transform(self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
-
+        num_samples = len(features_train)
+        indices = np.random.permutation(num_samples)
+        features_train = features_train[indices]
+        target_train = target_train[indices]
         print("Train status:")
         print("Epochs: ",self.args.epoch)
         print("Repeat(Round): ",self.args.round)
@@ -498,7 +508,7 @@ def main():
     index_ref = composer.prepare_cross_validate()
     i = 1
     for train_idx,valid_idx in index_ref:
-        print("Cross-validate: {}".format(i))
+        print("Cross-validate: {},{}".format(i,valid_idx[0]))
         composer.prepare_training(train_idx,valid_idx)
         composer.compose(train_idx,valid_idx,valid_idx[0])
         i+=1
