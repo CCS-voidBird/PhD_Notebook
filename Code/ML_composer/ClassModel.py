@@ -1103,7 +1103,7 @@ class MultiLevelAttention(NN):
             M = layers.Flatten()(M)
             QV_output = layers.Add()([M, D])
         """
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(M1)
+        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(M)
         #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
         D = layers.Activation("sigmoid")(M)
         D = layers.Flatten()(D)
