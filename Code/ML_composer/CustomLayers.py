@@ -661,7 +661,7 @@ class MultiLevel_BlockAttention(layers.Layer):
         if residual_score is not None:
             # add attention score with residual score
             attention = tf.add(attention, residual_score)
-
+        #attention = tf.multiply(attention, self.Wepigenome)
         attention_score = tf.nn.softmax(attention)
 
         #if attention_guide is not None:

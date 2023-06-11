@@ -1109,8 +1109,9 @@ class MultiLevelAttention(NN):
         D = layers.Flatten()(D)
         D = layers.Dense(1, activation="linear")(D)
 
-        M = layers.GlobalAveragePooling1D()(M)
+        #M = layers.GlobalAveragePooling1D()(M)
         M = layers.Flatten()(M)
+        M = layers.Dense(1, activation="linear")(M)
         #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
         QV_output = layers.Add()([M, D])
 
