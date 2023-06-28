@@ -55,7 +55,7 @@ class NN:
         self.name = "NN"
         self.args = args
         self.lr = args.lr
-        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=10000//args.batch,decay_rate=0.9,staircase=True)
+        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=6000//args.batch,decay_rate=0.9,staircase=True)
         self.optimizers = {"rmsprop": keras.optimizers.RMSprop,
                       "Adam": keras.optimizers.Adam,
                       "SGD": keras.optimizers.SGD}
@@ -1050,10 +1050,27 @@ class MultiLevelAttention(NN):
         if annotation is None:
 
             X = layers.ZeroPadding1D(padding=(0, zero_padding))(input1)
+            V = layers.LocallyConnected1D(filters=args.locallyConnect, kernel_size=args.locallyBlock, strides=1, activation=activation,padding="valid")(X)
+            #Xhet = BinaryConversionLayer(condition=lambda x: x == 1.0)(X)
+            #X = layers.LocallyConnected2D(filters=1,kernel_size=(1,2),strides=1,activation="relu", padding="valid")(Xhet)
+            #Xhet = layers.Conv2D(filters=1,kernel_size=(1,2),strides=1,activation="relu", padding="valid",use_bias=False)(Xhet)
+            #Xhet = tf.squeeze(Xhet,axis=-1)
+            #X = layers.Add()([Xhet,X])
+            
+            ##create a sub array that only contain dominance values (1)
+            #dominance_mask = K.cast(K.equal(X, 1), dtype=K.floatx())
+            ##stack dominance_mask to X
+            #X = K.stack([X, dominance_mask], axis=-1)
+            """
+            #Locally connected to reduce array size
+            V = layers.LocallyConnected1D(args.locallyConnect,kernel_size=args.locallyBlock, strides=args.locallyBlock, activation=activation, padding="valid",use_bias=False)(X)
+            """
 
-            V = layers.LocallyConnected1D(args.locallyConnect, args.locallyBlock, strides=args.locallyBlock, activation=activation, padding="valid",
-                                          use_bias=False)(X)
-
+            #Conv1D to reduce array size
+            #V = layers.Conv1D(args.locallyConnect,kernel_size=args.locallyBlock, strides=1+args.locallyBlock//2, activation=activation, padding="valid",use_bias=False)(X)
+            #if args.locallyBlock > 2:
+            #    V = layers.AveragePooling1D(pool_size=2)(V)
+            #V = layers.Dropout(0.1)(V)
         else:
             groups_sizes = [len(x) for x in annotation]
             #V = GroupedLocallyConnectedLayer(channels=args.embedding,reference=annotation)(input1)
@@ -1062,7 +1079,7 @@ class MultiLevelAttention(NN):
             Xs = [GroupedLocallyConnectedLayer(kernel_para,annotation[index],index)(input1) for index,kernel_para in enumerate(kernel_paras)]
             V = layers.Concatenate(axis=1)(Xs)
 
-        V = layers.Dense(embed, activation=activation)(V)
+        V = layers.Dense(embed, activation=activation,use_bias=False)(V)
 
         """
         # train and get guide attention for bin phenotypes
@@ -1076,8 +1093,13 @@ class MultiLevelAttention(NN):
         bin_output = layers.Add()([bin_output1,bin_output2])
         """
         # train and get guide attention for actual phenotypes
-        M1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False)(V)
-        M = layers.Dense(embed, activation=activation)(M1)
+        for attention_block in range(args.AttentionBlock):
+            M1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,use_bias=False)(V)
+            V = layers.Add()([M1, V]) ## Epistatic + Additive
+            V = layers.LayerNormalization()(V)
+            #V = layers.Dropout(0.1)(V)
+            M = layers.Dense(embed, activation=activation,use_bias=False)(V)
+
         #M = layers.Add()([M1, V])
         #M = layers.Flatten()(M)
         
@@ -1103,16 +1125,20 @@ class MultiLevelAttention(NN):
             M = layers.Flatten()(M)
             QV_output = layers.Add()([M, D])
         """
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(M)
+        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation=activation)(M)
         #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
+        #D = layers.LayerNormalization()(M)
+        #M = layers.Dropout(0.5)(M)
         D = layers.Activation("sigmoid")(M)
         D = layers.Flatten()(D)
-        D = layers.Dense(1, activation="linear")(D)
+        D = layers.Dense(1, activation="linear",use_bias=False)(D)
 
         #M = layers.GlobalAveragePooling1D()(M)
         M = layers.Flatten()(M)
-        M = layers.Dense(1, activation="linear")(M)
+        M = layers.Dense(1, activation="linear",use_bias=False)(M)
         #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
+        #QV_output = layers.Concatenate(axis=-1)([M, D])
+        #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
         QV_output = layers.Add()([M, D])
 
         model = keras.Model(inputs=input1, outputs=[QV_output])

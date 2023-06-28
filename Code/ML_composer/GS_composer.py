@@ -57,6 +57,7 @@ def get_args():
     req_grp.add_argument('--embedding', type=int, help="(Only for multi-head attention)Embedding length (default as 8)", default=8)
     req_grp.add_argument('--locallyConnect', type=int, help="(Only work with locally connected layers)locallyConnect channel (default as 1)", default=1)
     req_grp.add_argument('--locallyBlock', type=int, help="(Only work with locally connected layers)locallyBlock length (default as 10)", default=10)
+    req_grp.add_argument('--AttentionBlock', type=int, help="(Only work with Attention layers)AttentionBlock numbers (default as 1)", default=1)
     req_grp.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
     req_grp.add_argument('-loss', '--loss', type=str, help="loss founction.", default="mse")
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
@@ -94,7 +95,7 @@ def plot_loss_history(h, title,plot_name=None,checkpoint=0):
         plt.savefig(plot_name)
         plt.close()
     else:
-        plt.show()
+        pass
     #plt.show()
 
 lr_opt = keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=10, verbose=0, mode='auto', min_delta=0.005, cooldown=0, min_lr=0)
@@ -418,6 +419,7 @@ class ML_composer:
         print("observed: ", valid_pheno[:10])
         print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))
         print("Prediction mean: {} Var: {}".format(np.mean(y_pred_valid),np.var(y_pred_valid)))
+        print("The estimated proportion of variance explained by linear and non-linear is: ",self._model["TRAINED_MODEL"].layers[2].get_weights())
         mse = mean_squared_error(y_pred_valid, valid_pheno)
 
         print("Validate prediction accuracy (measured as Pearson's correlation) is: ",

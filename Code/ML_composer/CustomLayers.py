@@ -32,7 +32,21 @@ def is_label_valid(labels):
 def calculate_ordinal_loss(y_true, y_pred):
     pass
 
+class BinaryConversionLayer(layers.Layer):
+    def __init__(self, condition, **kwargs):
+        super(BinaryConversionLayer, self).__init__(**kwargs)
+        self.condition = condition
 
+    def call(self, inputs):
+        binary_array = tf.where(self.condition(inputs), tf.ones_like(inputs), tf.zeros_like(inputs))
+        heter_array = tf.stack([inputs,binary_array],axis=2)
+        #heter_array = tf.expand_dims(heter_array,axis=-1)
+        return heter_array
+
+    def get_config(self):
+        config = super(BinaryConversionLayer, self).get_config()
+        config.update({'condition': self.condition})
+        return config
 
 class Ordinal_loss:
     def __init__(self,num_classes):
@@ -558,12 +572,13 @@ class MultiLevel_BlockAttention(layers.Layer):
     LD: categorical embedding (dict length, LDs+1, individual SNP grouped as LD 0 (labelled as 1)
     """
 
-    def __init__(self,num_heads=1,return_attention=True,annotation=False,use_bias=True,**kwargs):
+    def __init__(self,num_heads=1,return_attention=True,annotation=False,epi_genomic=True,use_bias=True,**kwargs):
         super(MultiLevel_BlockAttention, self).__init__(**kwargs)
         self.head_num=num_heads
         self.return_attention = return_attention
         self.annotation = annotation
         self.use_bias=use_bias
+        self.epi_genomic = epi_genomic
 
 
     @staticmethod
@@ -603,9 +618,9 @@ class MultiLevel_BlockAttention(layers.Layer):
 
         self.Wv_ld = self.add_weight(name='Annotation_embedding_v_weights', shape=(self.seq_embedding, self.seq_embedding),
                                     initializer='normal', trainable=True)
-            
-        self.Wepigenome = self.add_weight(name='Epigenome_embedding_weights', shape=(self.seq_length, self.seq_length),
-                                   initializer='normal', trainable=True)
+        if self.epi_genomic:
+            self.Wepigenome = self.add_weight(name='Epigenome_embedding_weights', shape=(self.seq_length, self.seq_length),
+                                    initializer='normal', trainable=True)
         
         if self.use_bias:
             self.bq = self.add_weight(name='query_bias', shape=(self.seq_length,1),
@@ -640,6 +655,7 @@ class MultiLevel_BlockAttention(layers.Layer):
         value = tf.matmul(value,self.Wv_ld)
         #tf.einsum('sd,dd->sd',X,self.wv)
         #value = tf.tensordot(x, self.wv, axes=(-1,0))
+        diag_mask = tf.subtract(1.0,tf.eye(self.seq_length,dtype=tf.float32))
 
         if self.use_bias:
             query += self.bq
@@ -662,13 +678,18 @@ class MultiLevel_BlockAttention(layers.Layer):
             # add attention score with residual score
             attention = tf.add(attention, residual_score)
         #attention = tf.multiply(attention, self.Wepigenome)
-        attention_score = tf.nn.softmax(attention)
+        
+        attention = tf.nn.softmax(attention)
 
-        #if attention_guide is not None:
-        #    attention_score = tf.add(attention_score, attention_guide)
         # multiply last two dimensions with Wepigenome
-        attention_score = tf.multiply(attention_score, self.Wepigenome)
-        effect = tf.matmul(attention_score, value)
+        if self.epi_genomic:
+            attention = tf.multiply(attention, diag_mask)
+            attention = tf.multiply(attention, self.Wepigenome)
+            attention = tf.add(attention, tf.eye(self.seq_length,dtype=tf.float32))
+        #Check multiply outcome
+        effect = tf.matmul(attention, value)
+        #effect = tf.add(epi_effect,value)
+        #effect = tf.nn.relu(effect)
 
         if self.head_num > 1:
             effect = self._reshape_from_batches(effect,self.head_num)
