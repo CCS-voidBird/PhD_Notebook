@@ -1,5 +1,6 @@
 #import dask.array
 from tensorflow import keras
+import tensorflow_probability as tfp
 from keras import backend as K
 from keras import layers,utils
 import tensorflow as tf
@@ -66,16 +67,12 @@ class Ordinal_loss:
         return tf.greater_equal(labels, 0.)
 
     def _calculate_loss(self,labels, logits):
-        #print("checking dtypes")
-        #print(labels.dtype)
-        #print(logits.dtype)
+
         if logits.shape.rank != 3:
             raise ValueError('Predictions for ordinal loss must have rank 3.')
-        #labels = tf.convert_to_tensor(value=labels)
-        #labels = tf.cast(labels, dtype=tf.float32)
+
         mask = is_label_valid(labels)
         labels = tf.where(mask, labels, 0.0)
-        #logits = tf.cast(logits,dtype=tf.float32)
         logits = tf.where(tf.expand_dims(mask, -1), logits, 0.0)###
         ordinals = self._to_classes(labels, mask)
         losses = tf.where(
@@ -86,6 +83,23 @@ class Ordinal_loss:
             0.0)
         return tf.reduce_sum(losses, axis=-1), tf.cast(mask, dtype=tf.float32)
 
+class Cor_mse_loss:
+    def __init__(self):
+        self.loss = self._calculate_loss
+
+    def _calculate_loss(self,predictions, observations):
+        # Calculate the pearson's correlation
+        correlation = tfp.stats.correlation(predictions, observations, sample_axis=0, event_axis=None)
+        # Got diag cor for correlation matrix
+        #correlation = tf.linalg.diag_part(correlation)
+        #print(correlation)
+        # Calculate the MSE
+        mse = tf.reduce_mean(tf.square(predictions - observations), axis=1)
+        # Calculate the loss
+        loss = 1.0 if tf.math.is_nan(correlation) else tf.subtract(1.0, correlation)
+        loss = tf.add(loss, mse)
+        return loss
+    
 
 class OrdinalOutputLayer(layers.Layer):
     def __init__(self, num_classes, **kwargs):

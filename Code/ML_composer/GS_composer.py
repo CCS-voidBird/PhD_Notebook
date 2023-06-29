@@ -62,6 +62,8 @@ def get_args():
     req_grp.add_argument('-loss', '--loss', type=str, help="loss founction.", default="mse")
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     req_grp.add_argument('-plot', '--plot', dest='plot', action='store_true')
+    parser.set_defaults(epistatic=False)
+    req_grp.add_argument('-epistatic', '--epistatic', dest='epistatic matrix in Attention', action='store_true')
     parser.set_defaults(plot=False)
     req_grp.add_argument('-residual', '--residual', dest='residual', action='store_true')
     parser.set_defaults(residual=True)
@@ -184,9 +186,14 @@ class ML_composer:
         sample_reference = self._raw_data["INFO"].iloc[:,1] ## Get fam IID as reference
         snp_reference = self._raw_data["MAP"].iloc[:,:2]
         for label in ["GENO","FAM","PHENO","INDEX"]:
+            #check if samples are aligned with same order
             print(label)
+           
             if self._raw_data[label].iloc[:,1].equals(sample_reference) is False:
-                print("Samples are not aligned with same order")
+                #check if samples are aligned with same order
+                print("Samples are not aligned with same order or not the same name style.")
+                print(sample_reference.head(10))
+                print(self._raw_data[label].iloc[:,1].head(10))
                 #exit()
         if self._raw_data["GENO"].iloc[:,6:].shape[1] != snp_reference.shape[0]:
             print("SNPs are not in same length in ped file and map file")
@@ -419,7 +426,7 @@ class ML_composer:
         print("observed: ", valid_pheno[:10])
         print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))
         print("Prediction mean: {} Var: {}".format(np.mean(y_pred_valid),np.var(y_pred_valid)))
-        print("The estimated proportion of variance explained by linear and non-linear is: ",self._model["TRAINED_MODEL"].layers[2].get_weights())
+        #print("The estimated proportion of variance explained by linear and non-linear is: ",self._model["TRAINED_MODEL"].layers[2].get_weights())
         mse = mean_squared_error(y_pred_valid, valid_pheno)
 
         print("Validate prediction accuracy (measured as Pearson's correlation) is: ",

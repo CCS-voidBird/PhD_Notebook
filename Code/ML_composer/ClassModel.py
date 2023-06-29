@@ -19,6 +19,12 @@ def step_decay(epoch):
     lr = initial_lr * drop_rate ** (epoch // epochs_drop)
     return lr
 '''
+loss_fn = {
+    "mse": "mse",
+    "mae": "mae",
+    "cor_mse": Cor_mse_loss().loss,
+}
+
 class LearningRateLogger(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         lr = self.model.optimizer.lr(self.model.optimizer.iterations)
@@ -1050,7 +1056,7 @@ class MultiLevelAttention(NN):
         if annotation is None:
 
             X = layers.ZeroPadding1D(padding=(0, zero_padding))(input1)
-            V = layers.LocallyConnected1D(filters=args.locallyConnect, kernel_size=args.locallyBlock, strides=1, activation=activation,padding="valid")(X)
+            V = layers.LocallyConnected1D(filters=args.locallyConnect, kernel_size=args.locallyBlock, strides=args.locallyBlock, activation=activation,padding="valid")(X)
             #Xhet = BinaryConversionLayer(condition=lambda x: x == 1.0)(X)
             #X = layers.LocallyConnected2D(filters=1,kernel_size=(1,2),strides=1,activation="relu", padding="valid")(Xhet)
             #Xhet = layers.Conv2D(filters=1,kernel_size=(1,2),strides=1,activation="relu", padding="valid",use_bias=False)(Xhet)
@@ -1094,7 +1100,7 @@ class MultiLevelAttention(NN):
         """
         # train and get guide attention for actual phenotypes
         for attention_block in range(args.AttentionBlock):
-            M1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,use_bias=False)(V)
+            M1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,use_bias=False,epi_genomic=self.args.epistatic)(V)
             V = layers.Add()([M1, V]) ## Epistatic + Additive
             V = layers.LayerNormalization()(V)
             #V = layers.Dropout(0.1)(V)
@@ -1147,7 +1153,7 @@ class MultiLevelAttention(NN):
             model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
         else:
 
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=self.args.loss, metrics=['acc'])
+            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=['acc'])
             #model.compile(optimizer=optimizers[optimizer], loss=self.args.loss, metrics=['acc'])
 
         # QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
