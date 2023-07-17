@@ -474,48 +474,52 @@ class NCNN(NN):
 
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
-        input1 = layers.Input(shape=input_shape)
-        X = layers.Conv1D(64, kernel_size=5, strides=3, padding='same', activation=act_fn[args.activation])(input1)
+
+        """
+        Convolutional Layers
+        model = Sequential()
+        model.add(Conv1D(64, kernel_size=5, strides=3, padding='valid', activation='elu',
+                         input_shape=input_shape))
+        model.add(MaxPooling1D(pool_size=2))
+
+        model.add(Conv1D(128, kernel_size=3, strides=3, padding='valid', activation='elu'))
+        model.add(MaxPooling1D(pool_size=2))
+
+        # Randomly dropping 20%  sets input units to 0 each step during training time helps prevent overfitting
+        model.add(Dropout(rate=0.2))
+
+        model.add(Flatten())
+
+        # Full connected layers, classic multilayer perceptron (MLP)
+        for i in range(args.depth):
+            model.add(Dense(args.width, activation="elu"))
+        model.add(Dropout(0.2))
+        model.add(Dense(1, activation="linear"))  # The output layer uses a linear function to predict traits.
+        """
+        input = layers.Input(shape=input_shape)
+        X = layers.Conv1D(64, kernel_size=50, strides=10, padding='same', activation='relu',use_bias=False)(input)
         X = layers.BatchNormalization()(X)
-        X = layers.MaxPooling1D(pool_size=2,strides=1)(X)
+        X = layers.MaxPooling1D(pool_size=5)(X)
        
 
-        X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
-        X = layers.BatchNormalization()(X)
-        X = layers.MaxPooling1D(pool_size=2,strides=1)(X)
+        X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
+        X = layers.MaxPooling1D(pool_size=2)(X)
         print(X.shape)
-        #X = layers.Conv1D(256, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
-        #X = layers.Conv1D(256, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
-        #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
-        #X = layers.MaxPooling1D(pool_size=3,strides=1)(X)
-        #X = layers.Dropout(rate=0.2)(X)
-        X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation=act_fn[self.args.activation])(X)
-        #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
-        #D = layers.LayerNormalization()(M)
-        #M = layers.Dropout(0.5)(M)
-        D = layers.Activation("sigmoid")(M)
-        D = layers.Flatten()(D)
-        D = layers.Dense(1, activation="linear")(D)
-
-        M = layers.GlobalAveragePooling1D()(M)
-        M = layers.Flatten()(M)
-        #M = layers.Dense(1, activation="linear")(M)
-        #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
-        #QV_output = layers.Concatenate(axis=-1)([M, D])
-        #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
-        GEBV = layers.Add()([M, D])
+        #X = layers.MaxPooling1D(pool_size=2)(X)
+        X = layers.Dense(128,activation='linear',use_bias=False)(X)
+        X = layers.Dense(5,activation='linear')(X)
+        X = layers.Flatten()(X)
         '''
         for i in range(args.depth):
             X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
         '''
-        #X = layers.Dropout(rate=0.2)(X)
-        #X1 = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
-        #non_linear_output = layers.Dense(1, activation="linear")(X1)
-        #linear_output = layers.Dense(1, activation="linear")(X)
-        #output1 = layers.Add()([non_linear_output, linear_output])
+        X = layers.Dropout(rate=0.2)(X)
+        X1 = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
+        non_linear_output = layers.Dense(1, activation="linear")(X1)
+        linear_output = layers.Dense(1, activation="linear")(X)
+        output = layers.Add()([non_linear_output, linear_output])
 
-        model = keras.Model(inputs=input1, outputs=[GEBV])
+        model = keras.Model(inputs=input, outputs=output)
 
         try:
             adm = keras.optimizers.Adam(learning_rate=lr)
@@ -530,12 +534,7 @@ class NCNN(NN):
                       "Adam": adm,
                       "SGD": sgd}
 
-        if self.args.data_type == "ordinal":
-            loss_class = Ordinal_loss(self.args.classes)
-            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
-        else:
-
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=['acc'])
+        model.compile(optimizer=optimizers[optimizer], loss=self.args.loss)
 
         """
         Optimizers: Adam, RMSProp, SGD 
@@ -1067,8 +1066,8 @@ class MultiLevelAttention(NN):
 
             X = layers.ZeroPadding1D(padding=(0, zero_padding))(input1)
             V = layers.LocallyConnected1D(filters=args.locallyConnect, kernel_size=args.locallyBlock, strides=args.locallyBlock,activation=act_fn[self.args.activation],padding="valid",use_bias=False)(X)
-            #C = layers.Conv1D(args.locallyConnect,kernel_size=10, strides=1, activation=act_fn[self.args.activation], padding="same",use_bias=False)(V)
-            #V = layers.Add()([V,C])
+            #V = layers.Conv1D(args.locallyConnect,kernel_size=args.locallyBlock, strides=1+args.locallyBlock//2, activation=act_fn[self.args.activation], padding="valid",use_bias=False)(X)
+
             #Xhet = BinaryConversionLayer(condition=lambda x: x == 1.0)(X)
             #X = layers.LocallyConnected2D(filters=1,kernel_size=(1,2),strides=1,activation="relu", padding="valid")(Xhet)
             #Xhet = layers.Conv2D(filters=1,kernel_size=(1,2),strides=1,activation="relu", padding="valid",use_bias=False)(Xhet)
@@ -1111,16 +1110,16 @@ class MultiLevelAttention(NN):
         """
         # train and get guide attention for actual phenotypes
         for attention_block in range(args.AttentionBlock):
-            V1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,epi_genomic=self.args.epistatic)(V)
-            #V1 = layers.Add()([V1, V]) ## Epistatic + Additive
-            #V1 = layers.BatchNormalization()(V1)
+            V = MultiLevel_BlockAttention(args.num_heads, return_attention=False,epi_genomic=self.args.epistatic)(V)
+            #V = layers.Add()([M1, V]) ## Epistatic + Additive
+            #V = layers.LayerNormalization()(V)
             #V = layers.Dropout(0.1)(V)
-            V = layers.Dense(embed,activation=act_fn[self.args.activation])(V1)
-            #V1 = layers.Add()([V, V1]) ## Epistatic + Additive
-            #V = layers.BatchNormalization()(V1)
+            V = layers.Dense(embed,activation=act_fn[self.args.activation])(V)
+            #V = layers.Add()([M, V]) ## Epistatic + Additive
+            #V = layers.LayerNormalization()(V)
             #V = layers.Dropout(0.1)(V)
         
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(V)
+        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation=act_fn[self.args.activation])(V)
         #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
         #D = layers.LayerNormalization()(M)
         #M = layers.Dropout(0.5)(M)
@@ -1134,10 +1133,9 @@ class MultiLevelAttention(NN):
         #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
         #QV_output = layers.Concatenate(axis=-1)([M, D])
         #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
-        GEBV = layers.Add()([M, D])
-        #QV_output = AddingLayer_with_bias()(GEBV)
+        QV_output = layers.Add()([M, D])
 
-        model = keras.Model(inputs=input1, outputs=[GEBV])
+        model = keras.Model(inputs=input1, outputs=[QV_output])
         if self.args.data_type == "ordinal":
             loss_class = Ordinal_loss(self.args.classes)
             model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])

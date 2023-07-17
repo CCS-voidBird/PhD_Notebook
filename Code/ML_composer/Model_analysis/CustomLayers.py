@@ -178,22 +178,6 @@ class Expression_level_encoding(layers.Layer):
 
         return tf.add(X1,X2)
 
-class AddingLayer_with_bias(layers.Layer):
-
-    def __init__(self,**kwargs):
-        super(AddingLayer_with_bias, self).__init__(**kwargs)
-
-    def build(self, input_shape):
-        
-        self.Mbias = self.add_weight(
-            shape=(1,),name='pesudo_mean_bias'
-        )
-
-    def call(self, inputs):
-        ## sum all the inputs and bias
-
-        X = tf.add(inputs,self.Mbias)
-        return X
 
 
 class PositionalEncoding(layers.Layer):
@@ -717,7 +701,6 @@ class MultiLevel_BlockAttention(layers.Layer):
         #value = tf.einsum('bsd,dd->bsd', x, self.v_ld)
         if isinstance(x,list) and len(x) >= 2:
             X,residual_score,attention_guide = x
-            quit()
         else:
             X = x
             residual_score = None
@@ -760,9 +743,9 @@ class MultiLevel_BlockAttention(layers.Layer):
 
         # multiply last two dimensions with Wepigenome
         if self.epi_genomic:
-            #attention = tf.multiply(attention, diag_mask)
+            attention = tf.multiply(attention, diag_mask)
             attention = tf.multiply(attention, self.Wepigenome)
-            #attention = tf.add(attention, tf.eye(self.seq_length,dtype=tf.float32))
+            attention = tf.add(attention, tf.eye(self.seq_length,dtype=tf.float32))
         #Check multiply outcome
         effect = tf.matmul(attention, value)
         #effect = tf.add(epi_effect,value)
@@ -795,7 +778,6 @@ class MultiLevel_BlockAttention(layers.Layer):
         config = {'annotation': self.annotation,
                   'num_heads': self.head_num,
                   'use_bias': self.use_bias,
-                  'epi_genomic': self.epi_genomic,
                   'return_attention': self.return_attention}
         return config
     

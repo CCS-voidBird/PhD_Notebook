@@ -426,7 +426,7 @@ class ML_composer:
         print("observed: ", valid_pheno[:10])
         print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))
         print("Prediction mean: {} Var: {}".format(np.mean(y_pred_valid),np.var(y_pred_valid)))
-        print("The estimated proportion of variance explained by linear and non-linear is: ",self._model["TRAINED_MODEL"].layers[-1].get_weights())
+        #print("The estimated proportion of variance explained by linear and non-linear is: ",self._model["TRAINED_MODEL"].layers[2].get_weights())
         mse = mean_squared_error(y_pred_valid, valid_pheno)
 
         print("Validate prediction accuracy (measured as Pearson's correlation) is: ",
