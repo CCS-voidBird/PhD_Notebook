@@ -64,9 +64,11 @@ def get_args():
     req_grp.add_argument('-plot', '--plot', dest='plot', action='store_true')
     parser.set_defaults(epistatic=False)
     req_grp.add_argument('-epistatic', '--epistatic', dest='epistatic', action='store_true')
+    parser.set_defaults(addNorm=False)
+    req_grp.add_argument('-addNorm', '--addNorm', dest='addNorm', action='store_true')
     parser.set_defaults(plot=False)
     req_grp.add_argument('-residual', '--residual', dest='residual', action='store_true')
-    parser.set_defaults(residual=True)
+    parser.set_defaults(residual=False)
     req_grp.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=2)
     req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=True)
@@ -86,19 +88,62 @@ def get_args():
 
 def plot_loss_history(h, title,plot_name=None,checkpoint=0):
     print("Plotting loss history...")
-    plt.plot(h.history['loss'][5:], label = "Train loss", color = "blue")
-    plt.plot(h.history['val_loss'][5:], label = "Validation loss", color = "red")
-    plt.xlabel('Epochs')
-    plt.title(title)
+    hist_df = pd.DataFrame(h.history)
+    hist_df['round'] = abs(checkpoint)
+    hist_df['epoch'] = hist_df.index
+    checkpoint = abs(checkpoint)
+    try:
+        history_record = pd.read_csv(plot_name+"_history.csv", sep="\t")
+        history_record = history_record.append(hist_df)
+        history_record.to_csv(plot_name+"_history.csv", sep="\t",index=False)
+    except:
+        hist_df.to_csv(plot_name+"_history.csv", sep="\t",index=False)
+
+
+    plot_name_loss=plot_name+"_"+str(checkpoint)+"_loss.png"
+    fig, axs = plt.subplots(2, 1)
+    axs[0].plot(h.history['loss'][5:], label = "Train loss", color = "blue")
+    axs[0].plot(h.history['val_loss'][5:], label = "Validation loss", color = "red")
+    axs[0].set_ylabel("MSE")
+
+    axs[1].plot(h.history['p_corr'][5:], label = "Train cor", color = "blue")
+    axs[1].plot(h.history['val_p_corr'][5:], label = "Validation cor", color = "red")
+    axs[1].set_xlabel('Epochs')
+    axs[1].set_ylabel("Pearson's Correlation")
+    fig.suptitle(title)
+    #print plot name
+    print("Plot name: ", plot_name)
+    if plot_name:
+        plt.legend()
+        plt.savefig(plot_name_loss)
+        plt.close()
+
+        #read history csv file from path
+        
+
+    else:
+        return
+    
+    
+    #plt.show()
+
+def plot_corr_history(h, title,plot_name=None,checkpoint=0):
+    
+    print("Plotting correlation history...")
+    plot_name_corr=plot_name+"_corr.png"
+    corr_plot = plt.figure()
+    corr_plot.plot(h.history['p_corr'][5:], label = "Train cor", color = "blue")
+    corr_plot.plot(h.history['val_p_corr'][5:], label = "Validation cor", color = "red")
+    corr_plot.xlabel('Epochs')
+    corr_plot.title(title)
     #print plot name
     print("Plot name: ", plot_name)
     if plot_name and checkpoint == 0:
         #plt.legend()
-        plt.savefig(plot_name)
-        plt.close()
+        corr_plot.savefig(plot_name_corr)
+        corr_plot.close()
     else:
         pass
-    #plt.show()
 
 lr_opt = keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=10, verbose=0, mode='auto', min_delta=0.005, cooldown=0, min_lr=0)
 
@@ -393,7 +438,7 @@ class ML_composer:
                 if not os.path.exists(plot_dir):
                     os.makedirs(plot_dir)
                 # create a file name for the plot: path, model name, trait and round
-                plot_name = plot_dir + "/{}_{}_{}.png".format(self.args.trait, self.model_name, val)
+                plot_name = plot_dir + "/{}_{}_{}".format(self.args.trait, self.model_name, val)
                 # plot_name = os.path.abspath(self.args.output) + "/" + self.args.model + "_" + self.args.trait + "_" + str(round) + ".png"
                 plot_loss_history(history, self.args.trait, plot_name,round-self.args.round)
 

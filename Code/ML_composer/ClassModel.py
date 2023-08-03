@@ -41,6 +41,10 @@ class LearningRateLogger(keras.callbacks.Callback):
 
 lr_logger = LearningRateLogger()
 
+def p_corr(y_true, y_pred):
+    pearson_correlation = tfp.stats.correlation(y_true, y_pred)
+    return pearson_correlation
+
 class Residual(Layer):
     def __init__(self, channels_in,kernel,**kwargs):
         super(Residual, self).__init__(**kwargs)
@@ -61,6 +65,11 @@ class Residual(Layer):
     def compute_output_shape(self, input_shape):
         return input_shape
 
+def add_normalization(x,x1=None,norm_switch=False):
+    if norm_switch is True:
+        x = layers.Add()([x,x1])
+        x = layers.BatchNormalization()(x)
+    return x
 
 ####################
 
@@ -458,10 +467,7 @@ class NCNN(NN):
 
     def model_name(self):
         #get class name
-        if self.args.residual is True:
-            return "Res"+self.__class__.__name__
-        else:
-            return self.__class__.__name__
+        return self.__class__.__name__
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
         print("USE Numeric CNN MODEL as training method")
@@ -476,35 +482,33 @@ class NCNN(NN):
         lr = float(lr)
         input1 = layers.Input(shape=input_shape)
         X = layers.Conv1D(64, kernel_size=5, strides=3, padding='same', activation=act_fn[args.activation])(input1)
-        X = layers.BatchNormalization()(X)
-        X = layers.MaxPooling1D(pool_size=2,strides=1)(X)
+        X = add_normalization(X,input1,norm_switch=self.args.addNorm)
+        X1 = layers.MaxPooling1D(pool_size=2,strides=1)(X)
        
-
-        X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
-        X = layers.BatchNormalization()(X)
+        X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X1)
+        X = add_normalization(X,X1,norm_switch=self.args.addNorm)
         X = layers.MaxPooling1D(pool_size=2,strides=1)(X)
-        print(X.shape)
+        #X = layers.Dense(1, activation=act_fn[args.activation])(X)
         #X = layers.Conv1D(256, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
         #X = layers.Conv1D(256, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
         #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
         #X = layers.MaxPooling1D(pool_size=3,strides=1)(X)
         #X = layers.Dropout(rate=0.2)(X)
+        X = layers.Flatten()(X)
         X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation=act_fn[self.args.activation])(X)
-        #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
-        #D = layers.LayerNormalization()(M)
-        #M = layers.Dropout(0.5)(M)
-        D = layers.Activation("sigmoid")(M)
-        D = layers.Flatten()(D)
-        D = layers.Dense(1, activation="linear")(D)
-
-        M = layers.GlobalAveragePooling1D()(M)
-        M = layers.Flatten()(M)
+        X = tf.expand_dims(X, axis=-1)
+        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation='linear')(X)
+        GEBV = layers.GlobalAveragePooling1D()(M)
+        GEBV = layers.Flatten()(GEBV)
         #M = layers.Dense(1, activation="linear")(M)
         #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
         #QV_output = layers.Concatenate(axis=-1)([M, D])
         #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
-        GEBV = layers.Add()([M, D])
+        if self.args.residual is True:
+            D = layers.Activation("sigmoid")(M)
+            D = layers.Flatten()(D)
+            D = layers.Dense(1, activation="linear")(D)
+            GEBV = layers.Add()([GEBV, D])
         '''
         for i in range(args.depth):
             X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
@@ -535,15 +539,14 @@ class NCNN(NN):
             model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
         else:
 
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=['acc'])
+            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr])
 
         """
         Optimizers: Adam, RMSProp, SGD 
         """
 
         return model
-
-    
+   
 class BCNN():
 
     def __init__(self):
@@ -607,10 +610,10 @@ class BCNN():
 
         return model
 
-
-class MLP():
+class MLP(NN):
 
     def __init__(self,args):
+        super(MLP,self).__init__(args)
         self.args = args
         self.name = "MLP"
 
@@ -628,6 +631,56 @@ class MLP():
         return geno,pheno
 
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+
+        lr = float(lr)
+        input1 = layers.Input(shape=input_shape)
+        X = fullyConnectted_block(input1, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
+        X = tf.expand_dims(X, axis=-1)
+        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation='linear')(X)
+        GEBV = layers.GlobalAveragePooling1D()(M)
+        GEBV = layers.Flatten()(GEBV)
+        #M = layers.Dense(1, activation="linear")(M)
+        #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
+        #QV_output = layers.Concatenate(axis=-1)([M, D])
+        #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
+        if self.args.residual is True:
+            D = layers.Activation("sigmoid")(M)
+            D = layers.Flatten()(D)
+            D = layers.Dense(1, activation="linear")(D)
+            GEBV = layers.Add()([GEBV, D])
+        '''
+        for i in range(args.depth):
+            X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
+        '''
+        #X = layers.Dropout(rate=0.2)(X)
+        #X1 = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
+        #non_linear_output = layers.Dense(1, activation="linear")(X1)
+        #linear_output = layers.Dense(1, activation="linear")(X)
+        #output1 = layers.Add()([non_linear_output, linear_output])
+
+        model = keras.Model(inputs=input1, outputs=[GEBV])
+
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        if self.args.data_type == "ordinal":
+            loss_class = Ordinal_loss(self.args.classes)
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
+        else:
+
+            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr])
+
+        """       
         model = Sequential()
         model.add(Dense(args.width, activation="elu", input_shape=input_shape))
         for layers in range(args.depth - 1):
@@ -650,7 +703,7 @@ class MLP():
                       "SGD": sgd}
 
         model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
-
+        """
         return model
 
 class Double_MLP():
@@ -1124,17 +1177,17 @@ class MultiLevelAttention(NN):
         #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
         #D = layers.LayerNormalization()(M)
         #M = layers.Dropout(0.5)(M)
-        D = layers.Activation("sigmoid")(M)
-        D = layers.Flatten()(D)
-        D = layers.Dense(1, activation="linear")(D)
+        #D = layers.Activation("sigmoid")(M)
+        #D = layers.Flatten()(D)
+        #D = layers.Dense(1, activation="linear")(D)
 
         M = layers.GlobalAveragePooling1D()(M)
-        M = layers.Flatten()(M)
+        GEBV = layers.Flatten()(M)
         #M = layers.Dense(1, activation="linear")(M)
         #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
         #QV_output = layers.Concatenate(axis=-1)([M, D])
         #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
-        GEBV = layers.Add()([M, D])
+        #GEBV = layers.Add()([M, D])
         #QV_output = AddingLayer_with_bias()(GEBV)
 
         model = keras.Model(inputs=input1, outputs=[GEBV])
@@ -1198,7 +1251,7 @@ class MultiLevelNN(NN):
 
 
 MODELS = {
-    "MLP": Double_MLP,
+    "MLP": MLP,
     "Numeric CNN": NCNN,
     "Binary CNN": BCNN,
     "Test CNN":Transformer,
