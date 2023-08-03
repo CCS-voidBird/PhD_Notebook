@@ -102,12 +102,12 @@ def plot_loss_history(h, title,plot_name=None,checkpoint=0):
 
     plot_name_loss=plot_name+"_"+str(checkpoint)+"_loss.png"
     fig, axs = plt.subplots(2, 1)
-    axs[0].plot(h.history['loss'][5:], label = "Train loss", color = "blue")
-    axs[0].plot(h.history['val_loss'][5:], label = "Validation loss", color = "red")
+    axs[0].plot(h.history['loss'][1:], label = "Train loss", color = "blue")
+    axs[0].plot(h.history['val_loss'][1:], label = "Validation loss", color = "red")
     axs[0].set_ylabel("MSE")
 
-    axs[1].plot(h.history['p_corr'][5:], label = "Train cor", color = "blue")
-    axs[1].plot(h.history['val_p_corr'][5:], label = "Validation cor", color = "red")
+    axs[1].plot(h.history['p_corr'][1:], label = "Train cor", color = "blue")
+    axs[1].plot(h.history['val_p_corr'][1:], label = "Validation cor", color = "red")
     axs[1].set_xlabel('Epochs')
     axs[1].set_ylabel("Pearson's Correlation")
     fig.suptitle(title)
