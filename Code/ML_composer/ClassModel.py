@@ -67,7 +67,7 @@ class Residual(Layer):
 
 def add_normalization(x,x1=None,norm_switch=False):
     if norm_switch is True:
-        x = layers.Add()([x,x1])
+        #x = layers.Add()([x,x1])
         x = layers.BatchNormalization()(x)
     return x
 
@@ -495,6 +495,7 @@ class NCNN(NN):
         #X = layers.MaxPooling1D(pool_size=3,strides=1)(X)
         #X = layers.Dropout(rate=0.2)(X)
         X = layers.Flatten()(X)
+        X = layers.Dropout(rate=0.2)(X)
         X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
         X = tf.expand_dims(X, axis=-1)
         M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation='linear')(X)
@@ -1177,26 +1178,26 @@ class MultiLevelAttention(NN):
         #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
         #D = layers.LayerNormalization()(M)
         #M = layers.Dropout(0.5)(M)
-        #D = layers.Activation("sigmoid")(M)
-        #D = layers.Flatten()(D)
-        #D = layers.Dense(1, activation="linear")(D)
+        D = layers.Activation("sigmoid")(M)
+        D = layers.Flatten()(D)
+        D = layers.Dense(1, activation="linear")(D)
 
         M = layers.GlobalAveragePooling1D()(M)
-        GEBV = layers.Flatten()(M)
+        M = layers.Flatten()(M)
         #M = layers.Dense(1, activation="linear")(M)
         #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
         #QV_output = layers.Concatenate(axis=-1)([M, D])
         #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
-        #GEBV = layers.Add()([M, D])
+        GEBV = layers.Add()([M, D])
         #QV_output = AddingLayer_with_bias()(GEBV)
 
         model = keras.Model(inputs=input1, outputs=[GEBV])
         if self.args.data_type == "ordinal":
             loss_class = Ordinal_loss(self.args.classes)
-            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=[p_corr])
         else:
 
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=['acc'])
+            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr])
             #model.compile(optimizer=optimizers[optimizer], loss=self.args.loss, metrics=['acc'])
 
         # QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
