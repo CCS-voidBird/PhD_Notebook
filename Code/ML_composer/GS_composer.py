@@ -2,6 +2,7 @@
 
 from Functions import *
 from ClassModel import *
+from GS_interpretation import *
 import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -26,15 +27,8 @@ import os
 ##Training by para-sets -- convolutional act function + full connected act function + optimizer + learningRate###
 ##Output format: an table with mean accuracy for each para set; A density plot for each accuracy##########
 #################################################################
-CNNs = ["CNN","TDCNN","DeepGS"]
-PATIENCE = 100
-"""
-GENO_PATH = "E:\learning resource\PhD\geno_data1.csv"
-PHENO_PATH = "E:\learning resource\PhD\phenotypes.csv"
 
-TRAIN_PATH = "E:/learning resource/PhD/sugarcane/2015_TCHBlup_2000.csv"
-VALID_PATH = "E:/learning resource/PhD/sugarcane/2016_TCHBlup_2000.csv"
-"""
+
 def get_args():
     parser = argparse.ArgumentParser()
     req_grp = parser.add_argument_group(title='Required')
@@ -62,7 +56,9 @@ def get_args():
     req_grp.add_argument('-loss', '--loss', type=str, help="loss founction.", default="mse")
     req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     req_grp.add_argument('-plot', '--plot', dest='plot', action='store_true')
-    parser.set_defaults(epistatic=False)
+    parser.set_defaults(plot=False)
+    req_grp.add_argument('-analysis', '--analysis', dest='analysis', action='store_true')
+    parser.set_defaults(analysis=False)
     req_grp.add_argument('-epistatic', '--epistatic', dest='epistatic', action='store_true')
     parser.set_defaults(addNorm=False)
     req_grp.add_argument('-addNorm', '--addNorm', dest='addNorm', action='store_true')
@@ -193,6 +189,7 @@ class ML_composer:
         self._raw_data["INDEX"] = pd.read_table(args.index,delim_whitespace=True,header=None)
         self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,delim_whitespace=True) if args.annotation is not None else None
         self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique())
+        self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
         self.batchSize = args.batch
         print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
@@ -340,8 +337,6 @@ class ML_composer:
             except:
                 "Model plotting function error"
 
-        #callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=PATIENCE)
-
         try:
             print(self._model["TRAINED_MODEL"].summary())
         except:
@@ -403,7 +398,7 @@ class ML_composer:
         #print("feature shape:",features_train.shape)
 
         round = 1
-        val_record = 0
+        val_record = -1
         while round <= self.args.round:
             self._model["TRAINED_MODEL"] = None
             keras.backend.clear_session()
@@ -426,6 +421,12 @@ class ML_composer:
                         print("h5 Model saved.")
                     except:
                         print("Saving model failed, tring directly save by using self._model[\"TRAINED_MODEL\"].save")
+                if self.args.analysis is True:
+                    print("Start analysis model...")
+                    investigate_model(model = self._model["TRAINED_MODEL"],
+                                      model_path=os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,val),
+                                      marker_dim=self._info["MARKER_SIZE"])
+
             self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
                                test_accuracy, valid_accuracy, mse, runtime.seconds / 60]
             check_usage()
