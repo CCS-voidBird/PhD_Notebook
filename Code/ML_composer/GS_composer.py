@@ -31,50 +31,59 @@ import os
 
 def get_args():
     parser = argparse.ArgumentParser()
-    req_grp = parser.add_argument_group(title='Required')
-    req_grp.add_argument('--ped', type=str, help="PED-like file name", required=True)
-    req_grp.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.", required=True)
-    req_grp.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns (start with 1).", default=1)
-    req_grp.add_argument('-index', '--index', type=str, help="index file", default = None)
-    req_grp.add_argument('-vindex', '--vindex', type=int, help="index for validate", default = None)
-    req_grp.add_argument('-annotation', '--annotation', type=str, help="annotation file,1st row as colname", default=None)
-    req_grp.add_argument('--model', type=str, help="Select training model.", required=True)
-    req_grp.add_argument('--load', type=str, help="load model from file.", default=None)
-    req_grp.add_argument('--trait', type=str, help="give trait a name.", default=None)
-    req_grp.add_argument('--data-type', type=str, help="Trait type (numerous, ordinal, binary)", default="numerous")
-    req_grp.add_argument('-o', '--output', type=str, help="Input output dir.")
-    req_grp.add_argument('-r', '--round', type=int, help="training round.", default=10)
-    req_grp.add_argument('-lr', '--lr', type=float, help="Learning rate.", default=0.0001)
-    req_grp.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
-    req_grp.add_argument('--num-heads', type=int, help="(Only for multi-head attention)Number of heads.", default=1)
-    req_grp.add_argument('--activation', type=str, help="Activation function for hidden Dense layer.", default='relu')
-    req_grp.add_argument('--embedding', type=int, help="(Only for multi-head attention)Embedding length (default as 8)", default=8)
-    req_grp.add_argument('--locallyConnect', type=int, help="(Only work with locally connected layers)locallyConnect channel (default as 1)", default=1)
-    req_grp.add_argument('--locallyBlock', type=int, help="(Only work with locally connected layers)locallyBlock length (default as 10)", default=10)
-    req_grp.add_argument('--AttentionBlock', type=int, help="(Only work with Attention layers)AttentionBlock numbers (default as 1)", default=1)
-    req_grp.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
-    req_grp.add_argument('-loss', '--loss', type=str, help="loss founction.", default="mse")
-    req_grp.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
-    req_grp.add_argument('-plot', '--plot', dest='plot', action='store_true')
-    parser.set_defaults(plot=False)
-    req_grp.add_argument('-analysis', '--analysis', dest='analysis', action='store_true')
+    general = parser.add_argument_group(title='General')
+    general.add_argument('--ped', type=str, help="PED-like file name")
+    general.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.")
+    general.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns (start with 1).", default=1)
+    general.add_argument('-index', '--index', type=str, help="index file", default = None)
+    general.add_argument('-vindex', '--vindex', type=int, help="index for validate", default = None)
+    general.add_argument('-annotation', '--annotation', type=str, help="annotation file,1st row as colname", default=None)
+    general.add_argument('-o', '--output', type=str, help="Input output dir.",default="./Composed")
+    general.add_argument('--trait', type=str, help="give trait a name.", default=None)
+
+    task_opts = parser.add_argument_group(title='Task Options')
+    task_opts.add_argument('-build', "--build", help="Full model process.", dest='analysis', action='store_true')
+    parser.set_defaults(build=False)
+    task_opts.add_argument('-analysis', '--analysis', dest='analysis', action='store_true')
     parser.set_defaults(analysis=False)
-    req_grp.add_argument('-epistatic', '--epistatic', dest='epistatic', action='store_true')
-    parser.set_defaults(addNorm=False)
-    req_grp.add_argument('-addNorm', '--addNorm', dest='addNorm', action='store_true')
+    
+    build_args = parser.add_argument_group(title='Model Options')
+    ### Neural model default attributes##
+    build_args.add_argument('--width', type=int, help="FC layer width (units).", default=8)
+    build_args.add_argument('--depth', type=int, help="FC layer depth.", default=4)
+
+    build_args.add_argument('--use-mean', dest='mean', action='store_true')
+    build_args.add_argument('--model', type=str, help="Select training model from {}.".format(", ".join(MODELS.keys())))
+    build_args.add_argument('--load', type=str, help="load model from file.", default=None)
+    build_args.add_argument('--data-type', type=str, help="Trait type (numerous, ordinal, binary)", default="numerous")
+    build_args.add_argument('-r', '--round', type=int, help="training round.", default=10)
+    build_args.add_argument('-lr', '--lr', type=float, help="Learning rate.", default=0.0001)
+    build_args.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
+    build_args.add_argument('--num-heads', type=int, help="(Only for multi-head attention) Number of heads, currently only recommand 1 head.", default=1)
+    build_args.add_argument('--activation', type=str, help="Activation function for hidden Dense layer.", default='relu')
+    build_args.add_argument('--embedding', type=int, help="(Only for multi-head attention) Embedding length (default as 8)", default=8)
+    build_args.add_argument('--locallyConnect', type=int, help="(Only work with locally connected layers) locallyConnect Channels (default as 1)", default=1)
+    build_args.add_argument('--locallyBlock', type=int, help="(Only work with locally connected layers) Length of locallyBlock segment (default as 10)", default=10)
+    build_args.add_argument('--AttentionBlock', type=int, help="(Only work with Attention layers) AttentionBlock numbers (default as 1)", default=1)
+    build_args.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
+    build_args.add_argument('-loss', '--loss', type=str, help="loss founction.", default="mse")
+    build_args.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
+    build_args.add_argument('-plot', '--plot', dest='plot', action='store_true')
     parser.set_defaults(plot=False)
-    req_grp.add_argument('-residual', '--residual', dest='residual', action='store_true')
+
+    build_args.add_argument('-epistatic', '--epistatic', dest='epistatic', action='store_true')
+    parser.set_defaults(addNorm=False)
+    build_args.add_argument('-addNorm', '--addNorm', dest='addNorm', action='store_true')
+    parser.set_defaults(plot=False)
+    build_args.add_argument('-residual', '--residual', dest='residual', action='store_true')
     parser.set_defaults(residual=False)
-    req_grp.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=2)
-    req_grp.add_argument('-save', '--save', type=bool, help="save model True/False",
+    build_args.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=2)
+    build_args.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=True)
-    req_grp.add_argument('-config', '--config', type=str, help='config file path, default: ./ML_composer.ini',
+    build_args.add_argument('-config', '--config', type=str, help='config file path, default: ./ML_composer.ini',
                          default="./ML_composer.ini")
 
-    ### Neural model default attributes##
-    req_grp.add_argument('--width', type=int, help="Hidden layer width (units).", default=8)
-    req_grp.add_argument('--depth', type=int, help="Hidden layer depth.", default=4)
-    parser.add_argument('--use-mean', dest='mean', action='store_true')
+    
     parser.set_defaults(mean=False)
 
     args = parser.parse_args()
@@ -219,7 +228,7 @@ class ML_composer:
 
     def sort_data(self):
         """
-        Sort raw data as plink manner
+        Sort raw data as plink format
         FID,IID,father,mother,sex,pheno --> fam
         Chromosome, Variant ID, position, base pair --> map
         """
@@ -555,18 +564,26 @@ def main():
     with open(locat + 'args.txt', 'w') as f:
         f.write(str(args))
 
-    composer = ML_composer(args=args)
-    composer.get_data(configer=None,args=args)
+    
+    if args.build is True:
+        composer = ML_composer(args=args)
+        composer.get_data(configer=None,args=args)
+
+        index_ref = composer.prepare_cross_validate()
+        i = 1
+        for train_idx,valid_idx in index_ref:
+            print("Cross-validate: {},{}".format(i,valid_idx[0]))
+            composer.prepare_training(train_idx,valid_idx)
+            composer.compose(train_idx,valid_idx,valid_idx[0])
+            i+=1
+    elif args.analysis is True and args.load is not None and args.build is False:
+        print("Start analysis model...")
+        investigate_model(
+                        model_path=args.load)
     #composer.prepare_model()
 
 
-    index_ref = composer.prepare_cross_validate()
-    i = 1
-    for train_idx,valid_idx in index_ref:
-        print("Cross-validate: {},{}".format(i,valid_idx[0]))
-        composer.prepare_training(train_idx,valid_idx)
-        composer.compose(train_idx,valid_idx,valid_idx[0])
-        i+=1
+    
 
 if __name__ == "__main__":
     main()

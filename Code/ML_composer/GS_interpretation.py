@@ -110,6 +110,8 @@ def investigate_model(model=None,model_path=None,marker_dim=1000):
         #model.compile(optimizer="RMSprop", loss="mean_squared_error")
 
     marker_contributs = []
+    print(model.layers[0].input_shape)
+    marker_dim = model.layers[0].input_shape[-1][-2]
 
     bg0 = np.zeros((1, marker_dim,1))
     bg1 = np.ones((1, marker_dim,1))
@@ -124,7 +126,7 @@ def investigate_model(model=None,model_path=None,marker_dim=1000):
     dataset = []
 
     for bg in range(0,3):
-        print("Background: {}".format(bg))
+        print("Now creating simulated marker set under Background: {}".format(bg))
         large_matrix = []
         for allele in range(0,3):
             allele_matrix = np.full((marker_dim, marker_dim),bg,dtype=np.float32)
@@ -134,7 +136,7 @@ def investigate_model(model=None,model_path=None,marker_dim=1000):
         dataset.append(large_matrix)
 
     for bg in range(0,3):
-        print("Background: {}".format(bg))
+        print("Now estimating marker effects under Background: {}".format(bg))
         for dose in range(0,3):
             print("Analysing dose: {}".format(dose))
             gebvs = model.predict(dataset[bg][dose])
