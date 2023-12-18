@@ -42,9 +42,9 @@ def get_args():
     general.add_argument('--trait', type=str, help="give trait a name.", default=None)
 
     task_opts = parser.add_argument_group(title='Task Options')
-    task_opts.add_argument('-build', "--build", help="Full model process.", dest='analysis', action='store_true')
+    task_opts.add_argument('-build', "--build", help="Full model process.", dest='build', action='store_true')
     parser.set_defaults(build=False)
-    task_opts.add_argument('-analysis', '--analysis', dest='analysis', action='store_true')
+    task_opts.add_argument('-analysis', '--analysis', help="Analysis only process.", dest='analysis', action='store_true')
     parser.set_defaults(analysis=False)
     
     build_args = parser.add_argument_group(title='Model Options')
@@ -52,7 +52,7 @@ def get_args():
     build_args.add_argument('--width', type=int, help="FC layer width (units).", default=8)
     build_args.add_argument('--depth', type=int, help="FC layer depth.", default=4)
 
-    build_args.add_argument('--use-mean', dest='mean', action='store_true')
+    
     build_args.add_argument('--model', type=str, help="Select training model from {}.".format(", ".join(MODELS.keys())))
     build_args.add_argument('--load', type=str, help="load model from file.", default=None)
     build_args.add_argument('--data-type', type=str, help="Trait type (numerous, ordinal, binary)", default="numerous")
@@ -66,24 +66,31 @@ def get_args():
     build_args.add_argument('--locallyBlock', type=int, help="(Only work with locally connected layers) Length of locallyBlock segment (default as 10)", default=10)
     build_args.add_argument('--AttentionBlock', type=int, help="(Only work with Attention layers) AttentionBlock numbers (default as 1)", default=1)
     build_args.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
-    build_args.add_argument('-loss', '--loss', type=str, help="loss founction.", default="mse")
+    build_args.add_argument('--loss', type=str, help="loss founction from {}.".format(", ".join(loss_fn.keys())), default="mse")
     build_args.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
+    build_args.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=2)
     build_args.add_argument('-plot', '--plot', dest='plot', action='store_true')
     parser.set_defaults(plot=False)
 
     build_args.add_argument('-epistatic', '--epistatic', dest='epistatic', action='store_true')
-    parser.set_defaults(addNorm=False)
+    parser.set_defaults(epistatic=False)
+
     build_args.add_argument('-addNorm', '--addNorm', dest='addNorm', action='store_true')
-    parser.set_defaults(plot=False)
+    parser.set_defaults(addNorm=False)
+
+    build_args.add_argument('-maf', '--maf', help="Enable minor allele frequency multiplier, it will adjust genotype alleles with its MAF.", dest='maf', action='store_true')
+    parser.set_defaults(maf=False)
+
     build_args.add_argument('-residual', '--residual', dest='residual', action='store_true')
     parser.set_defaults(residual=False)
-    build_args.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=2)
+
     build_args.add_argument('-save', '--save', type=bool, help="save model True/False",
                          default=True)
+    
     build_args.add_argument('-config', '--config', type=str, help='config file path, default: ./ML_composer.ini',
                          default="./ML_composer.ini")
 
-    
+    build_args.add_argument('--use-mean', dest='mean', action='store_true')
     parser.set_defaults(mean=False)
 
     args = parser.parse_args()
@@ -199,6 +206,7 @@ class ML_composer:
         self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,delim_whitespace=True) if args.annotation is not None else None
         self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique())
         self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
+        self._info["MAF"] = self._raw_data["GENO"].iloc[:,6:].apply(lambda x: np.mean(x),axis=0)
         self.batchSize = args.batch
         print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
@@ -290,8 +298,8 @@ class ML_composer:
         train_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(train_index))[0].tolist() if x not in removal]
         valid_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(valid_index))[0].tolist() if x not in removal]
         print("Filtered population: {}".format(len(train_mask)+len(valid_mask)))
-        self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:]
-        self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:]
+        self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:] * self._info["MAF"] if self.args.maf is True else self._raw_data["GENO"].iloc[train_mask, 6:]
+        self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:] * self._info["MAF"] if self.args.maf is True else self._raw_data["GENO"].iloc[valid_mask, 6:]
 
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
         print("Mean of train phenotype:",np.mean(self.train_pheno))
