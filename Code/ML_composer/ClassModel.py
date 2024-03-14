@@ -90,6 +90,7 @@ class NN:
         self.optimizers = {"rmsprop": keras.optimizers.RMSprop,
                       "Adam": keras.optimizers.Adam,
                       "SGD": keras.optimizers.SGD}
+        self.lossfunc = loss_fn[self.args.loss] #For external validation
 
     def model_name(self):
         #get class name
