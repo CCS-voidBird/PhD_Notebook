@@ -14,6 +14,7 @@ from datetime import datetime
 from sklearn.metrics import mean_squared_error
 import gc
 import os
+
 """
 import sklearn.preprocessing
 import pickle
@@ -65,6 +66,42 @@ def plot_loss_history(h, title,plot_name=None,checkpoint=0):
         return
     
     
+def plot_correlation(predictions, observations, title,plot_name=None,checkpoint=0):
+
+    ###create clear correlation plot for predictions and observations
+
+    print("Plotting predictions and observations..")
+    hist_df = pd.DataFrame()
+    hist_df['Individual'] = [x for x in range(len(predictions))]
+    hist_df['Prediction'] = predictions
+    hist_df['Observation'] = observations
+    hist_df.sort_values(by='Observation', inplace=True)
+    try:
+        history_record = pd.read_csv(plot_name+title+"_correlation.csv", sep="\t")
+        history_record = history_record.append(hist_df)
+        history_record.to_csv(plot_name+title+"_correlation.csv", sep="\t",index=False)
+    except:
+        hist_df.to_csv(plot_name+title+"_correlation.csv", sep="\t",index=False)
+
+
+    plot_name_loss=plot_name+"_"+str(checkpoint)+title+"_correlation.png"
+    fig, axs = plt.subplots(1, 1)
+    axs[0].scatter(x=hist_df['Individual'],y=hist_df['Observation'], label = "Observation", color = "blue")
+    axs[0].scatter(x=hist_df['Individual'],y=hist_df['Prediction'], label = "Prediction", color = "red")
+    #axs[0].plot(hist_df['val_loss'][1:], label = "Validation loss", color = "red")
+    axs[0].set_ylabel(" ")
+    fig.suptitle(title)
+    #print plot name
+    print("Plot name: ", plot_name)
+    if plot_name:
+        plt.legend()
+        plt.savefig(plot_name_loss)
+        plt.close()
+        
+
+    else:
+        return
+
     #plt.show()
 
 def plot_corr_history(h, title,plot_name=None,checkpoint=0):
@@ -134,7 +171,7 @@ class ML_composer:
         self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,delim_whitespace=True) if args.annotation is not None else None
         self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique())
         self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
-        self._info["MAF"] = self._raw_data["GENO"].iloc[:,6:].apply(lambda x: np.mean(x),axis=0)
+        self._info["MAF"] = self._raw_data["GENO"].iloc[:,6:].apply(lambda x: np.mean(x)/self.args.ploidy,axis=0)
         self.batchSize = args.batch
         print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
@@ -178,16 +215,32 @@ class ML_composer:
            
             if self._raw_data[label].iloc[:,1].equals(sample_reference) is False:
                 #check if samples are aligned with same order
-                print("Samples are not aligned with same order or not the same name style.")
+                print("Samples are not aligned with same order or not the same name style, please check.")
                 print(sample_reference.head(10))
                 print(self._raw_data[label].iloc[:,1].head(10))
                 #exit()
         if self._raw_data["GENO"].iloc[:,6:].shape[1] != snp_reference.shape[0]:
             print("SNPs are not in same length in ped file and map file")
+            print("SNP length in ped file: ",self._raw_data["GENO"].iloc[:,6:].shape[1])
+            print("SNP length in map file: ",snp_reference.shape[0])
             exit()
         if self.args.annotation is not None and self._raw_data["ANNOTATION"].iloc[:,:1].equals(snp_reference) is False:
             print("SNPs in annotation file are not ordered by map file")
             #exit()
+        print("Data check passed.")
+
+        ## data quality control and filter by MAF
+        if self.args.maf > 0:
+            print("Filtering SNPs by MAF...")
+            print("Loaded SNPs: ",self._info["MARKER_SIZE"])
+            print("Filtering SNPs with MAF lower than {} with ployidy {}.".format(self.args.maf,self.args.ploidy))
+            ### Get column index of MAF >= self.args.maf 
+            selected_marker_idx = self._info["MAF"][self._info["MAF"] >= self.args.maf].index
+            print(selected_marker_idx[0:10])
+            self._raw_data["GENO"] = self._raw_data["GENO"].iloc[:,selected_marker_idx]
+            self._raw_data["MAP"] = self._raw_data["MAP"].iloc[selected_marker_idx-6,:] #update map file
+            self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
+            print("Filtered SNPs: ",self._info["MARKER_SIZE"])
 
 
     def prepare_model(self):
@@ -226,8 +279,9 @@ class ML_composer:
         train_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(train_index))[0].tolist() if x not in removal]
         valid_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(valid_index))[0].tolist() if x not in removal]
         print("Filtered population: {}".format(len(train_mask)+len(valid_mask)))
-        self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:] * self._info["MAF"] if self.args.maf is True else self._raw_data["GENO"].iloc[train_mask, 6:]
-        self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:] * self._info["MAF"] if self.args.maf is True else self._raw_data["GENO"].iloc[valid_mask, 6:]
+        print(self.args.mafm)
+        self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:] * self._info["MAF"] if self.args.mafm is True else self._raw_data["GENO"].iloc[train_mask, 6:]
+        self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:] * self._info["MAF"] if self.args.mafm is True else self._raw_data["GENO"].iloc[valid_mask, 6:]
 
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
         print("Mean of train phenotype:",np.mean(self.train_pheno))
@@ -413,14 +467,22 @@ class ML_composer:
             y_pred = np.reshape(y_pred_valid, (val_length,))
             accuracy_valid = np.corrcoef(y_pred, valid_pheno)[0, 1]
 
-        special_loss = loss_fn[self.args.loss](y_pred,valid_pheno).numpy()
+        mse = mean_squared_error(y_pred_valid, valid_pheno)
         print("Testing prediction:")
         print("Predicted: ", y_pred_valid[:10])
         print("observed: ", valid_pheno[:10])
+        plot_correlation(y_pred_valid,valid_pheno,self.args.trait,
+                         os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name, self.args.trait))
         print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))
         print("Prediction mean: {} Var: {}".format(np.mean(y_pred_valid),np.var(y_pred_valid)))
-        print("The estimated loss defined by model loss function as {} is: ".format(self.args.loss),special_loss)
-        mse = mean_squared_error(y_pred_valid, valid_pheno)
+
+        try:
+            special_loss = loss_fn[self.args.loss](y_pred,valid_pheno).numpy()
+            print("The estimated loss defined by model loss function as {} is: ".format(self.args.loss),special_loss)
+        except:
+            print("The model didn't used the special loss function (e.g. R2) or faced some issues..")
+            special_loss = mse
+        
 
         print("Validate prediction accuracy (measured as Pearson's correlation) is: ",
               accuracy_valid)
@@ -475,7 +537,9 @@ def get_model_summary(model: tf.keras.Model) -> str:
     return "\n".join(string_list)
 
 def main():
+    print("Test mode:")
     args = get_args()
+    
     '''
     config_path = os.path.abspath(args.config)
     print("Get config file path from: ", config_path)

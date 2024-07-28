@@ -98,7 +98,7 @@ class NN:
 
     def data_transform(self,geno,phenos,anno=None,pheno_standard = False):
 
-        print("USE Attention CNN MODEL as training method")
+        #print("USE Attention CNN MODEL as training method")
         geno = decoding(geno)
         geno = np.expand_dims(geno, axis=2)
         #pos = np.arrays(range(geno.shape[1]))
@@ -147,7 +147,7 @@ class Transformer(NN):
         return self.__class__.__name__
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE Numeric CNN MODEL as training method")
+        #print("USE Numeric CNN MODEL as training method")
         geno = decoding(geno)
         geno.replace(0.01, 0, inplace=True)
         #geno = np.expand_dims(geno, axis=2)
@@ -212,7 +212,7 @@ class RNN(NN):
         return self.__class__.__name__
 
     def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
-        print("USE Numeric CNN MODEL as training method")
+        #print("USE Numeric CNN MODEL as training method")
         geno = decoding(geno)
         geno.replace(0.01, 0, inplace=True)
         # geno = np.expand_dims(geno, axis=2)
@@ -687,7 +687,7 @@ class MLP(NN):
             model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
         else:
 
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_,r2_score])
+            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
 
         """       
         model = Sequential()
@@ -1103,7 +1103,7 @@ class MultiLevelAttention(NN):
 
     def data_transform(self,geno,phenos,anno=None,pheno_standard = False):
 
-        print("USE Attention CNN MODEL as training method")
+        print("USE MultiLevel Attention MODEL as training method")
         geno = decoding(geno)
         geno = np.expand_dims(geno, axis=2)
         #pos = np.arrays(range(geno.shape[1]))

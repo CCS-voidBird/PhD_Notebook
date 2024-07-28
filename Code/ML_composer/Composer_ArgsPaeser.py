@@ -1,25 +1,34 @@
 import argparse
 from ClassModel import MODELS, loss_fn
+import configparser
+import os
 
 def get_args():
     parser = argparse.ArgumentParser()
 
     general = parser.add_argument_group(title='General')
+    general.add_argument('--config', type=str, help="Config file path.", default="")
     general.add_argument('--ped', type=str, help="PED-like file name")
     general.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.")
     general.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns (start with 1).", default=1)
     general.add_argument('-index', '--index', type=str, help="index file", default = None)
     general.add_argument('-vindex', '--vindex', type=int, help="index for validate", default = None)
+    #general.add_argument('-include', '--include', type=str, help="Specify a list of SNPs to be included in the analysis.", default = None)
+    #general.add_argument('-exclude', '--exclude', type=str, help="Specify a list of SNPs to be excluded in the analysis.", default = None)
     general.add_argument('-annotation', '--annotation', type=str, help="annotation file,1st row as colname", default=None)
     general.add_argument('-o', '--output', type=str, help="Input output dir.",default="./Composed")
     general.add_argument('--trait', type=str, help="give trait a name.", default=None)
+    general.add_argument('-maf', '--maf', type=float, help="Filter shreshold for marker MAF, default is 0", default=0.0)
+    general.add_argument('-ploidy', '--ploidy', type=int, help="Ploidy for marker MAF, default is 2", default=2)
 
     task_opts = parser.add_argument_group(title='Task Options')
-    task_opts.add_argument('-build', "--build", help="Full model process.", dest='build', action='store_true')
+    task_opts.add_argument('-build', "--build", help="Modelling process.", dest='build', action='store_true')
     parser.set_defaults(build=False)
-    task_opts.add_argument('-analysis', '--analysis', help="Analysis only process.", dest='analysis', action='store_true')
+    task_opts.add_argument('-analysis', '--analysis', help="Analysis process.", dest='analysis', action='store_true')
     parser.set_defaults(analysis=False)
-    
+    task_opts.add_argument('-predict', '--predict', help="Predict process, currently not avaliable.", dest='predict', action='store_true')
+    parser.set_defaults(predict=False)
+
     build_args = parser.add_argument_group(title='Model Options')
     build_args.add_argument('--model', type=str, help="Select training model from {}.".format(", ".join(MODELS.keys())))
 
@@ -52,21 +61,47 @@ def get_args():
     build_args.add_argument('-addNorm', '--addNorm', dest='addNorm', action='store_true')
     parser.set_defaults(addNorm=False)
 
-    build_args.add_argument('-maf', '--maf', help="Enable minor allele frequency multiplier, it will adjust genotype alleles with its MAF.", dest='maf', action='store_true')
-    parser.set_defaults(maf=False)
+    build_args.add_argument('-mafm', '--mafm', help="Enable minor allele frequency multiplier, it will adjust genotype alleles with its MAF.", dest='mafm', action='store_true')
+    parser.set_defaults(mafm=False)
 
     build_args.add_argument('-residual', '--residual', dest='residual', action='store_true')
     parser.set_defaults(residual=False)
 
     build_args.add_argument('-save', '--save', dest='save', action='store_true', help="save model True/False")
     parser.set_defaults(save=False)
-    
-    build_args.add_argument('-config', '--config', type=str, help='config file path, default: ./ML_composer.ini (Currently not available))',
-                         default="./ML_composer.ini")
+
 
     build_args.add_argument('--use-mean', dest='mean', action='store_true')
     parser.set_defaults(mean=False)
 
     args = parser.parse_args()
+    config_path = os.path.abspath(args.config)
+    config = configparser.ConfigParser()
+    config.read(config_path)
+    ## replace the default value with the config file
+    print("Config file path: ", config_path)
+    print("Reading values with config file...")
+    if args.config:
+        for mothers_key in config:
+            #print(mothers_key)
+            print()
+            print("Now reading {}...".format(mothers_key))
+            #print(config[mothers_key].keys)
+            for key in config[mothers_key]:
+                if key in args and getattr(args,key) is parser.get_default(key) and config.get(mothers_key,key):
+                    print("Set {} value which was {} with {} from the config file".format(key,getattr(args,key), config.get(mothers_key,key) ))
+                    if type(getattr(args,key)) == bool:
+                        setattr(args, key, config.getboolean(mothers_key,key))
+                    elif type(getattr(args,key)) == int:
+                        setattr(args, key, config.getint(mothers_key,key))
+                    elif type(getattr(args,key)) == float:
+                        setattr(args, key, config.getfloat(mothers_key,key))
+                    else:
+                        setattr(args, key, config.get(mothers_key,key))
+                elif key not in args:
+                    print("Key {} not in args".format(key))
+                elif getattr(args,key) is not parser.get_default(key):
+                    print("Replace config parameter: {} which is passed by command parameter as {}".format(key, getattr(args,key) ))
+                    #print("Key {} is passed by command parameter".format(key))
 
     return args
