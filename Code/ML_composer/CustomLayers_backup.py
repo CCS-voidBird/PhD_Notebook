@@ -297,7 +297,318 @@ class BaseAttention(layers.Layer):
         self.layernorm = tf.keras.layers.LayerNormalization()
         self.add = tf.keras.layers.Add()
     
+class BlockAttention(layers.Layer):
+    """
+    A backup code trunk for multi-head attention from tensorflow 2.11, using tensorflow 2.2-2.5
+    """
 
+    def __init__(self,
+        num_heads,
+        key_dim,
+        value_dim=None,
+        dropout=0.0,
+        use_bias=True,
+        output_shape=None,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
+        **kwargs,):
+        super(BlockAttention, self).__init__(**kwargs)
+        self.supports_masking = True
+        self._num_heads = num_heads
+        self._key_dim = key_dim
+        self._value_dim = value_dim if value_dim else key_dim
+        self._dropout = dropout
+        self._use_bias = use_bias
+        self._output_shape = output_shape
+        self._kernel_initializer = keras.initializers.get(kernel_initializer)
+        self._bias_initializer = keras.initializers.get(bias_initializer)
+        self._kernel_regularizer = keras.regularizers.get(kernel_regularizer)
+        self._bias_regularizer = keras.regularizers.get(bias_regularizer)
+        self._activity_regularizer = keras.regularizers.get(activity_regularizer)
+        self._kernel_constraint = keras.constraints.get(kernel_constraint)
+        self._bias_constraint = keras.constraints.get(bias_constraint)
+
+        self._query_shape, self._key_shape, self._value_shape = None, None, None
+
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2
+        self.return_attention = False
+        self.filters = input_shape[-1]
+        self.u = self.add_weight(name='Block_extension', shape=(self.filters,input_shape[-2]),
+                                  initializer='ones', trainable=False)
+        self.Wa = self.add_weight(name='Attention_context_vector', shape=(self.filters,input_shape[-2], input_shape[-2]),
+                                 initializer='normal', trainable=True)
+        self.We = self.add_weight(name='effect_context_vector', shape=(self.filters,input_shape[-2], input_shape[-2]),
+                                  initializer='normal', trainable=True)
+        #self.u = self.add_weight(shape=(input_shape[-2],),initializer='normal',name='Attention_u')
+        #self.W2 = self.add_weight(name='Attention_weight', shape=(amount_size,attention_dim), initializer='normal', trainable=True)
+        self.built = True
+        super(BlockAttention, self).build(input_shape)
+
+    def call(self, x):
+        # require constant attention score from attention layer
+        # x shape == (batch_size, seq_len,seq_len, d_model
+        e = K.dot(x, self.u)
+        att = e * self.Wa
+        #sum by features
+        #eff = K.sum(e, axis=1)
+        att = K.softmax(att)
+        eff = att * e * self.We
+        #sum by time
+        eff = K.sum(eff, axis=1, keepdims=True)
+        #e = K.batch_dot(K.dot(x, self.Wa), K.permute_dimensions(x, (0, 2, 1)))
+        #uit = K.expand_dims(uit, axis=-1)
+        #ait = dot_product(uit, self.u)
+
+        #a = K.exp(ait)
+
+        #a /= K.cast(K.sum(a, axis=1, keepdims=True) + K.epsilon(), K.floatx())
+
+        #e = K.exp(e - K.max(e, axis=-1, keepdims=True))
+        #a = e / K.sum(e, axis=-1, keepdims=True)
+
+        # l_t = \sum_{t'} a_{t, t'} x_{t'}
+        #v = K.batch_dot(a, x)
+
+        if self.return_attention:
+            return [eff, att]
+        return eff
+
+    def get_config(self):
+        config = {
+            "num_heads": self._num_heads,
+            "key_dim": self._key_dim,
+            "value_dim": self._value_dim,
+            "dropout": self._dropout,
+            "use_bias": self._use_bias,
+            "output_shape": self._output_shape,
+            "kernel_initializer": keras.initializers.serialize(
+                self._kernel_initializer
+            ),
+            "bias_initializer": keras.initializers.serialize(self._bias_initializer),
+            "kernel_regularizer": keras.regularizers.serialize(
+                self._kernel_regularizer
+            ),
+            "bias_regularizer": keras.regularizers.serialize(self._bias_regularizer),
+            "activity_regularizer": keras.regularizers.serialize(
+                self._activity_regularizer
+            ),
+            "kernel_constraint": keras.constraints.serialize(self._kernel_constraint),
+            "bias_constraint": keras.constraints.serialize(self._bias_constraint),
+            "query_shape": self._query_shape,
+            "key_shape": self._key_shape,
+            "value_shape": self._value_shape,
+        }
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+class MultiHead_BlockAttention(layers.Layer):
+    def __init__(self,head_num, **kwargs):
+        super(MultiHead_BlockAttention, self).__init__(**kwargs)
+        self.head_num = head_num
+
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2
+        self.return_attention = False
+        self.filters = input_shape[-1]
+        self.seq_len = input_shape[1]
+
+        self.wq = self.add_weight(name='query', shape=(self.filters,self.seq_len*self.head_num),
+                                  initializer='normal', trainable=True)
+        self.wk = self.add_weight(name='key', shape=(self.filters,self.seq_len*self.head_num),
+                                  initializer='normal', trainable=True)
+        self.wv = self.add_weight(name='value', shape=(self.filters,self.seq_len*self.head_num),
+                                  initializer='normal', trainable=True)
+
+        self.built = True
+        super(MultiHead_BlockAttention, self).build(input_shape)
+
+    def call(self, x):
+
+        query = tf.tensordot(x, self.wq, axes=(-1,0))
+        key = tf.tensordot(x, self.wk, axes=(-1,0))
+        value = tf.tensordot(x, self.wv, axes=(-1,0))
+
+        # q,k,v shape == (batch_size, seq_len, d_model)
+
+        query = tf.stack(tf.split(query, self.head_num, axis=2))
+        key = tf.stack(tf.split(key, self.head_num, axis=2))
+        value = tf.stack(tf.split(value, self.head_num, axis=2))
+
+        inner_product = tf.matmul(query, key, transpose_b=True)
+        attention_score = tf.nn.softmax(inner_product)
+
+        effect = tf.matmul(attention_score, value)
+
+        all_effects = tf.concat(tf.split(effect, self.head_num,), axis=-1)
+        all_effects = tf.squeeze(all_effects, axis=0) # (batch_size, seq_len, d_model)\
+
+        return all_effects
+
+class MultiHead_QKV_BlockAttention(layers.Layer):
+    def __init__(self,head_num=1,residual=True,bias=True, **kwargs):
+        super(MultiHead_QKV_BlockAttention, self).__init__(**kwargs)
+        self.head_num = head_num
+        self.residual = residual
+        self.bias = bias
+        #self.return_attention = False
+        #self.feature_dim = None
+        #self.seq_len = None
+
+    @staticmethod
+    def _reshape_to_batches(x, head_num):
+        input_shape = K.shape(x)
+        print(input_shape[0])
+        batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
+        head_dim = feature_dim // head_num
+        x = K.reshape(x, (batch_size, seq_len, head_num, head_dim))
+        x = K.permute_dimensions(x, [0, 2, 1, 3])
+        return K.reshape(x, (batch_size * head_num, seq_len, head_dim))
+
+    @staticmethod
+    def _reshape_from_batches(x, head_num):
+        input_shape = K.shape(x)
+        print(input_shape[0])
+        batch_size, seq_len, feature_dim = input_shape[0], input_shape[1], input_shape[2]
+        x = K.reshape(x, (batch_size // head_num, head_num, seq_len, feature_dim))
+        x = K.permute_dimensions(x, [0, 2, 1, 3])
+        return K.reshape(x, (batch_size // head_num, seq_len, feature_dim * head_num))
+
+    def build(self, input_shape):
+        #assert len(input_shape[0]) >= 2
+        print(input_shape)
+        self.return_attention = False
+        self.feature_dim = input_shape[0][-1]
+        self.seq_len = input_shape[0][1] / self.head_num
+
+        self.wq = self.add_weight(name='query', shape=(self.feature_dim,self.feature_dim),
+                                  initializer='normal', trainable=True)
+        self.wk = self.add_weight(name='key', shape=(self.feature_dim,self.feature_dim),
+                                  initializer='normal', trainable=True)
+        self.wv = self.add_weight(name='value', shape=(self.feature_dim,self.feature_dim),
+                                  initializer='normal', trainable=True)
+        if self.bias:
+            self.bq = self.add_weight(name='query_bias', shape=(self.feature_dim,),
+                                  initializer='normal', trainable=True)
+            self.bk = self.add_weight(name='key_bias', shape=(self.feature_dim,),
+                                      initializer='normal', trainable=True)
+            self.bv = self.add_weight(name='value_bias', shape=(self.feature_dim,),
+                                      initializer='normal', trainable=True)
+            self.bo = self.add_weight(name='output_bias', shape=(self.feature_dim,),
+                                      initializer='normal', trainable=True)
+
+        self.built = True
+        super(MultiHead_QKV_BlockAttention, self).build(input_shape)
+
+    def call(self, x):
+        if type(x) is list and len(x) >= 2:
+            X,residual_score = x
+        else:
+            X = x[0]
+            residual_score = 0
+        query = tf.matmul(X,self.wq)
+        #tf.einsum('sd,dd->sd',X,self.wq)
+        key = tf.matmul(X,self.wk)
+        #tf.einsum('sd,dd->sd',X,self.wk)
+        value = tf.matmul(X,self.wv)
+        #tf.einsum('sd,dd->sd',X,self.wv)
+        #value = tf.tensordot(x, self.wv, axes=(-1,0))
+
+        if self.bias:
+            query += self.bq
+            key += self.bk
+            value += self.bv
+
+        # q,k,v shape == (batch_size, seq_len, d_model)
+        if self.head_num > 1:
+            query = self._reshape_to_batches(query,self.head_num)
+            key = self._reshape_to_batches(key,self.head_num)
+            value = self._reshape_to_batches(value,self.head_num)
+
+            #query = tf.stack(tf.split(split_q, self.head_num, axis=2),axis=1)
+            #key = tf.stack(tf.split(split_k, self.head_num, axis=2),axis=1)
+            #value = tf.stack(tf.split(split_v, self.head_num, axis=2),axis=1)
+        inner_product = tf.matmul(query, key, transpose_b=True)/tf.math.sqrt(self.seq_len)
+        #overall_score = tf.add([inner_product,self.b])
+        attention_score = tf.nn.tanh(inner_product)
+        effect = tf.matmul(attention_score, value)
+
+        if self.head_num > 1:
+            effect = self._reshape_from_batches(effect,self.head_num)
+            #effect = tf.squeeze(all_effects, axis=1) # (batch_size, seq_len, d_model)
+        effect += self.bo
+        if self.residual:
+            return tf.add(effect,residual_score),tf.add(effect,residual_score)
+
+        return effect,tf.add(effect,residual_score)
+    
+    def get_config(self):
+        config = super(MultiHead_QKV_BlockAttention, self).get_config()
+        config.update({
+            'head_num':self.head_num,
+            'residual':self.residual,
+            #'return_attention':self.return_attention,
+            #'feature_dim':self.feature_dim,
+            #'seq_len':self.seq_len
+        })
+        return config
+    
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def compute_output_shape(self, input_shapes):
+        input_shape,input_shape = input_shapes
+        if self.residual:
+            return [input_shape, input_shape]
+        return [input_shape, input_shape]
+
+class MultiHead_Seq_BlockAttention(layers.Layer):
+    def __init__(self, **kwargs):
+        super(MultiHead_Seq_BlockAttention, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2
+        self.return_attention = False
+        self.seq_dim  = input_shape[1]
+        self.embedding = input_shape[-1]
+
+        self.wq = self.add_weight(name='query', shape=(self.embedding,self.embedding),
+                                  initializer='normal', trainable=True)
+        self.wk = self.add_weight(name='key', shape=(1,self.seq_dim,self.embedding),
+                                  initializer='normal', trainable=True)
+        
+
+        self.built = True
+        super(MultiHead_Seq_BlockAttention, self).build(input_shape)
+
+    def call(self, x):
+        
+        query = tf.einsum('bsd,dd->bsd',x,self.wq)
+        exquery = tf.expand_dims(query,axis=2) #shape = (b,s,1,d)
+        attention_value = tf.einsum('bsnd,nqd->bsqd',exquery,self.wk) #shape = (b,s,q(=s),d)
+        attention_score = tf.nn.softmax(attention_value)
+        trans_attention_score = tf.transpose(attention_score,perm=[0,1,3,2]) # shape: (b,s,d,q)
+
+        return trans_attention_score,x #shape (batch,seq,embed,seq)
+
+    def compute_output_shape(self, output_shape):
+        input_shape = output_shape
+        if self.return_attention:
+            attention_shape = (input_shape[0], output_shape[1], input_shape[1])
+            return [output_shape, attention_shape]
+        return output_shape
+
+    def get_config(self):
+        return super(MultiHead_Seq_BlockAttention, self).get_config()    
+    
 class MultiHead_conv_BlockAttention(layers.Layer):
     def __init__(self,second_embed = None, **kwargs):
         super(MultiHead_conv_BlockAttention, self).__init__(**kwargs)

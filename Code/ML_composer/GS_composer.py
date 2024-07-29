@@ -81,15 +81,16 @@ def plot_correlation(predictions, observations, title,plot_name=None,checkpoint=
         history_record = history_record.append(hist_df)
         history_record.to_csv(plot_name+title+"_correlation.csv", sep="\t",index=False)
     except:
-        hist_df.to_csv(plot_name+title+"_correlation.csv", sep="\t",index=False)
+        hist_df.to_csv(plot_name+"_correlation.csv", sep="\t",index=False)
 
 
-    plot_name_loss=plot_name+"_"+str(checkpoint)+title+"_correlation.png"
+    plot_name_loss=plot_name+"_"+str(checkpoint)+"_correlation.png"
+    fig = plt.figure()
     fig, axs = plt.subplots(1, 1)
-    axs[0].scatter(x=hist_df['Individual'],y=hist_df['Observation'], label = "Observation", color = "blue")
-    axs[0].scatter(x=hist_df['Individual'],y=hist_df['Prediction'], label = "Prediction", color = "red")
+    axs.scatter(x=hist_df['Individual'],y=hist_df['Observation'], label = "Observation", color = "blue")
+    axs.scatter(x=hist_df['Individual'],y=hist_df['Prediction'], label = "Prediction", color = "red")
     #axs[0].plot(hist_df['val_loss'][1:], label = "Validation loss", color = "red")
-    axs[0].set_ylabel(" ")
+    axs.set_ylabel(" ")
     fig.suptitle(title)
     #print plot name
     print("Plot name: ", plot_name)
@@ -264,7 +265,7 @@ class ML_composer:
             train_index = [x for x in self._info["CROSS_VALIDATE"] if x is not idx]
             valid_index = [idx]
             index_ref.append((train_index,valid_index))
-            if self.args.vindex is not None and idx == self.args.vindex:
+            if self.args.vindex != 0 and idx == self.args.vindex:
                 print("Detected manual validation index")
                 print(f"Binary validation; index {idx} will be validate set, and anyother indexes will be training set")
                 return [(train_index,valid_index)]
@@ -374,13 +375,7 @@ class ML_composer:
         endTime = datetime.now()
         runtime = endTime - startTime
         print("Training Runtime: ", runtime.seconds / 60, " min")
-        gpu_devices = tf.config.list_physical_devices('GPU')
-        if gpu_devices:
-            try:
-                mem_usage = tf.config.experimental.get_memory_usage('GPU:0')
-                print("Currently using GPU memory: {} GB".format(mem_usage/1e9))
-            except:
-                print("Checking memory usage is not currently available.")
+        
         return history,test_accuracy,runtime
 
     def compose(self,train_index:list,valid_index:list,val=1):
@@ -422,13 +417,26 @@ class ML_composer:
                         print("Saving model failed, tring directly save by using self._model[\"TRAINED_MODEL\"].save")
                 if self.args.analysis is True:
                     print("Start analysis model...")
+                    model_path = os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,val)
+                    if not os.path.exists(model_path) is True:
+                        os.mkdir(model_path)
                     investigate_model(model = self._model["TRAINED_MODEL"],
-                                      model_path=os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,val),
-                                      marker_dim=self._info["MARKER_SIZE"])
+                                      model_path=model_path,
+                                      ploidy=self.args.ploidy)
 
             self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
                                test_accuracy, valid_accuracy, mse, special_loss, runtime.seconds / 60]
             check_usage()
+            check_gpu_usage()
+            gpu_devices = tf.config.list_physical_devices('GPU')
+            if gpu_devices:
+                try:
+                    mem_usage = tf.config.experimental.get_memory_usage('GPU:0')
+                    print("Currently using GPU memory: {} GB".format(mem_usage/1e9))
+                except:
+                    print("Checking memory usage is not currently available.")
+
+
             if self.plot is True:
                 # create a folder to save the plot, folder name: trait, model
                 print("Plotting the training process...")
@@ -580,7 +588,7 @@ def main():
     elif args.analysis is True and args.load is not None and args.build is False:
         print("Start analysis model...")
         investigate_model(
-                        model_path=args.load)
+                        model_path=args.load,ploidy=args.ploidy)
     #composer.prepare_model()
 
 

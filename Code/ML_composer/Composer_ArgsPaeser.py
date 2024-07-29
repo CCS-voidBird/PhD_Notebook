@@ -12,7 +12,7 @@ def get_args():
     general.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.")
     general.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns (start with 1).", default=1)
     general.add_argument('-index', '--index', type=str, help="index file", default = None)
-    general.add_argument('-vindex', '--vindex', type=int, help="index for validate", default = None)
+    general.add_argument('-vindex', '--vindex', type=int, help="index for validate, 0: cross vaidation", default = 0)
     #general.add_argument('-include', '--include', type=str, help="Specify a list of SNPs to be included in the analysis.", default = None)
     #general.add_argument('-exclude', '--exclude', type=str, help="Specify a list of SNPs to be excluded in the analysis.", default = None)
     general.add_argument('-annotation', '--annotation', type=str, help="annotation file,1st row as colname", default=None)
@@ -77,6 +77,9 @@ def get_args():
     args = parser.parse_args()
     config_path = os.path.abspath(args.config)
     config = configparser.ConfigParser()
+    ## Let configparser can read captial letter
+    config.optionxform = lambda option: option
+
     config.read(config_path)
     ## replace the default value with the config file
     print("Config file path: ", config_path)

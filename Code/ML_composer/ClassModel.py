@@ -839,9 +839,56 @@ class LNN(NN):
     def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
         lr = float(lr)
 
-        input = layers.Input(shape=input_shape)
-        X = layers.ZeroPadding1D(padding=(0, input_shape[1] // 5))(input)
-        X = layers.LocallyConnected1D(args.locallyConnect, kernel_size=5, strides=5, padding='valid', activation='elu')(X) # recommend to have 128 LNN channels
+        input1 = layers.Input(shape=input_shape)
+        X = layers.ZeroPadding1D(padding=(0, input_shape[1] // 5))(input1)
+        X = layers.LocallyConnected1D(args.locallyConnect, kernel_size=args.locallyBlock, strides=args.locallyBlock, padding='valid', activation='elu')(X) # recommend to have 128 LNN channels
+
+        X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
+        #X = tf.expand_dims(X, axis=-1)
+        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation='linear')(X)
+        GEBV = layers.GlobalAveragePooling1D()(M)
+        GEBV = layers.Flatten()(GEBV)
+        #M = layers.Dense(1, activation="linear")(M)
+        #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
+        #QV_output = layers.Concatenate(axis=-1)([M, D])
+        #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
+        if self.args.residual is True:
+            D = layers.Activation("sigmoid")(M)
+            D = layers.Flatten()(D)
+            D = layers.Dense(1, activation="linear")(D)
+            GEBV = layers.Add()([GEBV, D])
+        '''
+        for i in range(args.depth):
+            X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
+        '''
+        #X = layers.Dropout(rate=0.2)(X)
+        #X1 = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
+        #non_linear_output = layers.Dense(1, activation="linear")(X1)
+        #linear_output = layers.Dense(1, activation="linear")(X)
+        #output1 = layers.Add()([non_linear_output, linear_output])
+
+        model = keras.Model(inputs=input1, outputs=[GEBV])
+
+        try:
+            adm = keras.optimizers.Adam(learning_rate=lr)
+            rms = keras.optimizers.RMSprop(learning_rate=lr)
+            sgd = keras.optimizers.SGD(learning_rate=lr)
+        except:
+            adm = keras.optimizers.Adam(lr=lr)
+            rms = keras.optimizers.RMSprop(lr=lr)
+            sgd = keras.optimizers.SGD(lr=lr)
+
+        optimizers = {"rmsprop": rms,
+                      "Adam": adm,
+                      "SGD": sgd}
+
+        if self.args.data_type == "ordinal":
+            loss_class = Ordinal_loss(self.args.classes)
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
+        else:
+
+            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
+        '''
         X = layers.Conv1D(256, kernel_size=20, strides=2, padding='valid', activation='elu')(X)
 
         #X = layers.LocallyConnected1D(128, kernel_size=3, strides=3, padding='valid', activation='elu')(X)
@@ -873,7 +920,7 @@ class LNN(NN):
                       "SGD": sgd}
 
         model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error",metrics=[tf.keras.metrics.CosineSimilarity(axis=1)])
-
+        '''
         """
         Optimizers: Adam, RMSProp, SGD 
         """

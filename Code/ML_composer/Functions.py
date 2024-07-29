@@ -165,9 +165,21 @@ def check_usage():
     info = psutil.virtual_memory()
     print("Resource check:")
     print("Total memory: %.4f GB" % (info.total/1024/1024/1024))
-    print("Currently using memory: %.4f GB" % (psutil.Process(os.getpid()).memory_info().rss/1024/1024/1024))
+    cpu_memory = psutil.Process(os.getpid()).memory_info().rss/1024/1024/1024
+    print("Currently using memory: %.4f GB" % cpu_memory)
     print("Ratio of used memory: %.4f " % (info.percent),"%")
     print("Number of CPU node: ",psutil.cpu_count())
+    print("CPU usage: ",psutil.cpu_percent(interval=1))
+
+
+
+def check_gpu_usage():
+    #print overall gpu memory usage
+    print("GPU usage:")
+    os.system("nvidia-smi")
+
+
+
 
 
 def decoding(data):
