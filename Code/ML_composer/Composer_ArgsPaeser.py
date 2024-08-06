@@ -8,7 +8,7 @@ def get_args():
 
     general = parser.add_argument_group(title='General')
     general.add_argument('--config', type=str, help="Config file path.", default="")
-    general.add_argument('--ped', type=str, help="PED-like file name")
+    general.add_argument('--geno', type=str, help="PED-like genotype file name")
     general.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.")
     general.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns (start with 1).", default=1)
     general.add_argument('-index', '--index', type=str, help="index file", default = None)

@@ -3,11 +3,11 @@
 from Functions import *
 from ClassModel import *
 from GS_interpretation import *
+import tensorflow as tf
+from tensorflow.keras.utils import to_categorical
 from Composer_ArgsPaeser import get_args
 import pandas as pd
 import matplotlib.pyplot as plt
-import tensorflow as tf
-from tensorflow.keras.utils import to_categorical
 import keras.utils
 import numpy as np
 from datetime import datetime
@@ -164,9 +164,10 @@ class ML_composer:
         self.config = configer
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
                           "Valid_Accuracy", "MSE", self.args.loss, "Runtime"])
-        self._raw_data["GENO"] = pd.read_table(args.ped+".ped",delim_whitespace=True,header=None)
-        self._raw_data["MAP"] = pd.read_table(args.ped + ".map", delim_whitespace=True,header=None)
-        self._raw_data["FAM"] = pd.read_table(args.ped + ".fam", delim_whitespace=True,header=None)
+        self._raw_data["GENO"],self._raw_data["MAP"] = read_transform_plink_files(self.args.geno)
+        
+        #self._raw_data["MAP"] = pd.read_table(args.geno + ".map", delim_whitespace=True,header=None)
+        self._raw_data["FAM"] = pd.read_table(args.geno + ".fam", delim_whitespace=True,header=None)
         self._raw_data["PHENO"] = pd.read_table(args.pheno, delim_whitespace=True,header=None)
         self._raw_data["INDEX"] = pd.read_table(args.index,delim_whitespace=True,header=None)
         self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,delim_whitespace=True) if args.annotation is not None else None

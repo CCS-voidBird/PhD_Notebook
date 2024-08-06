@@ -343,11 +343,6 @@ class MultiHead_conv_BlockAttention(layers.Layer):
         return super(MultiHead_conv_BlockAttention, self).get_config()
 
 class MultiLevel_BlockAttention(layers.Layer):
-    """
-    LD or multi-level based block attention
-    SNP weight = (LDxLD) * (insider LD)
-    LD: categorical embedding (dict length, LDs+1, individual SNP grouped as LD 0 (labelled as 1)
-    """
 
     def __init__(self,num_heads=1,return_attention=True,annotation=False,epi_genomic=False,use_bias=True,**kwargs):
         super(MultiLevel_BlockAttention, self).__init__(**kwargs)
