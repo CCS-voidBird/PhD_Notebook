@@ -30,7 +30,7 @@ def read_transform_plink_files(geno_path):
 
     map_data = pd.read_csv(full_map_name,sep=r"\s+",header=None)
     #check map file infos, if V3 == V4, then raise a warning, then let V4 = 0
-    if map_data.iloc[:,2].equals(map_data.iloc[:,4]):
+    if map_data.iloc[:,2].equals(map_data.iloc[:,3]):
         print("V3 is same with V4, set V4 to 0")
         map_data.iloc[:,3] = 0
 
@@ -43,13 +43,14 @@ def read_transform_plink_files(geno_path):
     
 
     ped = pd.read_csv(full_ped_name,sep=r"\s+",header=None)
-
+    #ped = pd.read_csv(full_ped_name,sep="\t",header=None)
     ped_1_field = ped.iloc[:,0:6]
     ped_2_field = ped.iloc[:,6:] 
     if ped_2_field.shape[1] == len(marker_list):
         ped_2_field.columns = marker_list
         #check if values in variant_allele is any integer or not
-        if ped_2_field.dtype == "int64":
+        print(ped_2_field.dtypes)
+        if ped_2_field.dtypes.unique() == "int64":
             print("Variant allele is integer, no need to transform.")
         else:
             # count maximum string length across entire dataframe

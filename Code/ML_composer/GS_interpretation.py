@@ -146,7 +146,7 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
     print(marker_dim)
     bg0 = np.zeros((1, marker_dim,1))
     bs.append(model.predict(bg0))
-
+    '''
     for bg in range(1,ploidy+1):
         print("Now creating simulated marker set under Background: {}".format(bg))
         large_matrix = []
@@ -156,7 +156,7 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
             np.expand_dims(allele_matrix,axis=-1)
             large_matrix.append(allele_matrix)
         dataset.append(large_matrix)
-
+    '''
     bg1 = np.ones((1, marker_dim,1))
     bg2 = np.ones((1, marker_dim,1)) + 1
 
@@ -195,7 +195,7 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
     marker_contributs.columns = ["Background","Dose"]+["SNP_"+str(i) for i in range(1,marker_dim+1)]
 
     marker_contributs.to_csv(model_path+"/marker_contributes.csv",index=False,sep="\t")
-    plot_marker_contributs(marker_contributs,model_path)
+    #plot_marker_contributs(marker_contributs,model_path)
     return 
 
 if __name__ == "__main__":

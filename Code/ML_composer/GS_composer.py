@@ -437,6 +437,29 @@ class ML_composer:
                 except:
                     print("Checking memory usage is not currently available.")
 
+            if self.args.predict is True:
+                # predict the entire dataset
+                print("Predicting the entire dataset...")
+                features_all, target_all = self._model["INIT_MODEL"].data_transform(
+                    self._raw_data["GENO"].iloc[:, 6:], self._raw_data["PHENO"].iloc[:, self.args.mpheno + 1], pheno_standard=self.args.rank)
+                y_pred_all = self._model["TRAINED_MODEL"].predict(features_all, batch_size=self.batchSize) + self.mean_pheno
+                if self.args.data_type == "ordinal":
+                    y_pred_all = tf.reduce_sum(tf.round(y_pred_all), axis=-1)
+                    y_pred_all = np.reshape(y_pred_all, (len(target_all),))
+                    
+                else:
+                    y_pred_all = np.reshape(y_pred_all, (len(target_all),))
+                print("Predicted: ", y_pred_all[:10])
+                print("Observed: ", target_all[:10])
+                # Save samples,validate index,obvserved and predicted values to a file
+                print("Saving the prediction results...")
+                pred_df = pd.DataFrame()
+                pred_df["Sample"] = self._raw_data["FAM"].iloc[:, 1]
+                pred_df["Index"] = self._raw_data["INDEX"].iloc[:, -1]
+                pred_df["Observed"] = target_all
+                pred_df["Predicted"] = y_pred_all
+                pred_df.to_csv(os.path.abspath(self.args.output) + "/{}_{}_{}_prediction.csv".format(self.args.trait, self.model_name, val), sep="\t", index=False)
+
 
             if self.plot is True:
                 # create a folder to save the plot, folder name: trait, model

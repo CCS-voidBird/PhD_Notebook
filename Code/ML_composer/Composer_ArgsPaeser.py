@@ -26,7 +26,7 @@ def get_args():
     parser.set_defaults(build=False)
     task_opts.add_argument('-analysis', '--analysis', help="Analysis process.", dest='analysis', action='store_true')
     parser.set_defaults(analysis=False)
-    task_opts.add_argument('-predict', '--predict', help="Predict process, currently not avaliable.", dest='predict', action='store_true')
+    task_opts.add_argument('-predict', '--predict', help="Predict process, to predict all the phenotypes as a seperated file, currently not avaliable.", dest='predict', action='store_true')
     parser.set_defaults(predict=False)
 
     build_args = parser.add_argument_group(title='Model Options')
@@ -37,7 +37,7 @@ def get_args():
     build_args.add_argument('--depth', type=int, help="FC layer depth.", default=4)
     build_args.add_argument('--load', type=str, help="load model from file.", default=None)
     build_args.add_argument('--data-type', type=str, help="Trait type (numerous, ordinal, binary)", default="numerous")
-    build_args.add_argument('-r', '--round', type=int, help="training round.", default=10)
+    build_args.add_argument('-r', '--round', type=int, help="training round.", default=1)
     build_args.add_argument('-lr', '--lr', type=float, help="Learning rate.", default=0.0001)
     build_args.add_argument('-epo', '--epoch', type=int, help="training epoch.", default=50)
     build_args.add_argument('--num-heads', type=int, help="(Only for multi-head attention) Number of heads, currently only recommand 1 head.", default=1)
