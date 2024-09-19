@@ -86,7 +86,7 @@ class NN:
         self.name = "NN"
         self.args = args
         self.lr = args.lr
-        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=6000//args.batch,decay_rate=0.9,staircase=True)
+        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=args.numDecay//args.batch,decay_rate=0.9,staircase=True)
         self.optimizers = {"rmsprop": keras.optimizers.RMSprop,
                       "Adam": keras.optimizers.Adam,
                       "SGD": keras.optimizers.SGD}
@@ -1223,30 +1223,30 @@ class MultiLevelAttention(NN):
             V1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,epi_genomic=self.args.epistatic)(V)
             if self.args.addNorm is True:
                 V1 = layers.Add()([V1, V])
-                V1 = layers.BatchNormalization()(V1)
-            #V = layers.Dropout(0.1)(V)
+                V1 = layers.LayerNormalization()(V1)
+                V1 = layers.Activation("relu")(V1)
+                V1 = layers.Dropout(0.2)(V1)
             V = layers.Dense(embed,activation=act_fn[self.args.activation])(V1)
             if self.args.addNorm is True:
                 V = layers.Add()([V, V1])
                 V = layers.BatchNormalization()(V)
-            #V1 = layers.Add()([V, V1]) ## Epistatic + Additive
-            #V = layers.BatchNormalization()(V1)
-            #V = layers.Dropout(0.1)(V)
+                V = layers.Activation("relu")(V)
+                V = layers.Dropout(0.2)(V)
         
         M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(V)
-        #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation='elu')(X)
-        #D = layers.LayerNormalization()(M)
-        #M = layers.Dropout(0.5)(M)
+
+        #D = layers.GlobalAveragePooling1D()(M)
         D = layers.Activation("sigmoid")(M)
         D = layers.Flatten()(D)
         D = layers.Dense(1, activation="linear")(D)
+        
+        #D = layers.Conv1D(1, kernel_size=1, strides=1, padding="same")(D)
+        #D = layers.GlobalAveragePooling1D()(D)
+        #D = layers.Flatten()(D)
 
         M = layers.GlobalAveragePooling1D()(M)
         M = layers.Flatten()(M)
-        #M = layers.Dense(1, activation="linear")(M)
-        #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
-        #QV_output = layers.Concatenate(axis=-1)([M, D])
-        #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
+
         GEBV = layers.Add()([M, D])
         #QV_output = AddingLayer_with_bias()(GEBV)
 

@@ -79,7 +79,7 @@ def plot_correlation(predictions, observations, title,plot_name=None,checkpoint=
     try:
         history_record = pd.read_csv(plot_name+title+"_correlation.csv", sep="\t")
         history_record = history_record.append(hist_df)
-        history_record.to_csv(plot_name+title+"_correlation.csv", sep="\t",index=False)
+        #history_record.to_csv(plot_name+title+"_correlation.csv", sep="\t",index=False)
     except:
         hist_df.to_csv(plot_name+"_correlation.csv", sep="\t",index=False)
 
@@ -209,27 +209,50 @@ class ML_composer:
         """
         # sort GENO by first col with reference FAM
         print("Running data check")
-        sample_reference = self._raw_data["INFO"].iloc[:,1] ## Get fam IID as reference
+        #change all FID and IID into string
+        self._raw_data["FAM"].iloc[:,0:2] = self._raw_data["FAM"].iloc[:,0:2].astype(str)
+        self._raw_data["GENO"].iloc[:,0:2] = self._raw_data["GENO"].iloc[:,0:2].astype(str)
+        self._raw_data["MAP"].iloc[:,0:2] = self._raw_data["MAP"].iloc[:,0:2].astype(str)
+        self._raw_data["PHENO"].iloc[:,0:2] = self._raw_data["PHENO"].iloc[:,0:2].astype(str)
+        self._raw_data["INDEX"].iloc[:,0:2] = self._raw_data["INDEX"].iloc[:,0:2].astype(str)
+        sample_reference = self._raw_data["FAM"].iloc[:,1]## Get fam IID as reference
+        modelling_reference = self._raw_data["INDEX"].iloc[:,1]
         snp_reference = self._raw_data["MAP"].iloc[:,:2]
+        """
         for label in ["GENO","FAM","PHENO","INDEX"]:
             #check if samples are aligned with same order
             print(label)
            
             if self._raw_data[label].iloc[:,1].equals(sample_reference) is False:
                 #check if samples are aligned with same order
-                print("Samples are not aligned with same order or not the same name style, please check.")
+                print("Samples are not aligned with same order or not the same name style, please double-check.")
+                print("GS Composer would only use the samples recorded in the fam file.")
+                
                 print(sample_reference.head(10))
                 print(self._raw_data[label].iloc[:,1].head(10))
                 #exit()
+        """
+        
         if self._raw_data["GENO"].iloc[:,6:].shape[1] != snp_reference.shape[0]:
             print("SNPs are not in same length in ped file and map file")
             print("SNP length in ped file: ",self._raw_data["GENO"].iloc[:,6:].shape[1])
             print("SNP length in map file: ",snp_reference.shape[0])
-            exit()
+            ##select ped records that their second column value are appeared in fam file
+
+        ##sort ped, pheno and index file by IID order from fam file
+        self._raw_data["GENO"] = self._raw_data["GENO"].loc[self._raw_data["GENO"].iloc[:,1].isin(modelling_reference),:].reset_index(drop=True)
+        print(self._raw_data["GENO"].iloc[1:10,1:10])
+        self._raw_data["PHENO"] = self._raw_data["PHENO"].loc[self._raw_data["PHENO"].iloc[:,1].isin(modelling_reference),:].reset_index(drop=True)
+        #print(self._raw_data["INDEX"].loc[self._raw_data["INDEX"].iloc[:,1].isin(sample_reference),:])
+        self._raw_data["INDEX"] = self._raw_data["INDEX"].loc[self._raw_data["INDEX"].iloc[:,1].isin(modelling_reference),:].reset_index(drop=True)
+        print("SNPs are filtered by fam file.")
+        #Check if samples are aligned with same order with fam file
+
+
         if self.args.annotation is not None and self._raw_data["ANNOTATION"].iloc[:,:1].equals(snp_reference) is False:
             print("SNPs in annotation file are not ordered by map file")
             #exit()
-        print("Data check passed.")
+        print("Data check & sort passed.")
 
         ## data quality control and filter by MAF
         if self.args.maf > 0:
@@ -274,14 +297,14 @@ class ML_composer:
         return index_ref
 
     def prepare_training(self,train_index:list,valid_index:list):
-        
-        removal = np.where(self._raw_data["PHENO"].iloc[:, int(self.args.mpheno)+1].isin([-9,None,"NA",np.nan]))[0].tolist()
+
+        removal = np.where(self._raw_data["PHENO"].iloc[:, int(self.args.mpheno)+1].isin([None,"NA",np.nan]))[0].tolist()
         print("Overall population: {}".format(len(self._raw_data["INDEX"].index)))
         print("{} individuals need to be removed due to the miss phenotype".format(len(removal)))
         train_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(train_index))[0].tolist() if x not in removal]
         valid_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(valid_index))[0].tolist() if x not in removal]
         print("Filtered population: {}".format(len(train_mask)+len(valid_mask)))
-        print(self.args.mafm)
+        #print(self.args.mafm)
         self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:] * self._info["MAF"] if self.args.mafm is True else self._raw_data["GENO"].iloc[train_mask, 6:]
         self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:] * self._info["MAF"] if self.args.mafm is True else self._raw_data["GENO"].iloc[valid_mask, 6:]
 
@@ -293,6 +316,7 @@ class ML_composer:
             self.mean_pheno = 0
         self.train_pheno = self.train_pheno - self.mean_pheno
         self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
+        print(self._raw_data["PHENO"].iloc[valid_mask,])
         #self.valid_pheno = self.valid_pheno - self.mean_pheno
         print(self.valid_pheno.head(5))
         self.train_pheno = np.asarray(self.train_pheno).astype(np.float32)
@@ -454,7 +478,7 @@ class ML_composer:
                 # Save samples,validate index,obvserved and predicted values to a file
                 print("Saving the prediction results...")
                 pred_df = pd.DataFrame()
-                pred_df["Sample"] = self._raw_data["FAM"].iloc[:, 1]
+                pred_df["Sample"] = self._raw_data["INDEX"].iloc[:, 1]
                 pred_df["Index"] = self._raw_data["INDEX"].iloc[:, -1]
                 pred_df["Observed"] = target_all
                 pred_df["Predicted"] = y_pred_all

@@ -47,6 +47,7 @@ def get_args():
     build_args.add_argument('--locallyBlock', type=int, help="(Only work with locally connected layers) Length of locallyBlock segment (default as 10)", default=10)
     build_args.add_argument('--AttentionBlock', type=int, help="(Only work with Attention layers) AttentionBlock numbers (default as 1)", default=1)
     build_args.add_argument('-batch', '--batch', type=int, help="batch size.", default=16)
+    build_args.add_argument('-numDecay', '--numDecay', type=int, help="Number of samples to apply lr decay.", default=6000)
     build_args.add_argument('--loss', type=str, help="loss founction from {}.".format(", ".join(loss_fn.keys())), default="mse")
     build_args.add_argument('--rank', type=bool, help="If the trait is a ranked value, will use a standard value instead.", default=False)
     build_args.add_argument('-quiet', '--quiet', type=int, help="silent mode, 0: quiet, 1: normal, 2: verbose", default=2)
@@ -92,7 +93,8 @@ def get_args():
             #print(config[mothers_key].keys)
             for key in config[mothers_key]:
                 if key in args and getattr(args,key) is parser.get_default(key) and config.get(mothers_key,key):
-                    print("Set {} value which was {} with {} from the config file".format(key,getattr(args,key), config.get(mothers_key,key) ))
+                    print("Set {} value as {} ...............(from config file)".format(key,config.get(mothers_key,key)))
+                    #print("Set {} value as {} ...............(from config file)".format(key,getattr(args,key), config.get(mothers_key,key) ))
                     if type(getattr(args,key)) == bool:
                         setattr(args, key, config.getboolean(mothers_key,key))
                     elif type(getattr(args,key)) == int:
@@ -104,7 +106,7 @@ def get_args():
                 elif key not in args:
                     print("Key {} not in args".format(key))
                 elif getattr(args,key) is not parser.get_default(key):
-                    print("Replace config parameter: {} which is passed by command parameter as {}".format(key, getattr(args,key) ))
+                    print("Replace config parameter: {} to {}...............(from command)".format(key, getattr(args,key) ))
                     #print("Key {} is passed by command parameter".format(key))
 
     return args
