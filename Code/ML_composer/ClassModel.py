@@ -1230,20 +1230,29 @@ class MultiLevelAttention(NN):
                 V = layers.Dropout(0.2)(V)
         
         M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(V)
+        
+        GEBV = layers.GlobalAveragePooling1D()(M)
+        GEBV = layers.Flatten()(GEBV)
 
+        if self.args.residual is True:
+            D = layers.Activation("sigmoid")(M)
+            D = layers.Flatten()(D)
+            D = layers.Dense(1, activation="linear")(D)
+            GEBV = layers.Add()([GEBV, D])
+        
         #D = layers.GlobalAveragePooling1D()(M)
-        D = layers.Activation("sigmoid")(M)
-        D = layers.Flatten()(D)
-        D = layers.Dense(1, activation="linear")(D)
+        #D = layers.Activation("sigmoid")(M)
+        #D = layers.Flatten()(D)
+        #D = layers.Dense(1, activation="linear")(D)
         
         #D = layers.Conv1D(1, kernel_size=1, strides=1, padding="same")(D)
         #D = layers.GlobalAveragePooling1D()(D)
         #D = layers.Flatten()(D)
 
-        M = layers.GlobalAveragePooling1D()(M)
-        M = layers.Flatten()(M)
+        #M = layers.GlobalAveragePooling1D()(M)
+        #M = layers.Flatten()(M)
 
-        GEBV = layers.Add()([M, D])
+        #GEBV = layers.Add()([M, D])
         #QV_output = AddingLayer_with_bias()(GEBV)
 
         model = keras.Model(inputs=input1, outputs=[GEBV])
