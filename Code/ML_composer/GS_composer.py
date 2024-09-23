@@ -175,12 +175,12 @@ class ML_composer:
         self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
         self._info["MAF"] = self._raw_data["GENO"].iloc[:,6:].apply(lambda x: np.mean(x)/self.args.ploidy,axis=0)
         self.batchSize = args.batch
-        print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
+        #print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
         self._raw_data["INFO"] = self._raw_data["FAM"].iloc[:,0:6]  #Further using fam file instead.
 
         print("Get genotype shape:",self._raw_data["GENO"].iloc[:,6:].shape)
-        print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
+        #print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
         self.plot = self.args.plot
         self.sort_data()
         if self.args.annotation is not None:
@@ -188,11 +188,11 @@ class ML_composer:
             anno_dict = {annotation_groups[x]:x for x in range(len(annotation_groups))}
             self.annotation = self._raw_data["ANNOTATION"]
             self.annotation.iloc[:,-1] = self.annotation.iloc[:,-1].map(anno_dict)
-            print(self.annotation.head(10))
+            #print(self.annotation.head(10))
             if self.args.model == "MultiLevel Attention":
                 LD_index = self.annotation.groupby('LID')
                 self.annotation = np.array([x.values for x in LD_index.groups.values()])
-                print(self.annotation)
+                #print(self.annotation)
             else:
                 self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
             # self.annotation = np.asarray(self.annotation.iloc[:, 2]).astype(np.float32)
@@ -241,7 +241,7 @@ class ML_composer:
 
         ##sort ped, pheno and index file by IID order from fam file
         self._raw_data["GENO"] = self._raw_data["GENO"].loc[self._raw_data["GENO"].iloc[:,1].isin(modelling_reference),:].reset_index(drop=True)
-        print(self._raw_data["GENO"].iloc[1:10,1:10])
+        #print(self._raw_data["GENO"].iloc[1:10,1:10])
         self._raw_data["PHENO"] = self._raw_data["PHENO"].loc[self._raw_data["PHENO"].iloc[:,1].isin(modelling_reference),:].reset_index(drop=True)
         #print(self._raw_data["INDEX"].loc[self._raw_data["INDEX"].iloc[:,1].isin(sample_reference),:])
         self._raw_data["INDEX"] = self._raw_data["INDEX"].loc[self._raw_data["INDEX"].iloc[:,1].isin(modelling_reference),:].reset_index(drop=True)
@@ -261,7 +261,7 @@ class ML_composer:
             print("Filtering SNPs with MAF lower than {} with ployidy {}.".format(self.args.maf,self.args.ploidy))
             ### Get column index of MAF >= self.args.maf 
             selected_marker_idx = self._info["MAF"][self._info["MAF"] >= self.args.maf].index
-            print(selected_marker_idx[0:10])
+            #print(selected_marker_idx[0:10])
             self._raw_data["GENO"] = self._raw_data["GENO"].iloc[:,selected_marker_idx]
             self._raw_data["MAP"] = self._raw_data["MAP"].iloc[selected_marker_idx-6,:] #update map file
             self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
@@ -316,9 +316,9 @@ class ML_composer:
             self.mean_pheno = 0
         self.train_pheno = self.train_pheno - self.mean_pheno
         self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
-        print(self._raw_data["PHENO"].iloc[valid_mask,])
+        #print(self._raw_data["PHENO"].iloc[valid_mask,])
         #self.valid_pheno = self.valid_pheno - self.mean_pheno
-        print(self.valid_pheno.head(5))
+        #print(self.valid_pheno.head(5))
         self.train_pheno = np.asarray(self.train_pheno).astype(np.float32)
         self.valid_pheno = np.asarray(self.valid_pheno).astype(np.float32)
         if self.args.data_type == "ordinal":
@@ -335,7 +335,7 @@ class ML_composer:
                 print(self.args.classes)
                 #self.train_pheno = to_ordinal(self.train_pheno)
                 #self.valid_pheno = to_ordinal(self.valid_pheno)
-                print(self.valid_pheno.shape)
+                #print(self.valid_pheno.shape)
         self._model = {"INIT_MODEL": Model(self.args), "TRAINED_MODEL": Model(self.args)}
         self.prepare_model()
 
@@ -388,8 +388,8 @@ class ML_composer:
         if self.args.data_type == "ordinal":
             y_pred = tf.reduce_sum(tf.round(y_pred),axis=-1)
             y_pred = np.reshape(y_pred, (test_length,))
-            print(y_pred.shape)
-            print(target_train.shape)
+            #print(y_pred.shape)
+            #print(target_train.shape)
             #test = tf.reduce_sum(target_train,axis=-1)
             test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
         else:
@@ -473,8 +473,8 @@ class ML_composer:
                     
                 else:
                     y_pred_all = np.reshape(y_pred_all, (len(target_all),))
-                print("Predicted: ", y_pred_all[:10])
-                print("Observed: ", target_all[:10])
+                print("Predicted: ", np.array(y_pred_all[:10]))
+                print("Observed: ", np.array(target_all[:10]))
                 # Save samples,validate index,obvserved and predicted values to a file
                 print("Saving the prediction results...")
                 pred_df = pd.DataFrame()
@@ -515,8 +515,8 @@ class ML_composer:
         if self.args.data_type == "ordinal":
             y_pred_valid = tf.reduce_sum(tf.round(y_pred_valid),axis=-1)
             y_pred_valid = np.reshape(y_pred_valid, (val_length,))
-            print(y_pred_valid.shape)
-            print(valid_pheno.shape)
+            #print(y_pred_valid.shape)
+            #print(valid_pheno.shape)
             #test = tf.reduce_sum(valid_data,axis=-1)
             accuracy_valid = np.corrcoef(y_pred_valid, valid_pheno)[0, 1]
         else:
@@ -525,8 +525,8 @@ class ML_composer:
 
         mse = mean_squared_error(y_pred_valid, valid_pheno)
         print("Testing prediction:")
-        print("Predicted: ", y_pred_valid[:10])
-        print("observed: ", valid_pheno[:10])
+        print("Predicted: ", np.array(y_pred_valid[:10]))
+        print("observed: ", np.array(valid_pheno[:10]))
         plot_correlation(y_pred_valid,valid_pheno,self.args.trait,
                          os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name, self.args.trait))
         print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))

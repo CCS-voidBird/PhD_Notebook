@@ -34,7 +34,7 @@ def read_transform_plink_files(geno_path):
     print("Read {} markers from map file.".format(map_data.shape[0]))
     #check map file infos, if V3 == V4, then raise a warning, then let V4 = 0
     if map_data.iloc[:,2].equals(map_data.iloc[:,3]):
-        print("V3 is same with V4, set V4 to 0")
+        #print("V3 is same with V4, set V4 to 0")
         map_data.iloc[:,3] = 0
 
     marker_list = map_data.iloc[:,1].values
@@ -48,12 +48,12 @@ def read_transform_plink_files(geno_path):
     ped_1_field = ped.iloc[:,0:6]
     ped_2_field = ped.iloc[:,6:] 
     #Identify minor allele with lower allele frequyency
-
+    print("Sorting minor allele.......", end="")
     ped_2_field_minor_allele = ped_2_field.apply(lambda x: x.value_counts().idxmin(),axis=0)
     ped_2_field_minor_allele.replace("0","T",inplace=True)
     ##Reindex the minor allele from 0 to the last marker
     ped_2_field_minor_allele.index = ped_2_field_minor_allele.index-6
-    print("Sorted minor allele: ",ped_2_field_minor_allele.head())
+    print("DONE")#,ped_2_field_minor_allele.head())
     #ped_2_field_minor_allele = ped_2_field_minor_allele.replace("0","T")
 
     print(ped_2_field.shape[1] /2)
@@ -61,7 +61,7 @@ def read_transform_plink_files(geno_path):
         print("The number of markers are same with map file presented.")
         ped_2_field.columns = marker_list
         #check if values in variant_allele is any integer or not
-        print(ped_2_field.dtypes)
+        #print(ped_2_field.dtypes)
         if ped_2_field.dtypes.unique() == "int64":
             print("Variant allele is integer, no need to transform.")
         else:
@@ -87,7 +87,7 @@ def read_transform_plink_files(geno_path):
         else:
             
             print("Variant allele is string, transforming...Now convert allele genotypes to allele counts.")
-            print(ped_2_field_reshaped[0,0,:])
+            #print(ped_2_field_reshaped[0,0,:])
             for i in range(len(marker_list)):
                 ped_2_field_reshaped[:,i,:] = np.where(ped_2_field_reshaped[:,i,:] == ped_2_field_minor_allele[i], 0, 1)
 
@@ -100,7 +100,7 @@ def read_transform_plink_files(geno_path):
     # combine the ped_1_field and ped_2_field
     ped_2_field_merged = pd.DataFrame(np.concatenate([ped_1_field,ped_2_field],axis=1))
     print("Finish transforming genotype data.")
-    print(ped_2_field_merged.head())
+    #print(ped_2_field_merged.head())
     return ped_2_field_merged, map_data
 
 

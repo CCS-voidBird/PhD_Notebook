@@ -33,6 +33,14 @@ def is_label_valid(labels):
 def calculate_ordinal_loss(y_true, y_pred):
     pass
 
+def add_normalization(x=None,x1=None,norm_switch=False,activation='relu'):
+    if norm_switch is True:
+        x = layers.Add()([x,x1])
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation(activation)(x)
+    x = layers.Dropout(0.2)(x)
+    return x
+
 class BinaryConversionLayer(layers.Layer):
     def __init__(self, condition, **kwargs):
         super(BinaryConversionLayer, self).__init__(**kwargs)
@@ -585,20 +593,18 @@ class PosAttention(layers.Layer):
 
 
 #fully connected layers block with residual connection, downsample and batch normalization (only for relu)
-def fullyConnectted_block(input, width,depth=1, activation='relu',residual=False,use_bias=True):
+def fullyConnectted_block(input, width,depth=1, activation='relu',addNorm=False,use_bias=True):
 
-    activation_function = layers.Activation(activation=activation)
+    #activation_function = layers.Activation(activation=activation)
     for i in range(depth):
         X = layers.Dense(width,activation=activation,use_bias=use_bias)(input)
-        if activation == 'relu':
-            X = layers.BatchNormalization()(X)
-        if residual:
-            X = layers.Add()([X, input])
+        if addNorm & i != 0:
+            X = add_normalization(X,input,addNorm,activation)
             #out = activation(out)
             input = X
         else:
             input = X
-    return activation_function(X)
+    return X
 
 
 

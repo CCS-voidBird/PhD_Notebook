@@ -62,9 +62,9 @@ class Residual(Layer):
     def call(self, x):
         # the residual block using Keras functional API
         first_layer = layers.Activation("linear", trainable=False)(x)
-        x = Conv1D(self.channels_in, self.kernel, padding="same")(first_layer)
+        x = layers.Conv1D(self.channels_in, self.kernel, padding="same")(first_layer)
         x = layers.Activation("relu")(x)
-        x = Conv1D(self.channels_in, self.kernel, padding="same")(x)
+        x = layers.Conv1D(self.channels_in, self.kernel, padding="same")(x)
         residual = layers.Add()([x, first_layer])
         x = layers.Activation("relu")(residual)
         return x
@@ -72,11 +72,7 @@ class Residual(Layer):
     def compute_output_shape(self, input_shape):
         return input_shape
 
-def add_normalization(x,x1=None,norm_switch=False):
-    if norm_switch is True:
-        #x = layers.Add()([x,x1])
-        x = layers.BatchNormalization()(x)
-    return x
+
 
 ####################
 
@@ -98,7 +94,7 @@ class NN:
 
     def data_transform(self,geno,phenos,anno=None,pheno_standard = False):
 
-        #print("USE Attention CNN MODEL as training method")
+        print("USE {} MODEL as training method".format(self.name))
         geno = decoding(geno)
         geno = np.expand_dims(geno, axis=2)
         #pos = np.arrays(range(geno.shape[1]))
@@ -147,7 +143,7 @@ class Transformer(NN):
         return self.__class__.__name__
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        #print("USE Numeric CNN MODEL as training method")
+        print("USE {} MODEL as training method".format(self.name))
         geno = decoding(geno)
         geno.replace(0.01, 0, inplace=True)
         #geno = np.expand_dims(geno, axis=2)
@@ -212,7 +208,7 @@ class RNN(NN):
         return self.__class__.__name__
 
     def data_transform(self, geno, pheno, anno=None, pheno_standard=False):
-        #print("USE Numeric CNN MODEL as training method")
+        print("USE {} MODEL as training method".format(self.name))
         geno = decoding(geno)
         geno.replace(0.01, 0, inplace=True)
         # geno = np.expand_dims(geno, axis=2)
@@ -276,7 +272,7 @@ class DCNN():
 
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE Deep Residual CNN MODEL as training method")
+        print("USE {} MODEL as training method".format(self.name))
         geno = decoding(geno)
         geno1 = geno
         geno2 = geno.mask(geno != 1,0)
@@ -400,7 +396,7 @@ class DoubleCNN(NN):
 
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE Duo (Double) CNN MODEL as training method")
+        print("USE {} MODEL as training method".format(self.name))
         #geno = decoding(geno)
         #geno = np.expand_dims(geno, axis=2)
         geno1 = geno
@@ -478,7 +474,7 @@ class NCNN(NN):
         return self.__class__.__name__
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE Numeric CNN MODEL as training method")
+        print("USE {} MODEL as training method".format(self.name))
         geno = decoding(geno)
         geno = np.expand_dims(geno, axis=2)
         print("The transformed SNP shape:", geno.shape)
@@ -490,11 +486,11 @@ class NCNN(NN):
         lr = float(lr)
         input1 = layers.Input(shape=input_shape)
         X = layers.Conv1D(64, kernel_size=5, strides=3, padding='same', activation=act_fn[args.activation])(input1)
-        X = add_normalization(X,input1,norm_switch=self.args.addNorm)
+        #X = add_normalization(X,input1,norm_switch=False,activation=self.args.activation)
         X1 = layers.MaxPooling1D(pool_size=2,strides=1)(X)
        
         X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X1)
-        X = add_normalization(X,X1,norm_switch=self.args.addNorm)
+        #X = add_normalization(X,X1,norm_switch=False,activation=self.args.activation)
         X = layers.MaxPooling1D(pool_size=2,strides=1)(X)
         #X = layers.Dense(1, activation=act_fn[args.activation])(X)
         #X = layers.Conv1D(256, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
@@ -503,10 +499,10 @@ class NCNN(NN):
         #X = layers.MaxPooling1D(pool_size=3,strides=1)(X)
         #X = layers.Dropout(rate=0.2)(X)
         X = layers.Flatten()(X)
-        X = layers.Dropout(rate=0.2)(X)
-        X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
+        #X = layers.Dropout(rate=0.2)(X)
+        X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],addNorm = self.args.addNorm, use_bias=True)
         X = tf.expand_dims(X, axis=-1)
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation='linear')(X)
+        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=True,activation='linear')(X)
         GEBV = layers.GlobalAveragePooling1D()(M)
         GEBV = layers.Flatten()(GEBV)
         #M = layers.Dense(1, activation="linear")(M)
@@ -566,7 +562,7 @@ class BCNN():
         return self.__class__.__name__
 
     def data_transform(self, geno, pheno, anno=None,pheno_standard = False):
-        print("USE Binary CNN MODEL as training method")
+        print("USE {} MODEL as training method".format(self.name))
         geno = decoding(geno)
         geno.replace(0.01, 3, inplace=True)
         geno = to_categorical(geno)
@@ -631,7 +627,7 @@ class MLP(NN):
         return self.__class__.__name__
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE Numeric CNN MODEL as training method")
+        print("USE {} MODEL as training method".format(self.name))
         geno = decoding(geno)
         #geno = np.expand_dims(geno, axis=2)
         print("The transformed SNP shape:", geno.shape)
@@ -643,7 +639,7 @@ class MLP(NN):
 
         lr = float(lr)
         input1 = layers.Input(shape=input_shape)
-        X = fullyConnectted_block(input1, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
+        X = fullyConnectted_block(input1, args.width, args.depth,activation=act_fn[self.args.activation],addNorm = self.args.addNorm, use_bias=True)
         X = tf.expand_dims(X, axis=-1)
         M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation='linear')(X)
         GEBV = layers.GlobalAveragePooling1D()(M)
@@ -726,7 +722,7 @@ class Double_MLP():
         return self.__class__.__name__
 
     def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE Numeric CNN MODEL as training method")
+        print("USE {} MODEL as training method".format(self.name))
         geno = decoding(geno)
         #geno = np.expand_dims(geno, axis=2)
         print("The transformed SNP shape:", geno.shape)
