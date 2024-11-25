@@ -47,6 +47,7 @@ def read_transform_plink_files(geno_path):
     #ped = pd.read_csv(full_ped_name,sep="\t",header=None)
     ped_1_field = ped.iloc[:,0:6]
     ped_2_field = ped.iloc[:,6:] 
+    ped_2_field.replace(["--",-9,"NA"],np.nan,inplace=True)
     #Identify minor allele with lower allele frequyency
     print("Sorting minor allele.......", end="")
     ped_2_field_minor_allele = ped_2_field.apply(lambda x: x.value_counts().idxmin(),axis=0)
@@ -62,7 +63,7 @@ def read_transform_plink_files(geno_path):
         ped_2_field.columns = marker_list
         #check if values in variant_allele is any integer or not
         #print(ped_2_field.dtypes)
-        if ped_2_field.dtypes.unique() == "int64":
+        if ped_2_field.dtypes.unique().all() == "int64":
             print("Variant allele is integer, no need to transform.")
         else:
             # count maximum string length across entire dataframe
@@ -82,7 +83,7 @@ def read_transform_plink_files(geno_path):
         #reshape the ped genos from (N,marker*ploidy) to (N,marker,ploidy)
         ped_2_field_reshaped = np.reshape(ped_2_field.values,(ped_2_field.shape[0],len(marker_list),ploidy))
 
-        if ped_2_field.dtypes.unique() == "int64":
+        if ped_2_field.dtypes.unique().all() == "int64":
             print("Variant allele is integer, no need to transform.")
         else:
             

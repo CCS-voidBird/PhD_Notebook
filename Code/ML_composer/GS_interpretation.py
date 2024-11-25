@@ -128,7 +128,7 @@ def plot_marker_contributs(marker_contributs,plot_path):
     plt.savefig(plot_name)
     return
 
-def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=None):
+def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=None,args=None):
 
     if model is None:
         model = keras.models.load_model(model_path)
@@ -145,7 +145,7 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
     marker_dim = model.layers[0].input_shape[-1][1]
     print(marker_dim)
     bg0 = np.zeros((1, marker_dim,1))
-    bs.append(model.predict(bg0))
+    bs.append(model.predict(bg0,verbose=int(args.quiet)))
     '''
     for bg in range(1,ploidy+1):
         print("Now creating simulated marker set under Background: {}".format(bg))
@@ -161,9 +161,9 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
     bg2 = np.ones((1, marker_dim,1)) + 1
 
 
-    bp0 = model.predict(bg0)
-    bp1 = model.predict(bg1)
-    bp2 = model.predict(bg2)
+    bp0 = model.predict(bg0,verbose=int(args.quiet))
+    bp1 = model.predict(bg1,verbose=int(args.quiet))
+    bp2 = model.predict(bg2,verbose=int(args.quiet))
     bps = [bp0,bp1,bp2]
     print((bp0,bp2,bp1))
 
@@ -185,7 +185,7 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
             print("Analysing dose: {}".format(dose))
             with tf.device('/CPU:0'):
                 x = tf.convert_to_tensor(dataset[bg][dose])
-            gebvs = model.predict(x)
+            gebvs = model.predict(x,verbose=int(args.quiet))
             bs = gebvs - bps[bg]
             bs = [bg,dose]+np.transpose(bs).tolist()[0]
             marker_contributs.append(bs)

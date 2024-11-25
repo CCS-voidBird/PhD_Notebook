@@ -384,7 +384,7 @@ class ML_composer:
         print(' - Actual Training epochs: ', len(history.history['loss']))
         #print(self._model["TRAINED_MODEL"].predict(features_test).shape)
         test_length = target_train.shape[0]
-        y_pred = self._model["TRAINED_MODEL"].predict(features_train,batch_size=self.batchSize)
+        y_pred = self._model["TRAINED_MODEL"].predict(features_train,batch_size=self.batchSize,verbose=int(self.args.quiet))
         if self.args.data_type == "ordinal":
             y_pred = tf.reduce_sum(tf.round(y_pred),axis=-1)
             y_pred = np.reshape(y_pred, (test_length,))
@@ -447,7 +447,7 @@ class ML_composer:
                         os.mkdir(model_path)
                     investigate_model(model = self._model["TRAINED_MODEL"],
                                       model_path=model_path,
-                                      ploidy=self.args.ploidy)
+                                      ploidy=self.args.ploidy,args=self.args)
 
             self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
                                test_accuracy, valid_accuracy, mse, special_loss, runtime.seconds / 60]
@@ -466,7 +466,7 @@ class ML_composer:
                 print("Predicting the entire dataset...")
                 features_all, target_all = self._model["INIT_MODEL"].data_transform(
                     self._raw_data["GENO"].iloc[:, 6:], self._raw_data["PHENO"].iloc[:, self.args.mpheno + 1], pheno_standard=self.args.rank)
-                y_pred_all = self._model["TRAINED_MODEL"].predict(features_all, batch_size=self.batchSize) + self.mean_pheno
+                y_pred_all = self._model["TRAINED_MODEL"].predict(features_all, batch_size=self.batchSize,verbose=int(self.args.quiet)) + self.mean_pheno
                 if self.args.data_type == "ordinal":
                     y_pred_all = tf.reduce_sum(tf.round(y_pred_all), axis=-1)
                     y_pred_all = np.reshape(y_pred_all, (len(target_all),))
@@ -511,7 +511,7 @@ class ML_composer:
         print("Predicting valid set..")
         val_length = valid_pheno.shape[0]
 
-        y_pred_valid = self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize)+self.mean_pheno
+        y_pred_valid = self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize,verbose=int(self.args.quiet))+self.mean_pheno
         if self.args.data_type == "ordinal":
             y_pred_valid = tf.reduce_sum(tf.round(y_pred_valid),axis=-1)
             y_pred_valid = np.reshape(y_pred_valid, (val_length,))
@@ -636,7 +636,7 @@ def main():
     elif args.analysis is True and args.load is not None and args.build is False:
         print("Start analysis model...")
         investigate_model(
-                        model_path=args.load,ploidy=args.ploidy)
+                        model_path=args.load,ploidy=args.ploidy,args=self.args)
     #composer.prepare_model()
 
 

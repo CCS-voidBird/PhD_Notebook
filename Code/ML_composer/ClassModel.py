@@ -52,6 +52,20 @@ def r2_score(observations,predictions):
     R_squared = tf.subtract(1.0, tf.divide(unexplained_error, total_error))
     return R_squared
 
+
+def addNormLayer(_input=None,_residual=None,switch=False,normType="batch"):
+
+    V = layers.Dropout(0.2)(_input)
+    if switch:
+        if switch == "AddNorm":
+            V = layers.Add()([V, _residual])
+        if normType == "batch":
+            V = layers.BatchNormalization()(V)
+        if normType == "layer":
+            V = layers.LayerNormalization()(V)
+        #V = layers.Activation("relu")(V)
+    return V
+
 class Residual(Layer):
     def __init__(self, channels_in,kernel,**kwargs):
         super(Residual, self).__init__(**kwargs)
@@ -1218,41 +1232,34 @@ class MultiLevelAttention(NN):
         for attention_block in range(args.AttentionBlock):
             V1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,epi_genomic=self.args.epistatic)(V)
             if self.args.addNorm is True:
-                V1 = layers.Add()([V1, V])
-                V1 = layers.LayerNormalization()(V1)
-                V1 = layers.Activation("relu")(V1)
-                V1 = layers.Dropout(0.2)(V1)
+                V1 = addNormLayer(V1,V1,switch=self.args.addNorm,normType="layer")
+            #    V1 = layers.Add()([V1, V])
+            #    V1 = layers.LayerNormalization()(V1)
+            #    V1 = layers.Activation("relu")(V1)
+            #    V1 = layers.Dropout(0.2)(V1)
             V = layers.Dense(embed,activation=act_fn[self.args.activation])(V1)
             if self.args.addNorm is True:
-                V = layers.Add()([V, V1])
-                V = layers.BatchNormalization()(V)
-                V = layers.Activation("relu")(V)
-                V = layers.Dropout(0.2)(V)
+                V = addNormLayer(V,V,switch=self.args.addNorm,normType="batch")
+            #    V = layers.Add()([V, V1])
+            #    V = layers.BatchNormalization()(V)
+            #    V = layers.Activation("relu")(V)
+            #    V = layers.Dropout(0.2)(V)
         
         M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(V)
-        
-        GEBV = layers.GlobalAveragePooling1D()(M)
-        GEBV = layers.Flatten()(GEBV)
 
-        if self.args.residual is True:
-            D = layers.Activation("sigmoid")(M)
-            D = layers.Flatten()(D)
-            D = layers.Dense(1, activation="linear")(D)
-            GEBV = layers.Add()([GEBV, D])
-        
         #D = layers.GlobalAveragePooling1D()(M)
-        #D = layers.Activation("sigmoid")(M)
-        #D = layers.Flatten()(D)
-        #D = layers.Dense(1, activation="linear")(D)
+        D = layers.Activation("sigmoid")(M)
+        D = layers.Flatten()(D)
+        D = layers.Dense(1, activation="linear")(D)
         
         #D = layers.Conv1D(1, kernel_size=1, strides=1, padding="same")(D)
         #D = layers.GlobalAveragePooling1D()(D)
         #D = layers.Flatten()(D)
 
-        #M = layers.GlobalAveragePooling1D()(M)
-        #M = layers.Flatten()(M)
+        M = layers.GlobalAveragePooling1D()(M)
+        M = layers.Flatten()(M)
 
-        #GEBV = layers.Add()([M, D])
+        GEBV = layers.Add()([M, D])
         #QV_output = AddingLayer_with_bias()(GEBV)
 
         model = keras.Model(inputs=input1, outputs=[GEBV])

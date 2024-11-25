@@ -34,11 +34,11 @@ def calculate_ordinal_loss(y_true, y_pred):
     pass
 
 def add_normalization(x=None,x1=None,norm_switch=False,activation='relu'):
+    x = layers.Dropout(0.2)(x)
     if norm_switch is True:
         x = layers.Add()([x,x1])
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation(activation)(x)
-    x = layers.Dropout(0.2)(x)
+        x = layers.BatchNormalization()(x)
+    #x = layers.Activation(activation)(x)
     return x
 
 class BinaryConversionLayer(layers.Layer):
