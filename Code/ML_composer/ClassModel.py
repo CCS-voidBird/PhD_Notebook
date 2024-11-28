@@ -96,7 +96,8 @@ class NN:
         self.name = "NN"
         self.args = args
         self.lr = args.lr
-        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=args.numDecay//args.batch,decay_rate=0.9,staircase=True)
+        decay_steps=args.numDecay//args.batch if args.numDecay else 10000
+        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=decay_steps,decay_rate=0.9,staircase=True)
         self.optimizers = {"rmsprop": keras.optimizers.RMSprop,
                       "Adam": keras.optimizers.Adam,
                       "SGD": keras.optimizers.SGD}
@@ -121,10 +122,10 @@ class NN:
                     phenos[i] = stats.zscore(phenos[i])
         return geno,phenos
 
-    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape, args, optimizer="Adam", lr=0.00001):
         pass
 
-    def modelCompile(self,model, optimizer="rmsprop"):
+    def modelCompile(self,model, optimizer="Adam"):
         adm = keras.optimizers.Adam
         rms = keras.optimizers.RMSprop
         sgd = keras.optimizers.SGD
@@ -166,7 +167,7 @@ class Transformer(NN):
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
         embed_dim = 32  # Embedding size for each token
         num_heads = 2  # Number of attention heads
         ff_dim = 32  # Hidden layer size in feed forward network inside transformer
@@ -231,7 +232,7 @@ class RNN(NN):
             pheno = stats.zscore(pheno)
         return geno, pheno
 
-    def model(self, input_shape, args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape, args, optimizer="Adam", lr=0.00001):
         embed_dim = 32  # Embedding size for each token
         num_heads = 2  # Number of attention heads
         ff_dim = 32  # Hidden layer size in feed forward network inside transformer
@@ -301,7 +302,7 @@ class DCNN():
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
         lr = float(lr)
         #model = Sequential()
         """
@@ -426,7 +427,7 @@ class DoubleCNN(NN):
             pheno = stats.zscore(pheno)
         return [geno1,geno2],pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.0001,annotation=None):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.0001,annotation=None):
 
         input1 = layers.Input(shape=input_shape)
         X1 = layers.Conv1D(64, kernel_size=25, strides=3, padding='same')(input1)
@@ -496,7 +497,7 @@ class NCNN(NN):
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
         lr = float(lr)
         input1 = layers.Input(shape=input_shape)
         X = layers.Conv1D(64, kernel_size=5, strides=3, padding='same', activation=act_fn[args.activation])(input1)
@@ -585,7 +586,7 @@ class BCNN():
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
         lr = float(lr)
         model = Sequential()
         """
@@ -649,7 +650,7 @@ class MLP(NN):
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
 
         lr = float(lr)
         input1 = layers.Input(shape=input_shape)
@@ -744,7 +745,7 @@ class Double_MLP():
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
 
         input1 = layers.Input(shape=input_shape)
         X = fullyConnectted_block(input1, args.width, args.depth,activation=act_fn[self.args.activation])
@@ -791,7 +792,7 @@ class ResMLP(NN):
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
 
         # model.add(Dropout(0.2))
 
@@ -846,7 +847,7 @@ class LNN(NN):
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
         lr = float(lr)
 
         input1 = layers.Input(shape=input_shape)
@@ -979,7 +980,7 @@ class AttentionCNN(NN):
             pheno = stats.zscore(pheno)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
         # init Q,K,V
         if args.depth < 1:
             depth = 1
@@ -1061,7 +1062,7 @@ class MultiHeadAttentionLNN(NN):
         print("The transformed SNP shape:", pheno.shape,pheno.dtype)
         return geno,pheno
 
-    def model(self, input_shape,args, optimizer="rmsprop", lr=0.00001,annotation=None):
+    def model(self, input_shape,args, optimizer="Adam", lr=0.00001,annotation=None):
         # init Q,K,V
         depth = args.depth
         embed = args.embedding
@@ -1173,7 +1174,7 @@ class MultiLevelAttention(NN):
                     phenos[i] = stats.zscore(phenos[i])
         return geno,phenos
 
-    def model(self, input_shape, args, optimizer="rmsprop", lr=0.001, annotation=None):
+    def model(self, input_shape, args, optimizer="Adam", lr=0.001, annotation=None):
         # init Q,K,V
         depth = args.depth
         embed = args.embedding
@@ -1185,7 +1186,12 @@ class MultiLevelAttention(NN):
         if annotation is None:
 
             X = layers.ZeroPadding1D(padding=(0, zero_padding))(input1)
-            V = layers.LocallyConnected1D(filters=args.locallyConnect, kernel_size=args.locallyBlock, strides=args.locallyBlock,activation=act_fn[self.args.activation],padding="valid",use_bias=False)(X)
+            V = layers.LocallyConnected1D(filters=args.locallyConnect, 
+                                          kernel_size=args.locallyBlock, 
+                                          strides=args.locallyBlock,
+                                          activation=act_fn[self.args.activation],
+                                          padding="valid",use_bias=False,
+                                          kernel_regularizer=keras.regularizers.l2(0.01))(X)
             #C = layers.Conv1D(args.locallyConnect,kernel_size=10, strides=1, activation=act_fn[self.args.activation], padding="same",use_bias=False)(V)
             #V = layers.Add()([V,C])
             #Xhet = BinaryConversionLayer(condition=lambda x: x == 1.0)(X)
@@ -1230,7 +1236,10 @@ class MultiLevelAttention(NN):
         """
         # train and get guide attention for actual phenotypes
         for attention_block in range(args.AttentionBlock):
-            V1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,epi_genomic=self.args.epistatic)(V)
+            #V1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,epi_genomic=self.args.epistatic)(V)
+            V1 = layers.MultiHeadAttention(num_heads=args.num_heads, key_dim=embed, value_dim=embed, dropout=0.1,
+                                           kernel_regularizer=keras.regularizers.l2(0.01),
+                                           bias_regularizer=keras.regularizers.l2(0.01))(V,V)
             if self.args.addNorm is True:
                 V1 = addNormLayer(V1,V1,switch=self.args.addNorm,normType="layer")
             #    V1 = layers.Add()([V1, V])
@@ -1289,7 +1298,7 @@ class MultiLevelNN(NN):
         #get class name
         return self.__class__.__name__
 
-    def model(self, input_shape,args,optimizer="rmsprop", lr=0.00001):
+    def model(self, input_shape,args,optimizer="Adam", lr=0.00001):
 
         input1 = layers.Input(shape=input_shape, name="input_layer_1")
 
