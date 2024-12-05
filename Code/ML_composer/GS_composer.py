@@ -447,7 +447,7 @@ class ML_composer:
                         os.mkdir(model_path)
                     investigate_model(model = self._model["TRAINED_MODEL"],
                                       model_path=model_path,
-                                      ploidy=self.args.ploidy,args=self.args)
+                                      ploidy=self.args.ploidy,marker_maf = np.array(self._info["MAF"]),args=self.args)
 
             self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
                                test_accuracy, valid_accuracy, mse, special_loss, runtime.seconds / 60]
@@ -635,8 +635,11 @@ def main():
             i+=1
     elif args.analysis is True and args.load is not None and args.build is False:
         print("Start analysis model...")
+        composer = ML_composer(args=args)
+        composer.get_data(configer=None,args=args)
+        maf_info = composer._info["MAF"]
         investigate_model(
-                        model_path=args.load,ploidy=args.ploidy,args=self.args)
+                        model_path=args.load,ploidy=args.ploidy,marker_maf = np.array(maf_info),args=args)
     #composer.prepare_model()
 
 

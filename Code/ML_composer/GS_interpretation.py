@@ -8,88 +8,6 @@ from keras import backend as K
 import matplotlib.pyplot as plt
 import pandas as pd
 
-################################################
-###############Identify path################
-################################################
-
-"""
-user_profile = "H:/ML_archive/"
-#assume model index is 1
-model_index = 1
-trait = "pachy"
-model_series = "PIP_attention/MultiLevel/v"+str(model_index)+"_1AB_Epi_1000SNP_leaky_reluLinear"
-
-################################################################
-#####First stage: Input trained model from directory#########
-################################################################
-
-model_path = user_profile + model_series
-
-model_name = "MultiLevelAttention_v"+str(model_index)+"_1AB_Epi_1000SNP_leaky_reluLinear"
-model_full_path = model_path + "/" + str(trait) + "_MultiLevelAttention_"+str(model_index)
-
-print(model_full_path)
-model = keras.models.load_model(model_full_path)
-model.summary()
-#model = keras.Model(inputs=input1, outputs=QV_output)
-model.compile(optimizer="RMSprop", loss="mean_squared_error")
-"""
-
-################################################################
-#####Second stage: Create investigate dataset #########
-################################################################
-
-"""
-1. Create three backgrounds
-
-
-bg0 = np.zeros((1, marker_dim,1))
-bg1 = np.ones((1, marker_dim,1))
-# 1000 markers with value 2
-bg2 = np.ones((1, marker_dim,1)) + 1
-"""
-
-
-"""
-2. Create marker mutation sets
-
-
-dataset = []
-
-for bg in range(0,3):
-    print("Background: {}".format(bg))
-    large_matrix = []
-    for allele in range(0,3):
-        allele_matrix = np.full((marker_dim, marker_dim),bg,dtype=np.float32)
-        np.fill_diagonal(allele_matrix,allele)
-        np.expand_dims(allele_matrix,axis=-1)
-        large_matrix.append(allele_matrix)
-    dataset.append(large_matrix)
-
-    
-    #print(large_matrix.shape)
-"""
-
-################################################################
-#####Third stage: Predict phenotypes by trained model #########
-################################################################
-"""
-marker_contributs = []
-
-for bg in range(0,3):
-    print("Background: {}".format(bg))
-    for dose in range(0,3):
-        print("Analysing dose: {}".format(dose))
-        gebvs = model.predict(dataset[bg][dose])
-        bs = gebvs - bps[bg]
-        bs = [bg,dose]+np.transpose(bs).tolist()[0]
-        marker_contributs.append(bs)
-
-marker_contributs = pd.DataFrame(marker_contributs)
-print(marker_contributs.shape)
-marker_contributs.columns = ["Background","Dose"]+["SNP_"+str(i) for i in range(1,marker_dim+1)]
-marker_contributs.to_csv(model_path+"/marker_contributs.csv",index=False)
-"""
 
 ###################################
 #Placeholder for custmized function that investigate trained models##########
@@ -145,54 +63,53 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
     marker_dim = model.layers[0].input_shape[-1][1]
     print(marker_dim)
     bg0 = np.zeros((1, marker_dim,1))
-    bs.append(model.predict(bg0,verbose=int(args.quiet)))
-    '''
-    for bg in range(1,ploidy+1):
-        print("Now creating simulated marker set under Background: {}".format(bg))
-        large_matrix = []
-        for allele in range(0,ploidy+1):
-            allele_matrix = np.full((marker_dim, marker_dim),bg,dtype=np.float32)
-            np.fill_diagonal(allele_matrix,allele)
-            np.expand_dims(allele_matrix,axis=-1)
-            large_matrix.append(allele_matrix)
-        dataset.append(large_matrix)
-    '''
+    #bs.append(model.predict(bg0,verbose=int(args.quiet)))
+
     bg1 = np.ones((1, marker_dim,1))
-    bg2 = np.ones((1, marker_dim,1)) + 1
+    bg2 = np.zeros((1, marker_dim,1)) + ploidy
+    bg_maf = np.reshape(marker_maf,(1,marker_dim,1))
 
 
     bp0 = model.predict(bg0,verbose=int(args.quiet))
     bp1 = model.predict(bg1,verbose=int(args.quiet))
     bp2 = model.predict(bg2,verbose=int(args.quiet))
-    bps = [bp0,bp1,bp2]
-    print((bp0,bp2,bp1))
+    bp_maf = model.predict(bg_maf,verbose=int(args.quiet))
+    bps = [bp0,bp1,bp2,bp_maf]
+    print((bp0,bp2,bp1,bp_maf))
 
     dataset = []
+    allele_ref = [0,1,2,"MAF"]
 
-    for bg in range(0,3):
-        print("Now creating simulated marker set under Background: {}".format(bg))
+    for bg in range(0,4):
+        print("Now creating simulated marker set under Background: {}".format(allele_ref[bg]))
         large_matrix = []
-        for allele in range(0,3):
-            allele_matrix = np.full((marker_dim, marker_dim),bg,dtype=np.float32)
-            np.fill_diagonal(allele_matrix,allele)
-            np.expand_dims(allele_matrix,axis=-1)
+        for allele in range(0,4):
+            if allele in [0,1,2]:
+                allele_matrix = np.full((marker_dim, marker_dim),bg,dtype=np.float32)
+                np.fill_diagonal(allele_matrix,[0,1,ploidy][allele])
+                np.expand_dims(allele_matrix,axis=-1)
+            if allele == 3:
+                #repeat the same allele matrix for all markers to achieve shape (marker_dim,marker_dim,1)
+                allele_matrix = np.full((marker_dim, marker_dim),bg_maf,dtype=np.float32)
+                np.fill_diagonal(allele_matrix,marker_maf)
+                np.expand_dims(allele_matrix,axis=-1)
             large_matrix.append(allele_matrix)
         dataset.append(large_matrix)
 
-    for bg in range(0,3):
-        print("Now estimating marker effects under Background: {}".format(bg))
-        for dose in range(0,3):
-            print("Analysing dose: {}".format(dose))
+    for bg in range(0,4):
+        print("Now estimating marker effects under Background: {}".format(allele_ref[bg]))
+        for dose in range(0,4):
+            print("Analysing dose: {}".format(allele_ref[bg]))
             with tf.device('/CPU:0'):
                 x = tf.convert_to_tensor(dataset[bg][dose])
             gebvs = model.predict(x,verbose=int(args.quiet))
             bs = gebvs - bps[bg]
-            bs = [bg,dose]+np.transpose(bs).tolist()[0]
+            bs = [allele_ref[bg],dose]+np.transpose(bs).tolist()[0]
             marker_contributs.append(bs)
 
     marker_contributs = pd.DataFrame(marker_contributs)
     print(marker_contributs.shape)
-    marker_contributs.columns = ["Background","Dose"]+["SNP_"+str(i) for i in range(1,marker_dim+1)]
+    marker_contributs.columns = ["Background","Dose"]+["SNP_"+str(i) for i in range(1,  +1)]
 
     marker_contributs.to_csv(model_path+"/marker_contributes.csv",index=False,sep="\t")
     #plot_marker_contributs(marker_contributs,model_path)

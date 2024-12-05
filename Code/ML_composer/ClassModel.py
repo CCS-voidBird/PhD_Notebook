@@ -1236,16 +1236,12 @@ class MultiLevelAttention(NN):
         """
         # train and get guide attention for actual phenotypes
         for attention_block in range(args.AttentionBlock):
-            #V1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,epi_genomic=self.args.epistatic)(V)
-            V1 = layers.MultiHeadAttention(num_heads=args.num_heads, key_dim=embed, value_dim=embed, dropout=0.1,
-                                           kernel_regularizer=keras.regularizers.l2(0.01),
-                                           bias_regularizer=keras.regularizers.l2(0.01))(V,V)
+            V1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,epi_genomic=self.args.epistatic)(V)
+            #V1 = layers.MultiHeadAttention(num_heads=args.num_heads, key_dim=embed, value_dim=embed, dropout=0.0,
+            #                               )(V,V)
             if self.args.addNorm is True:
                 V1 = addNormLayer(V1,V1,switch=self.args.addNorm,normType="layer")
-            #    V1 = layers.Add()([V1, V])
-            #    V1 = layers.LayerNormalization()(V1)
-            #    V1 = layers.Activation("relu")(V1)
-            #    V1 = layers.Dropout(0.2)(V1)
+            
             V = layers.Dense(embed,activation=act_fn[self.args.activation])(V1)
             if self.args.addNorm is True:
                 V = addNormLayer(V,V,switch=self.args.addNorm,normType="batch")
