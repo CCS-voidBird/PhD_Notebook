@@ -27,7 +27,7 @@ import configparser
 """
 
 
-def plot_loss_history(h, title,plot_name=None,checkpoint=0):
+def plot_loss_history(h, title,plot_name=None,checkpoint=0,numTrait=1):
     print("Plotting loss history...")
     hist_df = pd.DataFrame(h.history)
     hist_df['round'] = abs(checkpoint)
@@ -42,7 +42,16 @@ def plot_loss_history(h, title,plot_name=None,checkpoint=0):
 
 
     plot_name_loss=plot_name+"_"+str(checkpoint)+"_loss.png"
-    fig, axs = plt.subplots(2, 1)
+    fig, axs = plt.subplots(2, numTrait)
+    for i in range(numTrait):
+        axs[0][i].plot(h.history['loss'][1:], label = "Train loss", color = "blue")
+        axs[0][i].plot(h.history['val_loss'][1:], label = "Validation loss", color = "red")
+        axs[0][i].set_ylabel("MSE")
+        axs[1][i].plot(h.history['p_corr'][1:], label = "Train cor", color = "blue")
+        axs[1][i].plot(h.history['val_p_corr'][1:], label = "Validation cor", color = "red")
+        axs[1][i].set_xlabel('Epochs')
+        axs[1][i].set_ylabel("Pearson's Correlation")
+    """
     axs[0].plot(h.history['loss'][1:], label = "Train loss", color = "blue")
     axs[0].plot(h.history['val_loss'][1:], label = "Validation loss", color = "red")
     axs[0].set_ylabel("MSE")
@@ -51,6 +60,7 @@ def plot_loss_history(h, title,plot_name=None,checkpoint=0):
     axs[1].plot(h.history['val_p_corr'][1:], label = "Validation cor", color = "red")
     axs[1].set_xlabel('Epochs')
     axs[1].set_ylabel("Pearson's Correlation")
+    """
     fig.suptitle(title)
     #print plot name
     print("Plot name: ", plot_name)
@@ -66,7 +76,7 @@ def plot_loss_history(h, title,plot_name=None,checkpoint=0):
         return
     
     
-def plot_correlation(predictions, observations, title,plot_name=None,checkpoint=0):
+def plot_correlation(predictions, observations, title,plot_name=None,checkpoint=0,numTrait=1):
 
     ###create clear correlation plot for predictions and observations
 
@@ -141,6 +151,7 @@ class ML_composer:
         self.modelling = None
         self.silence_mode = silence
         self.config = None
+        self.pheno_col_index = None
         self.save = True
         self.plot = False
         self.args = None
@@ -161,6 +172,7 @@ class ML_composer:
 
     def get_data(self,configer,args):
         self.args = args
+        
         self.config = configer
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
                           "Valid_Accuracy", "MSE", self.args.loss, "Runtime"])
@@ -178,7 +190,9 @@ class ML_composer:
         #print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
         self._raw_data["INFO"] = self._raw_data["FAM"].iloc[:,0:6]  #Further using fam file instead.
-
+        #prapare phenotype columns for multiTrait models
+        self.pheno_col_index = args.mpheno + 1 if args.mpheno != 0 else list(range(2,len(self._raw_data["PHENO"].columns)))
+        self.args.NumTrait = len(self.pheno_col_index) if args.mpheno == 0 else 1
         print("Get genotype shape:",self._raw_data["GENO"].iloc[:,6:].shape)
         #print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
         self.plot = self.args.plot
@@ -298,27 +312,27 @@ class ML_composer:
 
     def prepare_training(self,train_index:list,valid_index:list):
 
-        removal = np.where(self._raw_data["PHENO"].iloc[:, int(self.args.mpheno)+1].isin([None,"NA",np.nan]))[0].tolist()
+        ##prepare training data, extract removal index
+        removal = np.where(self._raw_data["PHENO"].iloc[:, self.pheno_col_index].isin([None,"NA",np.nan]))[0].tolist()
+
         print("Overall population: {}".format(len(self._raw_data["INDEX"].index)))
         print("{} individuals need to be removed due to the miss phenotype".format(len(removal)))
         train_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(train_index))[0].tolist() if x not in removal]
         valid_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(valid_index))[0].tolist() if x not in removal]
         print("Filtered population: {}".format(len(train_mask)+len(valid_mask)))
-        #print(self.args.mafm)
+
         self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:] * self._info["MAF"] if self.args.mafm is True else self._raw_data["GENO"].iloc[train_mask, 6:]
         self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:] * self._info["MAF"] if self.args.mafm is True else self._raw_data["GENO"].iloc[valid_mask, 6:]
 
-        self.train_pheno = self._raw_data["PHENO"].iloc[train_mask,self.args.mpheno + 1]
+        self.train_pheno = self._raw_data["PHENO"].iloc[train_mask, self.pheno_col_index] #,self.args.mpheno + 1] if self.args.mpheno != 0 else self._raw_data["PHENO"].iloc[train_mask,2:]
         print("Mean of train phenotype:",np.mean(self.train_pheno))
         self.mean_pheno = np.mean(self.train_pheno)
         if self.args.mean is not True or self.args.data_type == "ordinal":
             print("Use raw phenotype as the target")
             self.mean_pheno = 0
         self.train_pheno = self.train_pheno - self.mean_pheno
-        self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.args.mpheno + 1]
-        #print(self._raw_data["PHENO"].iloc[valid_mask,])
-        #self.valid_pheno = self.valid_pheno - self.mean_pheno
-        #print(self.valid_pheno.head(5))
+        self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.pheno_col_index] #self.args.mpheno + 1] if self.args.mpheno != 0 else self._raw_data["PHENO"].iloc[train_mask,2:]
+
         self.train_pheno = np.asarray(self.train_pheno).astype(np.float32)
         self.valid_pheno = np.asarray(self.valid_pheno).astype(np.float32)
         if self.args.data_type == "ordinal":
@@ -387,14 +401,15 @@ class ML_composer:
         y_pred = self._model["TRAINED_MODEL"].predict(features_train,batch_size=self.batchSize,verbose=int(self.args.quiet))
         if self.args.data_type == "ordinal":
             y_pred = tf.reduce_sum(tf.round(y_pred),axis=-1)
-            y_pred = np.reshape(y_pred, (test_length,))
-            #print(y_pred.shape)
-            #print(target_train.shape)
-            #test = tf.reduce_sum(target_train,axis=-1)
-            test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
+            y_pred = np.reshape(y_pred, (test_length,self.args.NumTrait))
+            target_train = np.reshape(target_train, (test_length,self.args.NumTrait))   
+            test_accuracy = calculate_correlation_for_traits(y_pred,target_train,self.args.NumTrait)
         else:
-            y_pred = np.reshape(y_pred, (test_length,))
-            test_accuracy = np.corrcoef(y_pred, target_train)[0, 1]
+            y_pred = np.reshape(y_pred, (test_length,self.args.NumTrait))
+            target_train = np.reshape(target_train, (test_length,self.args.NumTrait))   
+            print(y_pred.shape)
+            test_accuracy = calculate_correlation_for_traits(y_pred,target_train,self.args.NumTrait)
+            print("Train accuracy: ",test_accuracy)
         print("Train End.")
         print("In-year accuracy (measured as Pearson's correlation) is: ", test_accuracy)
         endTime = datetime.now()
@@ -414,7 +429,6 @@ class ML_composer:
         print("Train status:")
         print("Epochs: ",self.args.epoch)
         print("Repeat(Round): ",self.args.round)
-        #print("feature shape:",features_train.shape)
 
         round = 1
         val_record = -1
@@ -424,7 +438,7 @@ class ML_composer:
             gc.collect()
             history, test_accuracy, runtime = self.train(features_train, features_val, target_train, target_val,round=round)
             valid_accuracy, mse,special_loss = self.model_validation()
-            if valid_accuracy > val_record:
+            if valid_accuracy:
                 val_record = valid_accuracy
                 if self.args.save is True:
                     print("Saving the model with higher accuracy...")
@@ -448,9 +462,18 @@ class ML_composer:
                     investigate_model(model = self._model["TRAINED_MODEL"],
                                       model_path=model_path,
                                       ploidy=self.args.ploidy,marker_maf = np.array(self._info["MAF"]),args=self.args)
+            for i in range(self.args.NumTrait):
+                print("Trait ",i)
+                print("Train accuracy: ", test_accuracy[i])
+                print("Valid accuracy: ", valid_accuracy[i])
+                print("MSE: ", mse[i])
+                print("Special loss: ", special_loss[i])
+                print("Runtime: ", runtime.seconds / 60, " min")
+                single_trait_record = [self.args.trait[i], train_index, valid_index, self.model_name,
+                                        test_accuracy[i], valid_accuracy[i], mse[i], special_loss[i], runtime.seconds / 60]
 
-            self.record.loc[len(self.record)] = [self.args.trait, train_index, valid_index, self.model_name,
-                               test_accuracy, valid_accuracy, mse, special_loss, runtime.seconds / 60]
+                self.record.loc[len(self.record)] = single_trait_record #[self.args.trait, train_index, valid_index, self.model_name,
+                                #test_accuracy, valid_accuracy, mse, special_loss, runtime.seconds / 60]
             check_usage()
             check_gpu_usage()
             gpu_devices = tf.config.list_physical_devices('GPU')
@@ -465,14 +488,14 @@ class ML_composer:
                 # predict the entire dataset
                 print("Predicting the entire dataset...")
                 features_all, target_all = self._model["INIT_MODEL"].data_transform(
-                    self._raw_data["GENO"].iloc[:, 6:], self._raw_data["PHENO"].iloc[:, self.args.mpheno + 1], pheno_standard=self.args.rank)
+                    self._raw_data["GENO"].iloc[:, 6:], np.asarray(self._raw_data["PHENO"].iloc[:, self.pheno_col_index]), pheno_standard=self.args.rank)
                 y_pred_all = self._model["TRAINED_MODEL"].predict(features_all, batch_size=self.batchSize,verbose=int(self.args.quiet)) + self.mean_pheno
                 if self.args.data_type == "ordinal":
                     y_pred_all = tf.reduce_sum(tf.round(y_pred_all), axis=-1)
-                    y_pred_all = np.reshape(y_pred_all, (len(target_all),))
+                    y_pred_all = np.reshape(y_pred_all, (len(target_all),self.args.NumTrait))
                     
                 else:
-                    y_pred_all = np.reshape(y_pred_all, (len(target_all),))
+                    y_pred_all = np.reshape(y_pred_all, (len(target_all),self.args.NumTrait))
                 print("Predicted: ", np.array(y_pred_all[:10]))
                 print("Observed: ", np.array(target_all[:10]))
                 # Save samples,validate index,obvserved and predicted values to a file
@@ -480,12 +503,14 @@ class ML_composer:
                 pred_df = pd.DataFrame()
                 pred_df["Sample"] = self._raw_data["INDEX"].iloc[:, 1]
                 pred_df["Index"] = self._raw_data["INDEX"].iloc[:, -1]
-                pred_df["Observed"] = target_all
-                pred_df["Predicted"] = y_pred_all
+                print("Predicted: ", target_all.shape)
+                for i in range(self.args.NumTrait):
+                    pred_df["Observed_{}".format(i)] = target_all[:,i] if self.args.NumTrait > 1 else target_all
+                    pred_df["Predicted_{}".format(i)] = y_pred_all[:,i] if self.args.NumTrait > 1 else y_pred_all
                 pred_df.to_csv(os.path.abspath(self.args.output) + "/{}_{}_{}_prediction.csv".format(self.args.trait, self.model_name, val), sep="\t", index=False)
 
 
-            if self.plot is True:
+            if self.plot:
                 # create a folder to save the plot, folder name: trait, model
                 print("Plotting the training process...")
                 plot_dir = os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,
@@ -514,21 +539,21 @@ class ML_composer:
         y_pred_valid = self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize,verbose=int(self.args.quiet))+self.mean_pheno
         if self.args.data_type == "ordinal":
             y_pred_valid = tf.reduce_sum(tf.round(y_pred_valid),axis=-1)
-            y_pred_valid = np.reshape(y_pred_valid, (val_length,))
+            y_pred_valid = np.reshape(y_pred_valid, (val_length,self.args.NumTrait))
             #print(y_pred_valid.shape)
             #print(valid_pheno.shape)
             #test = tf.reduce_sum(valid_data,axis=-1)
-            accuracy_valid = np.corrcoef(y_pred_valid, valid_pheno)[0, 1]
+            accuracy_valid = calculate_correlation_for_traits(y_pred_valid,valid_pheno,self.args.NumTrait)
         else:
-            y_pred = np.reshape(y_pred_valid, (val_length,))
-            accuracy_valid = np.corrcoef(y_pred, valid_pheno)[0, 1]
+            y_pred = np.reshape(y_pred_valid, (val_length,self.args.NumTrait))
+            accuracy_valid = calculate_correlation_for_traits(y_pred_valid,valid_pheno,self.args.NumTrait)
 
-        mse = mean_squared_error(y_pred_valid, valid_pheno)
+        mse = mean_squared_error(y_pred_valid, valid_pheno, multioutput='raw_values')
         print("Testing prediction:")
         print("Predicted: ", np.array(y_pred_valid[:10]))
         print("observed: ", np.array(valid_pheno[:10]))
-        plot_correlation(y_pred_valid,valid_pheno,self.args.trait,
-                         os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name, self.args.trait))
+        #plot_correlation(y_pred_valid,valid_pheno,self.args.trait,
+        #                 os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name, self.args.trait))
         print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))
         print("Prediction mean: {} Var: {}".format(np.mean(y_pred_valid),np.var(y_pred_valid)))
 
@@ -546,6 +571,8 @@ class ML_composer:
 
     def export_record(self):
 
+        # sort record by traits
+        self.record = self.record.sort_values(by=["Trait"])
         self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self.model_name, self.args.trait), sep="\t")
         print("Result:")
         print(self.record)

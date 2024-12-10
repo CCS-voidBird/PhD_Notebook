@@ -20,6 +20,31 @@ if platform.system().lower() == "windows":
 else:
     config.read("/clusterdata/uqcche32/MLP_parameters.ini")
 """
+
+def calculate_correlation_for_traits(y_pred,y_true,numTraits=1):
+    """
+    Calculate the correlation between predicted value and true value for each trait, nan value woule be missed by pairs.
+    :param y_true: true value
+    :param y_pred: predicted value
+    :param numTraits: number of traits
+    :return: a list of correlation value for each trait
+    """
+    corrs = []
+    for i in range(numTraits):
+        #Get the true and predicted value for each trait
+        y_true_trait = y_true[:,] if numTraits == 1 else y_true[:,i]
+        y_pred_trait = y_pred[:,] if numTraits == 1 else y_pred[:,i]
+        #reshape y_true and y_pred to 1D array
+        y_true_trait = np.reshape(y_true_trait,(-1,))
+        y_pred_trait = np.reshape(y_pred_trait,(-1,))
+        #construct a mask to filter nan value
+        mask = ~np.isnan(y_true_trait) & ~np.isnan(y_pred_trait)
+        #calculate the correlation between true and predicted value
+        corr = np.corrcoef(y_true_trait[mask],y_pred_trait[mask])[0,1]
+        corrs.append(corr)
+        
+    return corrs
+
 def read_transform_plink_files(geno_path):
 
     print("Reading geno files from: ",geno_path)

@@ -396,12 +396,12 @@ class DCNN():
         return model
 
 
-class DoubleCNN(NN):
+class DNNGP(NN):
     """
     double CNN, esitmate additive SNP alleles and heterozygous SNP alleles
     """
     def __init__(self,args):
-        super(DoubleCNN, self).__init__(args)
+        super(DNNGP, self).__init__(args)
         self.name = "Double channel residual CNN"
         self.args = args
 
@@ -417,58 +417,87 @@ class DoubleCNN(NN):
         geno1 = geno
         geno1 = decoding(geno1)
         geno1 = np.expand_dims(geno1, axis=2)
-        geno2 = geno.mask(geno != 1,0)
-        geno2 = decoding(geno2)
-        geno2 = np.expand_dims(geno2, axis=2)
-        #geno = np.stack((geno1,geno2),axis=2)
-        #geno = np.expand_dims(geno, axis=3)
-        print("The transformed SNP shape:", geno1.shape,geno2.shape)
+        #geno2 = geno.mask(geno != 1,0)
+        #geno2 = decoding(geno2)
+        #geno2 = np.expand_dims(geno2, axis=2)
+
+        print("The transformed SNP shape:", geno1.shape)
         if pheno_standard is True:
             pheno = stats.zscore(pheno)
-        return [geno1,geno2],pheno
+        return geno1,pheno
 
     def model(self, input_shape,args, optimizer="Adam", lr=0.0001,annotation=None):
 
         input1 = layers.Input(shape=input_shape)
-        X1 = layers.Conv1D(64, kernel_size=25, strides=3, padding='same')(input1)
-        X1 = layers.Activation('relu')(X1)
-        X1 = layers.MaxPooling1D(pool_size=2)(X1)
-        X1 = layers.Conv1D(128, kernel_size=3, strides=3, padding='same')(X1)
-        X1 = layers.Activation('relu')(X1)
-        X1 = layers.MaxPooling1D(pool_size=2)(X1)
+        V1 = layers.Conv1D(filters=64, 
+                              kernel_size=4, 
+                              strides=4,
+                              activation=layers.LeakyReLU(alpha=0.1),
+                              padding="valid",use_bias=True,
+                              kernel_regularizer=keras.regularizers.l2(0.01),
+                              bias_regularizer=keras.regularizers.l2(0.01)
+                              )(input1)
+        V1 = layers.Dropout(0.2)(V1)
+        V1 = layers.BatchNormalization()(V1)
+        V1 = layers.Conv1D(filters=64, 
+                              kernel_size=4, 
+                              strides=4,
+                              activation=layers.LeakyReLU(alpha=0.1),
+                              padding="valid",use_bias=True,
+                              kernel_regularizer=keras.regularizers.l2(0.01),
+                              bias_regularizer=keras.regularizers.l2(0.01)
+                              )(V1)
+        V1 = layers.Dropout(0.2)(V1)
+        V1 = layers.Conv1D(filters=64, 
+                              kernel_size=4, 
+                              strides=4,
+                              activation=layers.LeakyReLU(alpha=0.1),
+                              padding="valid",use_bias=True,
+                              kernel_regularizer=keras.regularizers.l2(0.01),
+                              bias_regularizer=keras.regularizers.l2(0.01)
+                              )(V1)
 
-        input2 = layers.Input(shape=input_shape)
-        X2 = layers.Conv1D(64, kernel_size=25, strides=3, padding='same')(input2)
-        X2 = layers.Activation('relu')(X2)
-        X2 = layers.MaxPooling1D(pool_size=2)(X2)
-        X2 = layers.Conv1D(128, kernel_size=3, strides=3, padding='same')(X2)
-        X2 = layers.Activation('relu')(X2)
-        X2 = layers.MaxPooling1D(pool_size=2)(X2)
+        #mask all the input1 value != 1 to 0
+        '''
+        mask = layers.Lambda(lambda x: tf.cast(tf.equal(x, 1), tf.float32))(input1)
+        V2 = layers.Multiply()([input1, mask])
+        V2 = layers.Conv1D(filters=64, 
+                              kernel_size=4, 
+                              strides=4,
+                              activation="relu",
+                              padding="valid",use_bias=True
+                              )(V2)
+        V2 = layers.Dropout(0.2)(V2)
+        V2 = layers.BatchNormalization()(V2)
+        V2 = layers.Conv1D(filters=64, 
+                              kernel_size=4, 
+                              strides=4,
+                              activation="relu",
+                              padding="valid",use_bias=True
+                              )(V2)
+        V2 = layers.Dropout(0.2)(V2)
+        V2 = layers.Conv1D(filters=64, 
+                              kernel_size=4, 
+                              strides=4,
+                              activation="relu",
+                              padding="valid",use_bias=True
+                              )(V2)
 
-        X = layers.concatenate([X1, X2], axis=-1)
-        X = layers.Flatten()(X)
-        X = layers.Dropout(rate=0.2)(X)
+        X = layers.concatenate([V1, V2], axis=-1)
+        '''
+        X = layers.Flatten()(V1)
 
-        for i in range(args.depth):
-            X = residual_fl_block(input=X, width=self.args.width, downsample=(i % 2 != 0 & self.args.residual))
+        #for i in range(args.depth):
+        #    X = residual_fl_block(input=X, width=self.args.width, downsample=(i % 2 != 0 & self.args.residual))
 
-        output = layers.Dense(1, activation="linear")(X)
-        model = keras.Model(inputs=[input1,input2], outputs=output)
+        output = layers.Dense(args.NumTrait, activation="linear",kernel_regularizer=keras.regularizers.l2(0.01),bias_regularizer=keras.regularizers.l2(0.01))(X)
+        model = keras.Model(inputs=input1, outputs=output)
+        if self.args.data_type == "ordinal":
+            loss_class = Ordinal_loss(self.args.classes)
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=[p_corr])
+        else:
 
-        try:
-            adm = keras.optimizers.Adam(learning_rate=lr)
-            rms = keras.optimizers.RMSprop(learning_rate=lr)
-            sgd = keras.optimizers.SGD(learning_rate=lr)
-        except:
-            adm = keras.optimizers.Adam(lr=lr)
-            rms = keras.optimizers.RMSprop(lr=lr)
-            sgd = keras.optimizers.SGD(lr=lr)
-
-        optimizers = {"rmsprop": rms,
-                      "Adam": adm,
-                      "SGD": sgd}
-
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
+            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
 
         """
         Optimizers: Adam, RMSProp, SGD 
@@ -517,7 +546,7 @@ class NCNN(NN):
         #X = layers.Dropout(rate=0.2)(X)
         X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],addNorm = self.args.addNorm, use_bias=True)
         X = tf.expand_dims(X, axis=-1)
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=True,activation='linear')(X)
+        M = layers.Conv1D(args.NumTrait, kernel_size=1, strides=1,padding="same", use_bias=True,activation='linear')(X)
         GEBV = layers.GlobalAveragePooling1D()(M)
         GEBV = layers.Flatten()(GEBV)
         #M = layers.Dense(1, activation="linear")(M)
@@ -527,7 +556,7 @@ class NCNN(NN):
         if self.args.residual is True:
             D = layers.Activation("sigmoid")(M)
             D = layers.Flatten()(D)
-            D = layers.Dense(1, activation="linear")(D)
+            D = layers.Dense(args.NumTrait, activation="linear")(D)
             GEBV = layers.Add()([GEBV, D])
         '''
         for i in range(args.depth):
@@ -666,7 +695,7 @@ class MLP(NN):
         if self.args.residual is True:
             D = layers.Activation("sigmoid")(M)
             D = layers.Flatten()(D)
-            D = layers.Dense(1, activation="linear")(D)
+            D = layers.Dense(args.NumTrait, activation="linear")(D)
             GEBV = layers.Add()([GEBV, D])
         '''
         for i in range(args.depth):
@@ -1141,12 +1170,6 @@ class MultiHeadAttentionLNN(NN):
         return model
 
 class MultiLevelAttention(NN):
-    """
-    Need work
-    SNP (by LD mask) * LD Attention = Global averaging GEBVs
-    self attention - encoding - additive
-    cross attention - decoding (with raw SNP/LD map) assume to estimate global effect.
-    """
 
     def __init__(self,args):
         super(MultiLevelAttention,self).__init__(args)
@@ -1172,6 +1195,8 @@ class MultiLevelAttention(NN):
             for i in range(len(phenos)):
                 if pheno_standard is True:
                     phenos[i] = stats.zscore(phenos[i])
+        #convert phenos to numpy array
+        #phenos = np.array(phenos)
         return geno,phenos
 
     def model(self, input_shape, args, optimizer="Adam", lr=0.001, annotation=None):
@@ -1190,32 +1215,12 @@ class MultiLevelAttention(NN):
                                           kernel_size=args.locallyBlock, 
                                           strides=args.locallyBlock,
                                           activation=act_fn[self.args.activation],
-                                          padding="valid",use_bias=False,
-                                          kernel_regularizer=keras.regularizers.l2(0.01))(X)
-            #C = layers.Conv1D(args.locallyConnect,kernel_size=10, strides=1, activation=act_fn[self.args.activation], padding="same",use_bias=False)(V)
-            #V = layers.Add()([V,C])
-            #Xhet = BinaryConversionLayer(condition=lambda x: x == 1.0)(X)
-            #X = layers.LocallyConnected2D(filters=1,kernel_size=(1,2),strides=1,activation="relu", padding="valid")(Xhet)
-            #Xhet = layers.Conv2D(filters=1,kernel_size=(1,2),strides=1,activation="relu", padding="valid",use_bias=False)(Xhet)
-            #Xhet = tf.squeeze(Xhet,axis=-1)
-            #X = layers.Add()([Xhet,X])
+                                          padding="valid",use_bias=False)(X)
             
-            ##create a sub array that only contain dominance values (1)
-            #dominance_mask = K.cast(K.equal(X, 1), dtype=K.floatx())
-            ##stack dominance_mask to X
-            #X = K.stack([X, dominance_mask], axis=-1)
-            """
-            #Locally connected to reduce array size
-            V = layers.LocallyConnected1D(args.locallyConnect,kernel_size=args.locallyBlock, strides=args.locallyBlock, activation=act_fn[self.args.activation], padding="valid",use_bias=False)(X)
-            """
+            
 
-            #Conv1D to reduce array size
-            #if args.locallyBlock > 2:
-            #    V = layers.AveragePooling1D(pool_size=2)(V)
-            #V = layers.Dropout(0.1)(V)
         else:
             groups_sizes = [len(x) for x in annotation]
-            #V = GroupedLocallyConnectedLayer(channels=args.embedding,reference=annotation)(input1)
 
             kernel_paras = [(args.embedding,groups_sizes[i],input_shape[-1]) for i in range(len(annotation))]
             Xs = [GroupedLocallyConnectedLayer(kernel_para,annotation[index],index)(input1) for index,kernel_para in enumerate(kernel_paras)]
@@ -1223,17 +1228,6 @@ class MultiLevelAttention(NN):
 
         V = layers.Dense(embed,activation=act_fn[self.args.activation])(V)
 
-        """
-        # train and get guide attention for bin phenotypes
-        bin_M1,bin_res,attention_score = MultiLevel_BlockAttention(args.num_heads,return_attention=True)([V])
-        bin_M = layers.Add()([bin_M1, V])
-        bin_M = layers.Flatten()(bin_M)
-
-        bin_output1 = OrdinalOutputLayer(num_classes=self.args.classes)(bin_M)
-        bin_output2 = fullyConnectted_block(input=bin_M, width=self.args.width,depth=self.args.depth, activation='sigmoid')
-        bin_output2 = OrdinalOutputLayer(num_classes=self.args.classes)(bin_output2)
-        bin_output = layers.Add()([bin_output1,bin_output2])
-        """
         # train and get guide attention for actual phenotypes
         for attention_block in range(args.AttentionBlock):
             V1 = MultiLevel_BlockAttention(args.num_heads, return_attention=False,epi_genomic=self.args.epistatic)(V)
@@ -1250,12 +1244,12 @@ class MultiLevelAttention(NN):
             #    V = layers.Activation("relu")(V)
             #    V = layers.Dropout(0.2)(V)
         
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False)(V)
+        M = layers.Conv1D(args.NumTrait, kernel_size=1, strides=1,padding="same", use_bias=False)(V)
 
         #D = layers.GlobalAveragePooling1D()(M)
         D = layers.Activation("sigmoid")(M)
         D = layers.Flatten()(D)
-        D = layers.Dense(1, activation="linear")(D)
+        D = layers.Dense(args.NumTrait, activation="linear")(D)
         
         #D = layers.Conv1D(1, kernel_size=1, strides=1, padding="same")(D)
         #D = layers.GlobalAveragePooling1D()(D)
@@ -1333,7 +1327,7 @@ MODELS = {
     "Binary CNN": BCNN,
     "Test CNN":Transformer,
     "Duo CNN": DCNN,
-    "Double CNN": DoubleCNN,
+    "DNNGP": DNNGP,
     "Attention CNN": AttentionCNN,
     "MultiHead Attention LNN": MultiHeadAttentionLNN,
     "ResMLP": ResMLP,
