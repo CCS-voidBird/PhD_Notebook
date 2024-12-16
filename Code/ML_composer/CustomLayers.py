@@ -107,7 +107,56 @@ class Cor_mse_loss:
         loss = 1.0 if tf.math.is_nan(correlation) else tf.subtract(1.0, correlation)
         loss = tf.add(loss, mse)
         return loss
-    
+class Ordinal_loss:
+    def __init__(self,num_classes):
+        self.num_classes = num_classes
+        self.loss = self._calculate_loss
+
+    def _to_classes(self,labels,mask):
+        one_to_n = tf.range(1, self.num_classes + 1, dtype=tf.float32)
+        unsqueezed = tf.repeat(
+            tf.expand_dims(labels, axis=2), self.num_classes, axis=-1)
+        ordinals = tf.where(unsqueezed >= one_to_n, tf.ones_like(unsqueezed), 0.0)
+        return tf.where(tf.expand_dims(mask, axis=-1), ordinals, 0.0)
+
+    def is_label_valid(self,labels):
+        """Returns a boolean `Tensor` for label validity."""
+        #labels = tf.convert_to_tensor(value=labels)
+        return tf.greater_equal(labels, 0.)
+
+    def _calculate_loss(self,labels, logits):
+
+        if logits.shape.rank != 3:
+            raise ValueError('Predictions for ordinal loss must have rank 3.')
+
+        mask = is_label_valid(labels)
+        labels = tf.where(mask, labels, 0.0)
+        logits = tf.where(tf.expand_dims(mask, -1), logits, 0.0)###
+        ordinals = self._to_classes(labels, mask)
+        losses = tf.where(
+            tf.expand_dims(mask, -1),
+            tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
+                labels=ordinals,
+                logits=logits),
+            0.0)
+        return tf.reduce_sum(losses, axis=-1), tf.cast(mask, dtype=tf.float32)
+
+class Var_mse_loss:
+    def __init__(self):
+        self.loss = self._calculate_loss
+
+    def _calculate_loss(self,predictions, observations):
+        # Calculate the variance of the predictions
+        variance = tf.math.reduce_variance(predictions, axis=1)
+        # Calculate the MSE
+        mse = tf.reduce_mean(tf.square(predictions - observations), axis=1)
+        # calculate the obv variance
+        obs_variance = tf.math.reduce_variance(observations, axis=1)
+        # Calculate the abs var part loss
+        var_loss = 0.1 * tf.abs(tf.subtract(variance, obs_variance))
+        # return adjust loss of mse and varloss
+        return tf.add(mse, var_loss)
+
 class R2_score_loss:
     def __init__(self):
         self.loss = self._calculate_loss

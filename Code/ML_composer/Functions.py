@@ -82,7 +82,6 @@ def read_transform_plink_files(geno_path):
     print("DONE")#,ped_2_field_minor_allele.head())
     #ped_2_field_minor_allele = ped_2_field_minor_allele.replace("0","T")
 
-    print(ped_2_field.shape[1] /2)
     if ped_2_field.shape[1] == len(marker_list):
         print("The number of markers are same with map file presented.")
         ped_2_field.columns = marker_list

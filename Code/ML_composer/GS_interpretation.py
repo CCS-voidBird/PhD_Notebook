@@ -65,7 +65,7 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
     bg0 = np.zeros((1, marker_dim,1))
     #bs.append(model.predict(bg0,verbose=int(args.quiet)))
 
-    bg1 = np.ones((1, marker_dim,1))
+    bg1 = np.ones((1, marker_dim,1)) 
     bg2 = np.zeros((1, marker_dim,1)) + ploidy
     bg_maf = np.reshape(marker_maf,(1,marker_dim,1))
 
@@ -98,20 +98,25 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
 
     for bg in range(0,4):
         print("Now estimating marker effects under Background: {}".format(allele_ref[bg]))
+        b0 = None
         for dose in range(0,4):
-            print("Analysing dose: {}".format(allele_ref[bg]))
+            print("Analysing dose: {}".format(allele_ref[dose]))
             with tf.device('/CPU:0'):
                 x = tf.convert_to_tensor(dataset[bg][dose])
             gebvs = model.predict(x,verbose=int(args.quiet))
             bs = gebvs - bps[bg]
+            if dose == 0:
+                b0 = bs
+            else:
+                bs = bs - b0
             bs = [allele_ref[bg],dose]+np.transpose(bs).tolist()[0]
             marker_contributs.append(bs)
 
     marker_contributs = pd.DataFrame(marker_contributs)
     print(marker_contributs.shape)
-    marker_contributs.columns = ["Background","Dose"]+["SNP_"+str(i) for i in range(1,  +1)]
+    marker_contributs.columns = ["Background","Dose"]+["SNP_"+str(i) for i in range(1, marker_dim+1)]
 
-    marker_contributs.to_csv(model_path+"/marker_contributes.csv",index=False,sep="\t")
+    marker_contributs.to_csv(model_path+"/marker_contribution.csv",index=False,sep="\t")
     #plot_marker_contributs(marker_contributs,model_path)
     return 
 
@@ -129,4 +134,4 @@ if __name__ == "__main__":
 
             model_name = "MultiLevelAttention_v"+str(model_index)+"_1AB_Epi_1000SNP_leaky_reluLinear"
             model_full_path = model_path + "/" + str(trait) + "_MultiLevelAttention_"+str(model_index)
-            investigate_model(model_path=model_full_path,marker_dim=marker_dim)
+            investigate_model(model_path=model_full_path,marker_dim=1000)

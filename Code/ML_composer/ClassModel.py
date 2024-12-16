@@ -23,6 +23,7 @@ loss_fn = {
     "mse": "mse",
     "mae": "mae",
     "cor_mse": Cor_mse_loss().loss,
+    "var_mse": Var_mse_loss().loss,
     "r2": R2_score_loss().loss,
 }
 
