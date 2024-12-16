@@ -12,7 +12,7 @@ def get_args():
     general.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.")
     general.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns, start with 1 (FID, IID, 1st Phenotype). If not specified, multi-trait would be enabled.", default=0)
     general.add_argument('-index', '--index', type=str, help="index file", default = None)
-    general.add_argument('-vindex', '--vindex', type=int, help="index for validate, 0: cross vaidation", default = 0)
+    general.add_argument('-vindex', '--vindex', type=int, help="index for validate, 0: no vaidation", default = None)
     #general.add_argument('-include', '--include', type=str, help="Specify a list of SNPs to be included in the analysis.", default = None)
     #general.add_argument('-exclude', '--exclude', type=str, help="Specify a list of SNPs to be excluded in the analysis.", default = None)
     general.add_argument('-annotation', '--annotation', type=str, help="annotation file,1st row as colname", default=None)
@@ -93,7 +93,7 @@ def get_args():
             #print(config[mothers_key].keys)
             for key in config[mothers_key]:
                 if key in args and getattr(args,key) is parser.get_default(key) and config.get(mothers_key,key):
-                    print("Set {} value as {} ...............(from config file)".format(key,config.get(mothers_key,key)))
+                    #print("Set {} value as {} ...............(from config file)".format(key,config.get(mothers_key,key)))
                     #print("Set {} value as {} ...............(from config file)".format(key,getattr(args,key), config.get(mothers_key,key) ))
                     if type(getattr(args,key)) == bool:
                         setattr(args, key, config.getboolean(mothers_key,key))

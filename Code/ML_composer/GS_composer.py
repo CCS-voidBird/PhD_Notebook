@@ -14,6 +14,7 @@ from datetime import datetime
 from sklearn.metrics import mean_squared_error
 import gc
 import os
+import shutil
 
 """
 import sklearn.preprocessing
@@ -181,9 +182,11 @@ class ML_composer:
         #self._raw_data["MAP"] = pd.read_table(args.geno + ".map", delim_whitespace=True,header=None)
         self._raw_data["FAM"] = pd.read_table(args.geno + ".fam", delim_whitespace=True,header=None)
         self._raw_data["PHENO"] = pd.read_table(args.pheno, delim_whitespace=True,header=None)
-        self._raw_data["INDEX"] = pd.read_table(args.index,delim_whitespace=True,header=None)
+        self._raw_data["INDEX"] = pd.read_table(args.index,delim_whitespace=True,header=None) if args.index is not None else self._raw_data["FAM"].iloc[:,0:3]
+        if args.vindex == 0:
+            self._raw_data["INDEX"].iloc[:,-1] = 0
         self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,delim_whitespace=True) if args.annotation is not None else None
-        self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique())
+        self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique()) 
         self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
         self._info["MAF"] = self._raw_data["GENO"].iloc[:,6:].apply(lambda x: np.mean(x)/self.args.ploidy,axis=0)
         self.batchSize = args.batch
@@ -266,7 +269,7 @@ class ML_composer:
         if self.args.annotation is not None and self._raw_data["ANNOTATION"].iloc[:,:1].equals(snp_reference) is False:
             print("SNPs in annotation file are not ordered by map file")
             #exit()
-        print("Data check & sort passed.")
+        print("Data check & sort passed.\n")
 
         ## data quality control and filter by MAF
         if self.args.maf > 0:
@@ -279,7 +282,7 @@ class ML_composer:
             self._raw_data["GENO"] = self._raw_data["GENO"].iloc[:,selected_marker_idx]
             self._raw_data["MAP"] = self._raw_data["MAP"].iloc[selected_marker_idx-6,:] #update map file
             self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
-            print("Filtered SNPs: ",self._info["MARKER_SIZE"])
+            print("Filtered SNPs: ",self._info["MARKER_SIZE"],"\n")
 
 
     def prepare_model(self):
@@ -299,13 +302,18 @@ class ML_composer:
         ###Cross_validation;
         ###if use binary validate, index 0 will be validate set, and anyother index will be training set
         index_ref = []
+        if self._info["CROSS_VALIDATE"] is None or self.args.vindex == 0:
+            print("No cross validation index found, using whole dataset for training. \n")
+            train_index = [0]
+            return [(train_index,train_index)]
+                    
         for idx in self._info["CROSS_VALIDATE"]:
             train_index = [x for x in self._info["CROSS_VALIDATE"] if x is not idx]
             valid_index = [idx]
             index_ref.append((train_index,valid_index))
-            if self.args.vindex != 0 and idx == self.args.vindex:
+            if self.args.vindex and idx == self.args.vindex:
                 print("Detected manual validation index")
-                print(f"Binary validation; index {idx} will be validate set, and anyother indexes will be training set")
+                print(f"Binary validation; index {idx} will be validate set, and anyother indexes will be training set \n")
                 return [(train_index,valid_index)]
 
         return index_ref
@@ -325,10 +333,10 @@ class ML_composer:
         self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:] * self._info["MAF"] if self.args.mafm is True else self._raw_data["GENO"].iloc[valid_mask, 6:]
 
         self.train_pheno = self._raw_data["PHENO"].iloc[train_mask, self.pheno_col_index] #,self.args.mpheno + 1] if self.args.mpheno != 0 else self._raw_data["PHENO"].iloc[train_mask,2:]
-        print("Mean of train phenotype:",np.mean(self.train_pheno))
+        #print("Mean of train phenotype:",np.mean(self.train_pheno))
         self.mean_pheno = np.mean(self.train_pheno)
         if self.args.mean is not True or self.args.data_type == "ordinal":
-            print("Use raw phenotype as the target")
+            #print("Use raw phenotype as the target")
             self.mean_pheno = 0
         self.train_pheno = self.train_pheno - self.mean_pheno
         self.valid_pheno = self._raw_data["PHENO"].iloc[valid_mask, self.pheno_col_index] #self.args.mpheno + 1] if self.args.mpheno != 0 else self._raw_data["PHENO"].iloc[train_mask,2:]
@@ -362,7 +370,7 @@ class ML_composer:
         else:
             n_features = features_train.shape[1:]
 
-        print("Got input shape:",n_features)
+        #print("Got input shape:",n_features)
         self._model["TRAINED_MODEL"] = self._model["INIT_MODEL"].modelling(
             input_shape = n_features,args = self.args, lr=float(self.args.lr),annotation = self.annotation) if self.args.annotation else self._model["INIT_MODEL"].modelling(
             input_shape = n_features,args = self.args, lr=float(self.args.lr))
@@ -411,10 +419,10 @@ class ML_composer:
             test_accuracy = calculate_correlation_for_traits(y_pred,target_train,self.args.NumTrait)
             print("Train accuracy: ",test_accuracy)
         print("Train End.")
-        print("In-year accuracy (measured as Pearson's correlation) is: ", test_accuracy)
+        print("Training accuracy (measured as Pearson's correlation) is: ", test_accuracy)
         endTime = datetime.now()
         runtime = endTime - startTime
-        print("Training Runtime: ", runtime.seconds / 60, " min")
+        print("Training Runtime: ", runtime.seconds / 60, " min \n")
         
         return history,test_accuracy,runtime
 
@@ -422,16 +430,16 @@ class ML_composer:
 
         features_train,target_train = self._model["INIT_MODEL"].data_transform(self.train_data,self.train_pheno, pheno_standard = self.args.rank)
         features_val,target_val = self._model["INIT_MODEL"].data_transform(self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
-        num_samples = len(features_train)
+        num_samples = len(features_train) if type(features_train) is np.ndarray else len(features_train[0])
         indices = np.random.permutation(num_samples)
-        features_train = features_train[indices]
+        features_train = features_train[indices] if type(features_train) is np.ndarray else [x[indices] for x in features_train]
         target_train = target_train[indices]
         print("Train status:")
         print("Epochs: ",self.args.epoch)
         print("Repeat(Round): ",self.args.round)
 
         round = 1
-        val_record = -1
+        
         while round <= self.args.round:
             self._model["TRAINED_MODEL"] = None
             keras.backend.clear_session()
@@ -444,19 +452,19 @@ class ML_composer:
                     print("Saving the model with higher accuracy...")
                     try:
                         self._model["TRAINED_MODEL"].save(
-                            os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,
+                            os.path.abspath(self.args.output) + "/{}_{}_{}".format(self._model["INIT_MODEL"].trait_label, self.model_name,
                                                                                    val))
                         print("Model saved.")
 
-                        self._model["TRAINED_MODEL"].save(
-                            os.path.abspath(self.args.output) + "/{}_{}_{}.h5".format(self.args.trait, self.model_name,
-                                                                                   val))
-                        print("h5 Model saved.")
+                        #self._model["TRAINED_MODEL"].save(
+                        #    os.path.abspath(self.args.output) + "/{}_{}_{}.h5".format(trait_label, self.model_name,
+                        #                                                           val))
+                        #print("h5 Model saved.")
                     except:
                         print("Saving model failed, tring directly save by using self._model[\"TRAINED_MODEL\"].save")
                 if self.args.analysis is True:
                     print("Start analysis model...")
-                    model_path = os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,val)
+                    model_path = os.path.abspath(self.args.output) + "/{}_{}_{}".format(self._model["INIT_MODEL"].trait_label, self.model_name,val)
                     if not os.path.exists(model_path) is True:
                         os.mkdir(model_path)
                     investigate_model(model = self._model["TRAINED_MODEL"],
@@ -496,32 +504,31 @@ class ML_composer:
                     
                 else:
                     y_pred_all = np.reshape(y_pred_all, (len(target_all),self.args.NumTrait))
-                print("Predicted: ", np.array(y_pred_all[:10]))
-                print("Observed: ", np.array(target_all[:10]))
                 # Save samples,validate index,obvserved and predicted values to a file
-                print("Saving the prediction results...")
                 pred_df = pd.DataFrame()
                 pred_df["Sample"] = self._raw_data["INDEX"].iloc[:, 1]
                 pred_df["Index"] = self._raw_data["INDEX"].iloc[:, -1]
-                print("Predicted: ", target_all.shape)
                 for i in range(self.args.NumTrait):
                     pred_df["Observed_{}".format(i)] = target_all[:,i] if self.args.NumTrait > 1 else target_all
                     pred_df["Predicted_{}".format(i)] = y_pred_all[:,i] if self.args.NumTrait > 1 else y_pred_all
-                pred_df.to_csv(os.path.abspath(self.args.output) + "/{}_{}_{}_prediction.csv".format(self.args.trait, self.model_name, val), sep="\t", index=False)
+                if self.args.NumTrait == 1:
+                    pred_df.to_csv(os.path.abspath(self.args.output) + "/{}_{}_{}_prediction.csv".format(self._model["INIT_MODEL"].trait_label, self.model_name, val), sep="\t", index=False)
+                elif self.args.NumTrait > 1:
+                    pred_df.to_csv(os.path.abspath(self.args.output) + "/MT_{}_{}_prediction.csv".format(self.model_name, val), sep="\t", index=False)
 
 
             if self.plot:
                 # create a folder to save the plot, folder name: trait, model
                 print("Plotting the training process...")
-                plot_dir = os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name,
-                                                                                  self.args.trait)
+                plot_dir = os.path.abspath(self.args.output) + "/{}_{}_{}".format(self._model["INIT_MODEL"].trait_label, self.model_name,
+                                                                                  val)
                 print(plot_dir)
                 if not os.path.exists(plot_dir):
                     os.makedirs(plot_dir)
                 # create a file name for the plot: path, model name, trait and round
-                plot_name = plot_dir + "/{}_{}_{}".format(self.args.trait, self.model_name, val)
+                plot_name = plot_dir + "/{}_{}_{}".format(self._model["INIT_MODEL"].trait_label, self.model_name, val)
                 # plot_name = os.path.abspath(self.args.output) + "/" + self.args.model + "_" + self.args.trait + "_" + str(round) + ".png"
-                plot_loss_history(history, self.args.trait, plot_name,round-self.args.round)
+                plot_loss_history(history, self._model["INIT_MODEL"].trait_label, plot_name,round-self.args.round)
 
             if self.save == True:
                 self.export_record()
@@ -573,7 +580,7 @@ class ML_composer:
 
         # sort record by traits
         self.record = self.record.sort_values(by=["Trait"])
-        self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self.model_name, self.args.trait), sep="\t")
+        self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self.model_name,self._model["INIT_MODEL"].trait_label), sep="\t")
         print("Result:")
         print(self.record)
 
@@ -589,6 +596,7 @@ class Model:
         self._data_requirements = None
         self.modelling = None
         self.data_transform = None
+        self.trait_label = None
 
     def get_model_name(self):
         return self._init_model.model_name()
@@ -599,6 +607,7 @@ class Model:
         self.data_transform = self._init_model.data_transform
         self.modelling = self._init_model.model
         self.lr_schedule = self._init_model.lr_schedule
+        self.trait_label = "MT" if self.args.NumTrait > 1 else self.args.trait[0]
 
         return
 
@@ -647,6 +656,9 @@ def main():
     ##write args to a txt file in the locat
     with open(locat + 'args.txt', 'w') as f:
         f.write(str(args))
+
+    ##paste the config file to the locat
+    shutil.copy(args.config, locat + 'config.ini')
 
     
     if args.build is True:
