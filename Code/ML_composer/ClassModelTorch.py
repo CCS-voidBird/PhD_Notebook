@@ -178,9 +178,13 @@ class NN:
 
         return model
 
-###################
+############################################################################
 # Torch based transformer model
-###################
+# 1. A padding layer to pad the input tensor to the length of kernel size
+
+
+
+############################################################################
 
 class zero_padding(nn.Module):
     def __init__(self, len_seq, kernel_size):
@@ -207,6 +211,7 @@ class locally_connected_layer(nn.Module):
         self.temp_tensor = None
 
         if type(d_model) == int: ##assuming the input is a entire sequence without blocking
+
             self.d_model = d_model
             self.LC_Weight = nn.Parameter(torch.randn(out_channels, d_model, 1))
             self.LC_Bias = nn.Parameter(torch.randn(out_channels, 1)) if use_bias else None
@@ -215,7 +220,8 @@ class locally_connected_layer(nn.Module):
             self.d_model = d_model[0]
             self.LC_Weight = nn.Parameter(torch.randn(out_channels, d_model[0], d_model[1]))
             self.LC_Bias = nn.Parameter(torch.randn(out_channels, d_model[1])) if use_bias else None
-            
+        
+        self.padding = zero_padding(self.d_model, kernel_size)
 
         '''
         if block_indexes is not None:
@@ -232,6 +238,8 @@ class locally_connected_layer(nn.Module):
         '''
     
     def forward(self, x):
+        assert x.dim() == 3
+        x = self.padding(x)
         ###convert x shape from (batch_size, sequence_length, n) to (batch_size, 1, sequence_length, n)
         ###convert last dimension to channel dimension
         x = x.permute(0, 2, 1).unsqueeze(1)
@@ -264,9 +272,9 @@ class block_connected_layer(nn.Module):
     2. Fixed blocks with kernel size and stride, defined by external indexes;
     3. Flexible kernel size and stride, defined by external indexes, and kernels would not overlap
     """
-    def __init__(self, d_model, out_channels, kernel_size, stride, padding):
+    def __init__(self, d_model, out_channels, kernel_size):
         super(block_connected_layer, self).__init__()
-        self.padding = zero_padding(padding)
+        self.padding = zero_padding(d_model, kernel_size)
         self.locally_connected = locally_connected_layer(d_model, out_channels, kernel_size, use_bias=True)
 
     def forward(self, x):
@@ -352,10 +360,18 @@ class EncoderLayer(nn.Module):
         return x
     
 class Encoder(nn.Module):
-    def __init__(self, num_layers, d_model, num_heads, d_ff, dropout=0.1):
+    def __init__(self, num_layers, out_channels, kernel_size, d_model, num_heads, d_ff, dropout=0.1):
         super(Encoder, self).__init__()
-        self.local_conv = locally_connected_layer(1, d_model, 3, 1, 0)
-        self.layers = nn.ModuleList([EncoderLayer(d_model, num_heads, d_ff, dropout) for _ in range(num_layers)])
+        self.block_connected_layer = block_connected_layer(d_model = d_model, 
+                                                           out_channels = out_channels, 
+                                                           kernel_size = kernel_size)
+
+        self.layers = nn.ModuleList(
+            [EncoderLayer(d_model = d_model, 
+                          num_heads = num_heads, 
+                          d_ff = d_ff, 
+                          dropout = dropout) for _ in range(num_layers)]
+            )
     
     def forward(self, x, mask):
         for layer in self.layers:
