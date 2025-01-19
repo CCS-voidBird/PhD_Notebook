@@ -42,6 +42,38 @@ act_fn = {
     "leaky_relu": layers.LeakyReLU(alpha=0.1),
     "elu": "elu"
 }
+
+
+# Code to cleanly swap between Pytorch and Numpy.
+# Makes PyTorch much more user friendly, but not widely used. 
+
+#Main adjustable flag. Enables or Disable GPU optimizations
+USE_CUDA = 1
+
+def cuda(obj):
+    if USE_CUDA:
+        if isinstance(obj, tuple):
+            return tuple(cuda(o) for o in obj)
+        elif isinstance(obj, list):
+            return list(cuda(o) for o in obj)
+        elif hasattr(obj, 'cuda'):
+            return obj.cuda()
+    return obj
+
+def tovar(*arrs, **kwargs):
+    tensors = [(torch.from_numpy(a) if isinstance(a, np.ndarray) else a) for a in arrs]
+    vars_ = [torch.autograd.Variable(t, **kwargs) for t in tensors]
+    if USE_CUDA:
+        vars_ = [v.cuda() for v in vars_]
+    return vars_[0] if len(vars_) == 1 else vars_
+
+
+def tonumpy(*vars_):
+    arrs = [(v.data.cpu().numpy() if isinstance(v, torch.autograd.Variable) else
+             v.cpu().numpy() if torch.is_tensor(v) else v) for v in vars_]
+    return arrs[0] if len(arrs) == 1 else arrs
+
+#########################
 class LearningRateLogger(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         lr = self.model.optimizer.lr(self.model.optimizer.iterations)
@@ -150,6 +182,98 @@ class NN:
 # Torch based transformer model
 ###################
 
+class zero_padding(nn.Module):
+    def __init__(self, len_seq, kernel_size):
+        super(zero_padding, self).__init__()
+        assert type(len_seq) == int
+        self.padding = len_seq % kernel_size
+    
+    def forward(self, x):
+        # pad the second last dimension of the input tensor on the right side
+        return nn.functional.pad(x, (0,0, 0,self.padding))
+    
+class locally_connected_layer(nn.Module):
+    """
+    Assuming the input shape is 3D-like 1D sequence, (batch_size, sequence_length, 1) or a blocked 1D sequence with shape (batch_size, max_block_length, n)
+    """
+
+    def __init__(self, d_model, out_channels, kernel_size, use_bias=True):
+        super(locally_connected_layer, self).__init__()
+        self.channels = out_channels
+        self.kernel_size = (kernel_size,1)
+        self.stride = kernel_size
+        self.locally_connection = nn.Unfold(kernel_size=self.kernel_size, stride=self.stride) #output shape (batch_size, out_channels*kernel_size, sequence_length//kernel_size)
+        self.masks = None
+        self.temp_tensor = None
+
+        if type(d_model) == int: ##assuming the input is a entire sequence without blocking
+            self.d_model = d_model
+            self.LC_Weight = nn.Parameter(torch.randn(out_channels, d_model, 1))
+            self.LC_Bias = nn.Parameter(torch.randn(out_channels, 1)) if use_bias else None
+
+        elif type(d_model) == tuple: ##assuming the input is a blocked sequence, with shape (batch_size, max_block_length, n_blocks)
+            self.d_model = d_model[0]
+            self.LC_Weight = nn.Parameter(torch.randn(out_channels, d_model[0], d_model[1]))
+            self.LC_Bias = nn.Parameter(torch.randn(out_channels, d_model[1])) if use_bias else None
+            
+
+        '''
+        if block_indexes is not None:
+            # create a weight mask regarding to block index, with shape (out_channels, d_model, 1)
+            assert len(block_indexes) > 1 ##assuming the block_indexes is a list of indexes e.g., [[0,1,2],[3,4,5],[6,7,8]]
+            num_blocks = len(block_indexes)
+            max_length = max(
+                [len(block) for block in block_indexes]) if max_block_length is None else max_block_length
+            self.temp_tensor = torch.zeros(out_channels, d_model, max_length)
+            ##create a masking tensor with shape (out_channels, d_model, num_blocks) in which values are false
+            self.block_mask = torch.zeros(out_channels, d_model, num_blocks, dtype=torch.bool)
+            for i, block in enumerate(block_indexes): ##for each block, set the pos of the block to True
+                self.block_mask[:, block, i] = True
+        '''
+    
+    def forward(self, x):
+        ###convert x shape from (batch_size, sequence_length, n) to (batch_size, 1, sequence_length, n)
+        ###convert last dimension to channel dimension
+        x = x.permute(0, 2, 1).unsqueeze(1)
+        ###duplicate x to the number of out_channels:: (batch_size, out_channels, sequence_length, n)
+        x = x.expand(-1, self.channels, -1, -1)
+        ###multiply the weight and add bias
+        if self.LC_Bias is not None: 
+            x = x.multiply(self.LC_Weight).add(self.LC_Bias)
+        else:
+            x = x.multiply(self.LC_Weight)
+        #output shape (batch_size, out_channels, sequence_length(max_block_length),n)
+
+        #if the last dimension is 1: meaning the input is a entire sequence without blocking
+        if x.size(-1) == 1: 
+            ###unfold the x to the shape of (batch_size, out_channels*kernel_size,nKernels)
+            x = self.locally_connection(x)
+            ###convert to the shape of (batch_size, out_channels, karnel_size, nKernels)
+            x = x.view(x.size(0), self.channels, self.kernel_size[0], -1)
+
+        ###sum the value inside each kernel to the shape of (batch_size, out_channels, 1, n)
+        x = x.sum(-2).unsqueeze(-2)
+        ###switch the shape of (batch_size, out_channels, n, 1)
+        return x.permute(0, 1, 3, 2)
+    
+
+class block_connected_layer(nn.Module):
+    """
+    A locally connected layer with three modes:
+    1. fixed kernel size and stride and size==stride;
+    2. Fixed blocks with kernel size and stride, defined by external indexes;
+    3. Flexible kernel size and stride, defined by external indexes, and kernels would not overlap
+    """
+    def __init__(self, d_model, out_channels, kernel_size, stride, padding):
+        super(block_connected_layer, self).__init__()
+        self.padding = zero_padding(padding)
+        self.locally_connected = locally_connected_layer(d_model, out_channels, kernel_size, use_bias=True)
+
+    def forward(self, x):
+        x = self.padding(x)
+        return self.locally_connected(x)
+
+
 class positional_encoding(nn.Module):
     def __init__(self, d_model, max_len=5000):
         super(positional_encoding, self).__init__()
@@ -230,6 +354,7 @@ class EncoderLayer(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, num_layers, d_model, num_heads, d_ff, dropout=0.1):
         super(Encoder, self).__init__()
+        self.local_conv = locally_connected_layer(1, d_model, 3, 1, 0)
         self.layers = nn.ModuleList([EncoderLayer(d_model, num_heads, d_ff, dropout) for _ in range(num_layers)])
     
     def forward(self, x, mask):
@@ -249,10 +374,14 @@ class TransformerEncoder(nn.Module):
         return x
         
 class Transformer(nn.Module):
-    def __init__(self, d_model, num_heads, d_ff, num_layers, dropout=0.1):
+    def __init__(self, d_model,args, dropout=0.1,optimizer="Adam",lr=0.001):
         super(Transformer, self).__init__()
+        self.args = args
+        num_heads, d_ff, num_layers= args.num_heads, args.width, args.depth
         self.encoder = TransformerEncoder(d_model, num_heads, d_ff, num_layers, dropout)
         self.fc = nn.Linear(d_model, 1)
+        self.optimizer = optimizer
+        self.init_lr = lr
     
     def forward(self, x, mask):
         x = self.encoder(x, mask)
@@ -265,7 +394,7 @@ class Transformer(nn.Module):
         return
     
     def fit(self, x, y, epochs, lr=0.001):
-        optimizer = optim.Adam(self.parameters(), lr=lr)
+        optimizer = {"Adam":optim.Adam, "SGD":optim.SGD, "Rmsprop":optim.RMSprop}[self.optimizer](self.parameters(), lr=lr)
         criterion = nn.MSELoss()
         for epoch in range(epochs):
             optimizer.zero_grad()
@@ -317,269 +446,6 @@ class TransformerModel(NN):
     
 ####################
 
-
-class NCNN(NN):
-
-    def __init__(self,args):
-        super(NCNN,self).__init__(args)
-        self.name = "Numeric CNN"
-        self.args = args
-
-
-    def model_name(self):
-        #get class name
-        return self.__class__.__name__
-
-    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE {} MODEL as training method".format(self.name))
-        geno = decoding(geno)
-        geno = np.expand_dims(geno, axis=2)
-        print("The transformed SNP shape:", geno.shape)
-        if pheno_standard is True: 
-            pheno = stats.zscore(pheno)
-        return geno,pheno
-
-    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
-        lr = float(lr)
-        input1 = layers.Input(shape=input_shape)
-        X = layers.Conv1D(64, kernel_size=5, strides=3, padding='same', activation=act_fn[args.activation])(input1)
-        #X = add_normalization(X,input1,norm_switch=False,activation=self.args.activation)
-        X1 = layers.MaxPooling1D(pool_size=2,strides=1)(X)
-       
-        X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X1)
-        #X = add_normalization(X,X1,norm_switch=False,activation=self.args.activation)
-        X = layers.MaxPooling1D(pool_size=2,strides=1)(X)
-        #X = layers.Dense(1, activation=act_fn[args.activation])(X)
-        #X = layers.Conv1D(256, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
-        #X = layers.Conv1D(256, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
-        #X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X)
-        #X = layers.MaxPooling1D(pool_size=3,strides=1)(X)
-        #X = layers.Dropout(rate=0.2)(X)
-        X = layers.Flatten()(X)
-        #X = layers.Dropout(rate=0.2)(X)
-        X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],addNorm = self.args.addNorm, use_bias=True)
-        X = tf.expand_dims(X, axis=-1)
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=True,activation='linear')(X)
-        GEBV = layers.GlobalAveragePooling1D()(M)
-        GEBV = layers.Flatten()(GEBV)
-        #M = layers.Dense(1, activation="linear")(M)
-        #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
-        #QV_output = layers.Concatenate(axis=-1)([M, D])
-        #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
-        if self.args.residual is True:
-            D = layers.Activation("sigmoid")(M)
-            D = layers.Flatten()(D)
-            D = layers.Dense(1, activation="linear")(D)
-            GEBV = layers.Add()([GEBV, D])
-        '''
-        for i in range(args.depth):
-            X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
-        '''
-        #X = layers.Dropout(rate=0.2)(X)
-        #X1 = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
-        #non_linear_output = layers.Dense(1, activation="linear")(X1)
-        #linear_output = layers.Dense(1, activation="linear")(X)
-        #output1 = layers.Add()([non_linear_output, linear_output])
-
-        model = keras.Model(inputs=input1, outputs=[GEBV])
-
-        try:
-            adm = keras.optimizers.Adam(learning_rate=lr)
-            rms = keras.optimizers.RMSprop(learning_rate=lr)
-            sgd = keras.optimizers.SGD(learning_rate=lr)
-        except:
-            adm = keras.optimizers.Adam(lr=lr)
-            rms = keras.optimizers.RMSprop(lr=lr)
-            sgd = keras.optimizers.SGD(lr=lr)
-
-        optimizers = {"rmsprop": rms,
-                      "Adam": adm,
-                      "SGD": sgd}
-
-        if self.args.data_type == "ordinal":
-            loss_class = Ordinal_loss(self.args.classes)
-            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
-        else:
-
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
-
-        """
-        Optimizers: Adam, RMSProp, SGD 
-        """
-
-        return model
-   
-class MLP(NN):
-
-    def __init__(self,args):
-        super(MLP,self).__init__(args)
-        self.args = args
-        self.name = "MLP"
-
-    def model_name(self):
-        #get class name
-        return self.__class__.__name__
-
-    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-        print("USE {} MODEL as training method".format(self.name))
-        geno = decoding(geno)
-        #geno = np.expand_dims(geno, axis=2)
-        print("The transformed SNP shape:", geno.shape)
-        if pheno_standard is True:
-            pheno = stats.zscore(pheno)
-        return geno,pheno
-
-    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
-
-        lr = float(lr)
-        input1 = layers.Input(shape=input_shape)
-        X = fullyConnectted_block(input1, args.width, args.depth,activation=act_fn[self.args.activation],addNorm = self.args.addNorm, use_bias=True)
-        X = tf.expand_dims(X, axis=-1)
-        M = layers.Conv1D(1, kernel_size=1, strides=1,padding="same", use_bias=False,activation='linear')(X)
-        GEBV = layers.GlobalAveragePooling1D()(M)
-        GEBV = layers.Flatten()(GEBV)
-        #M = layers.Dense(1, activation="linear")(M)
-        #M = layers.Dense(1, activation="linear")(M) ##Only for debugging, need remove
-        #QV_output = layers.Concatenate(axis=-1)([M, D])
-        #QV_output = layers.Dense(1, activation="linear",use_bias=True)(QV_output)
-        if self.args.residual is True:
-            D = layers.Activation("sigmoid")(M)
-            D = layers.Flatten()(D)
-            D = layers.Dense(1, activation="linear")(D)
-            GEBV = layers.Add()([GEBV, D])
-        '''
-        for i in range(args.depth):
-            X = residual_fl_block(input=X, width=self.args.width,activation=layers.ELU(),downsample=(i%2 != 0 & self.args.residual))
-        '''
-        #X = layers.Dropout(rate=0.2)(X)
-        #X1 = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],use_bias=False)
-        #non_linear_output = layers.Dense(1, activation="linear")(X1)
-        #linear_output = layers.Dense(1, activation="linear")(X)
-        #output1 = layers.Add()([non_linear_output, linear_output])
-
-        model = keras.Model(inputs=input1, outputs=[GEBV])
-
-        try:
-            adm = keras.optimizers.Adam(learning_rate=lr)
-            rms = keras.optimizers.RMSprop(learning_rate=lr)
-            sgd = keras.optimizers.SGD(learning_rate=lr)
-        except:
-            adm = keras.optimizers.Adam(lr=lr)
-            rms = keras.optimizers.RMSprop(lr=lr)
-            sgd = keras.optimizers.SGD(lr=lr)
-
-        optimizers = {"rmsprop": rms,
-                      "Adam": adm,
-                      "SGD": sgd}
-
-        if self.args.data_type == "ordinal":
-            loss_class = Ordinal_loss(self.args.classes)
-            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
-        else:
-
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
-
-        """       
-        model = Sequential()
-        model.add(Dense(args.width, activation="elu", input_shape=input_shape))
-        for layers in range(args.depth - 1):
-            model.add(Dense(args.width, activation="elu"))
-        # model.add(Dropout(0.2))
-
-        model.add(Dense(1, activation="linear"))
-
-        try:
-            adm = keras.optimizers.Adam(learning_rate=lr)
-            rms = keras.optimizers.RMSprop(learning_rate=lr)
-            sgd = keras.optimizers.SGD(learning_rate=lr)
-        except:
-            adm = keras.optimizers.Adam(lr=lr)
-            rms = keras.optimizers.RMSprop(lr=lr)
-            sgd = keras.optimizers.SGD(lr=lr)
-
-        optimizers = {"rmsprop": rms,
-                      "Adam": adm,
-                      "SGD": sgd}
-
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
-        """
-        return model
-
-class AttentionCNN(NN):
-
-    def __init__(self,args):
-        super(AttentionCNN,self).__init__(args)
-        self.name = "Attention CNN"
-        self.rank = True  ##rank block value to 0 (zero),1 (low),2 (high).
-        self.args = args
-
-    def model_name(self):
-        #get class name
-        return self.__class__.__name__
-
-    def data_transform(self,geno,pheno,anno=None,pheno_standard = False):
-
-        print("USE Attention CNN MODEL as training method")
-        geno = decoding(geno)
-        geno = np.expand_dims(geno, axis=2)
-        #pos = np.arrays(range(geno.shape[1]))
-        #pos = np.expand_dims(pos, axis=0)
-        print("The transformed SNP shape:", geno.shape)
-
-        if pheno_standard is True:
-            pheno = stats.zscore(pheno)
-        return geno,pheno
-
-    def model(self, input_shape,args, optimizer="Adam", lr=0.00001):
-        # init Q,K,V
-        if args.depth < 1:
-            depth = 1
-        else:
-            depth = args.depth
-        input1 = layers.Input(shape=input_shape,name="input_layer_1")
-
-        X = layers.ZeroPadding1D(padding=(0, input_shape[1]//10))(input1)
-
-        V = layers.LocallyConnected1D(1,10,strides=10, activation="relu",padding="valid",use_bias=False)(X)
-        M = layers.Conv1D(8, kernel_size=1, strides=1, activation='relu', use_bias=False)(V)
-        M = layers.BatchNormalization()(M)
-        # V = layers.LayerNormalization()(V)
-        M,value = MultiHead_Seq_BlockAttention()(M)
-        M = layers.BatchNormalization()(M)
-        M = layers.Dropout(0.4)(M)
-        M = MultiHead_conv_BlockAttention(8)([M,value])
-        #seq = M.shape[-1]
-        #M = Conv2D(seq,(1,1),(1,1))(M)  #b,q,d,s -> b,n,d,s -> b,n,s
-
-        M = layers.GlobalAvgPool2D()(M) #out shape b,s
-
-        #M = layers.Dense(256,activation="relu")(M)
-        M = layers.Dropout(0.2)(M)
-        model_output = layers.Dense(1,activation='linear')(M)
-
-        try:
-            adm = keras.optimizers.Adam(learning_rate=lr)
-            rms = keras.optimizers.RMSprop(learning_rate=lr)
-            sgd = keras.optimizers.SGD(learning_rate=lr)
-        except:
-            adm = keras.optimizers.Adam(lr=lr)
-            rms = keras.optimizers.RMSprop(lr=lr)
-            sgd = keras.optimizers.SGD(lr=lr)
-
-        optimizers = {"rmsprop": rms,
-                      "Adam": adm,
-                      "SGD": sgd}
-
-        model = keras.Model(inputs=input1, outputs=model_output)
-        model.compile(optimizer=optimizers[optimizer], loss="mean_squared_error")
-
-        #QK = layers.Dot(axes=[2, 2])([Q_encoding, K_encoding])
-        #QK = layers.Softmax(axis=-1)(QK)
-        #QKV = layers.Dot(axes=[2, 1])([QK, V_encoding])
-        #QKV = layers.Flatten()(QKV)
-        #QKV = layers.Dense(1, activation="linear")(QKV)
-
-        return model
 
 MODELS = {
     "MLP": MLP,

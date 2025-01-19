@@ -7,7 +7,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     general = parser.add_argument_group(title='General')
-    general.add_argument('--config', type=str, help="Config file path.", default="")
+    general.add_argument('--config', type=str, help="Config file path.", default=None)
     general.add_argument('--geno', type=str, help="PED-like genotype file name")
     general.add_argument('-pheno', '--pheno', type=str, help="Phenotype file.")
     general.add_argument('-mpheno', '--mpheno', type=int, help="Phenotype columns, start with 1 (FID, IID, 1st Phenotype). If not specified, multi-trait would be enabled.", default=0)
@@ -26,6 +26,8 @@ def get_args():
     parser.set_defaults(build=False)
     task_opts.add_argument('-analysis', '--analysis', help="Analysis process.", dest='analysis', action='store_true')
     parser.set_defaults(analysis=False)
+    task_opts.add_argument('--analysis-format', type=int, help="1: SNP on columns, 2: SNP on rows.", default=1)
+
     task_opts.add_argument('-predict', '--predict', help="Predict process, to predict all the phenotypes as a seperated file, currently not avaliable.", dest='predict', action='store_true')
     parser.set_defaults(predict=False)
 
@@ -76,15 +78,16 @@ def get_args():
     parser.set_defaults(mean=False)
 
     args = parser.parse_args()
-    config_path = os.path.abspath(args.config)
-    config = configparser.ConfigParser()
+    if args.config:
+        config_path = os.path.abspath(args.config)
+        config = configparser.ConfigParser()
     ## Let configparser can read captial letter
-    config.optionxform = lambda option: option
+        config.optionxform = lambda option: option
 
-    config.read(config_path)
+        config.read(config_path)
     ## replace the default value with the config file
-    print("Config file path: ", config_path)
-    print("Reading values with config file...")
+        print("Config file path: ", config_path)
+        print("Reading values with config file...")
     if args.config:
         for mothers_key in config:
             #print(mothers_key)

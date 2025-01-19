@@ -3,6 +3,7 @@
 from Functions import *
 from ClassModel import *
 from GS_interpretation import *
+from CustomLayers import R2_score_loss, Var_mse_loss, Cor_mse_loss
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 from Composer_ArgsPaeser import get_args
@@ -189,6 +190,8 @@ class ML_composer:
         self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique()) 
         self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
         self._info["MAF"] = self._raw_data["GENO"].iloc[:,6:].apply(lambda x: np.mean(x)/self.args.ploidy,axis=0)
+        print(self._info["MAF"].head(10))
+        print(self._info["MAF"].shape)
         self.batchSize = args.batch
         #print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
@@ -497,7 +500,7 @@ class ML_composer:
                 print("Predicting the entire dataset...")
                 features_all, target_all = self._model["INIT_MODEL"].data_transform(
                     self._raw_data["GENO"].iloc[:, 6:], np.asarray(self._raw_data["PHENO"].iloc[:, self.pheno_col_index]), pheno_standard=self.args.rank)
-                y_pred_all = self._model["TRAINED_MODEL"].predict(features_all, batch_size=self.batchSize,verbose=int(self.args.quiet)) + self.mean_pheno
+                y_pred_all = self._model["TRAINED_MODEL"].predict(features_all, batch_size=self.batchSize,verbose=int(self.args.quiet))# + self.mean_pheno
                 if self.args.data_type == "ordinal":
                     y_pred_all = tf.reduce_sum(tf.round(y_pred_all), axis=-1)
                     y_pred_all = np.reshape(y_pred_all, (len(target_all),self.args.NumTrait))
@@ -543,7 +546,7 @@ class ML_composer:
         print("Predicting valid set..")
         val_length = valid_pheno.shape[0]
 
-        y_pred_valid = self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize,verbose=int(self.args.quiet))+self.mean_pheno
+        y_pred_valid = self._model["TRAINED_MODEL"].predict(valid_data,batch_size=self.batchSize,verbose=int(self.args.quiet))#+self.mean_pheno
         if self.args.data_type == "ordinal":
             y_pred_valid = tf.reduce_sum(tf.round(y_pred_valid),axis=-1)
             y_pred_valid = np.reshape(y_pred_valid, (val_length,self.args.NumTrait))
@@ -616,7 +619,7 @@ class Model:
         self._init_model = MODELS[self.args.model](self.args)
         self.data_transform = self._init_model.data_transform
         self.modelling = self._init_model.model
-        self.modelling = keras.models.load_model(path)
+        self.modelling = keras.models.load_model(path,custom_objects={'r2_score': R2_score_loss})
         self.lr_schedule = self._init_model.lr_schedule
 
         #self._init_model = load(path)
@@ -658,7 +661,8 @@ def main():
         f.write(str(args))
 
     ##paste the config file to the locat
-    shutil.copy(args.config, locat + 'config.ini')
+    if args.config:
+        shutil.copy(args.config, locat + 'config.ini')
 
     
     if args.build is True:

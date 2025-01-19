@@ -22,6 +22,7 @@ def step_decay(epoch):
 loss_fn = {
     "mse": "mse",
     "mae": "mae",
+    "huber": "huber",
     "cor_mse": Cor_mse_loss().loss,
     "var_mse": Var_mse_loss().loss,
     "r2": R2_score_loss().loss,
@@ -57,27 +58,36 @@ def addNormLayer(_input=None,_residual=None,switch=False,normType="batch"):
 
     V = layers.Dropout(0.2)(_input)
     if switch:
-        if switch == "AddNorm":
+        if switch == True:
             V = layers.Add()([V, _residual])
         if normType == "batch":
-            V = layers.BatchNormalization()(V)
+            V = layers.BatchNormalization(axis=1)(V)
         if normType == "layer":
-            V = layers.LayerNormalization(epsilon=1e-6)(V)
+            V = layers.LayerNormalization(axis=1,epsilon=1e-6)(V)
         #V = layers.Activation("relu")(V)
     return V
 
 def common_layers(_input=None, _residual=None,args=None):
     M = layers.Conv1D(args.NumTrait, kernel_size=1, strides=1,padding="same")(_input)
-    M = layers.Dropout(0.2)(M)
+    #M = layers.BatchNormalization()(M)
+    #M = layers.Normalization()(M)
+    #M = layers.Dropout(0.2)(M)
 
     #D = layers.GlobalAveragePooling1D()(M)
-    D = layers.Activation("softmax")(M)
+    D = layers.Activation("sigmoid")(M)
     D = layers.Flatten()(D)
+    for dense in range(args.depth):
+        D = layers.Dense(args.width, activation="sigmoid")(D)
     D = layers.Dense(args.NumTrait, activation="linear")(D)
 
-    M = layers.Conv1D(args.NumTrait, kernel_size=1, strides=1,padding="same")(M)
-    M = layers.GlobalAveragePooling1D()(M)
     M = layers.Flatten()(M)
+    for dense in range(args.depth):
+        M = layers.Dense(args.width, activation="linear")(M)
+    M = layers.Dense(args.NumTrait, activation="linear")(M)
+
+    #M = layers.Conv1D(args.NumTrait, kernel_size=1, strides=1,padding="same")(M)
+    #M = layers.GlobalAveragePooling1D()(M)
+    #M = layers.Flatten()(M)
 
     GEBV = layers.Add()([M, D])
 

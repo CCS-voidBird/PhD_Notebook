@@ -79,20 +79,24 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
 
     dataset = []
     allele_ref = [0,1,2,"MAF"]
+    bgs = [0,1,ploidy,marker_maf]
+    print(ploidy)
 
     for bg in range(0,4):
         print("Now creating simulated marker set under Background: {}".format(allele_ref[bg]))
         large_matrix = []
         for allele in range(0,4):
+            allele_matrix = np.full((marker_dim, marker_dim),bgs[bg],dtype=np.float32)
             if allele in [0,1,2]:
-                allele_matrix = np.full((marker_dim, marker_dim),bg,dtype=np.float32)
-                np.fill_diagonal(allele_matrix,[0,1,ploidy][allele])
-                np.expand_dims(allele_matrix,axis=-1)
+                #allele_matrix = np.full((marker_dim, marker_dim),bg,dtype=np.float32)
+                print(bgs[allele],allele_matrix.shape)
+                np.fill_diagonal(allele_matrix,bgs[allele])
+                allele_matrix = np.expand_dims(allele_matrix,axis=-1)
             if allele == 3:
                 #repeat the same allele matrix for all markers to achieve shape (marker_dim,marker_dim,1)
-                allele_matrix = np.full((marker_dim, marker_dim),bg_maf,dtype=np.float32)
+                #allele_matrix = np.full((marker_dim, marker_dim),bg_maf,dtype=np.float32)
                 np.fill_diagonal(allele_matrix,marker_maf)
-                np.expand_dims(allele_matrix,axis=-1)
+                allele_matrix = np.expand_dims(allele_matrix,axis=-1)
             large_matrix.append(allele_matrix)
         dataset.append(large_matrix)
 
@@ -109,15 +113,32 @@ def investigate_model(model=None,model_path=None,ploidy=2,marker_maf:np.array=No
                 b0 = bs
             else:
                 bs = bs - b0
-            bs = [allele_ref[bg],dose]+np.transpose(bs).tolist()[0]
+            bs = [allele_ref[bg],allele_ref[dose]]+np.transpose(bs).tolist()[0]
             marker_contributs.append(bs)
 
     marker_contributs = pd.DataFrame(marker_contributs)
     print(marker_contributs.shape)
     marker_contributs.columns = ["Background","Dose"]+["SNP_"+str(i) for i in range(1, marker_dim+1)]
 
-    marker_contributs.to_csv(model_path+"/marker_contribution.csv",index=False,sep="\t")
-    #plot_marker_contributs(marker_contributs,model_path)
+    ###output format 1: columns: Background, Dose, SNP_1, SNP_2, ..., SNP_n
+    if args.analysis_format == 1:
+        marker_contributs.to_csv(model_path+"/marker_contribution.csv",index=False,sep="\t")
+
+    ###output format 2: columns: Background, Dose, SNP, Effect
+    elif args.analysis_format == 2:
+        marker_effect = marker_contributs.iloc[:,2:]
+        marker_info = marker_contributs.iloc[:,0:2]
+        marker_effect = marker_effect.T
+        marker_effect.columns = ["Background_"+str(i)+"_Dose_"+str(j) for i in marker_info["Background"].unique() for j in marker_info["Dose"].unique()]
+        marker_effect = marker_effect.reset_index()
+        marker_effect = marker_effect.rename(columns={"index":"SNP"})
+
+        marker_effect = marker_effect.melt(id_vars=["SNP"],var_name="Background_Dose",value_name="Effect")
+        marker_effect["Background"] = marker_effect["Background_Dose"].apply(lambda x: int(x.split("_")[1]))
+        marker_effect["Dose"] = marker_effect["Background_Dose"].apply(lambda x: int(x.split("_")[3]))
+        marker_effect.to_csv(model_path+"/marker_effect.csv",index=False,sep="\t")
+    
+
     return 
 
 if __name__ == "__main__":
