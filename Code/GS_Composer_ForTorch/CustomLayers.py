@@ -1,7 +1,7 @@
 #import dask.array\
 import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
-#import tensorflow.keras as keras
+import keras_core as keras
 from keras import layers, activations
 #import tensorflow_probability as tfp
 from keras import backend as K
@@ -396,6 +396,50 @@ class BaseAttention(layers.Layer):
         self.add = tf.keras.layers.Add()
     
 
+class MultiHead_conv_BlockAttention(layers.Layer):
+    def __init__(self,second_embed = None, **kwargs):
+        super(MultiHead_conv_BlockAttention, self).__init__(**kwargs)
+        #self.head_num = head_num
+        self.second_embedding = second_embed
+
+    def build(self, input_shape):
+
+        self.first_embed = input_shape[0][-1]
+        self.seq_dim = input_shape[0][1]
+        self.value_embed = input_shape[1][-1]
+        if self.second_embedding is None:
+            self.second_embedding = self.first_embed
+        self.wv1 = self.add_weight(name='value', shape=(self.value_embed, self.value_embed),
+                                  initializer='normal', trainable=True)
+        self.wq = self.add_weight(name='value', shape=(self.seq_dim, self.second_embedding),
+                                  initializer='normal', trainable=True)
+
+        self.built = True
+        super(MultiHead_conv_BlockAttention, self).build(input_shape)
+
+    def call(self, x):
+        attention_score,value = x
+        value_v = tf.einsum('bsd,dd->bsd',value,self.wv1)
+        value_v = tf.expand_dims(value_v,axis=-1) #bsd1
+        #attention_score = tf.transpose(x,perm=[0,3,1,2]) #b,q,d,s -> b,s,q,d
+        attention_map = tf.multiply(attention_score, value_v)
+        #attention_map = tf.einsum('bsdq,bsdn->bsdq', attention_score, value_v)
+        #effect_map = tf.tensordot(attention_map,self.wv2,axes=)
+        effect_map = tf.matmul(attention_map,self.wq) #tf.einsum('bsdq,qn->bsdn',attention_map,self.wv2)
+        effect_map = tf.transpose(effect_map, perm=[0,2,3,1]) # b,d,n,s
+
+        return effect_map
+    
+    def compute_output_shape(self, output_shape):
+        input_shape = output_shape
+        if self.return_attention:
+            attention_shape = (input_shape[0], output_shape[1], input_shape[1])
+            return [output_shape, attention_shape]
+        return output_shape
+
+    def get_config(self):
+        return super(MultiHead_conv_BlockAttention, self).get_config()
+
 class MultiLevel_BlockAttention(layers.Layer):
 
     def __init__(self,num_heads=1,return_attention=True,annotation=False,epi_genomic=False,use_bias=True,**kwargs):
@@ -595,6 +639,7 @@ class GroupedLocallyConnectedLayer(layers.Layer):
         return config
     
 
+
 class PosAttention(layers.Layer):
     def __init__(self, **kwargs):
         super(PosAttention, self).__init__(**kwargs)
@@ -649,7 +694,7 @@ def fullyConnectted_block(input, width,depth=1, activation='relu',addNorm=False,
             input = X
         else:
             input = X
-    return X if depth > 0 else input
+    return X
 
 
 

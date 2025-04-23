@@ -1,6 +1,6 @@
 import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
-#import keras_core as keras
+import keras_core as keras
 from keras import layers, activations
 import tensorflow as tf
 from CustomLayers import *

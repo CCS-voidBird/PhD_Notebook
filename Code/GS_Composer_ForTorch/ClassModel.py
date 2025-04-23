@@ -1,16 +1,15 @@
-from tensorflow import keras
+import os
+os.environ["KERAS_BACKEND"] = "tensorflow"
+import keras_core as keras
 from keras import layers, activations
-from keras.layers import Layer
 from sklearn.datasets import make_regression
 from sklearn.ensemble import RandomForestRegressor
-import tensorflow_probability as tfp
 from scipy import stats
 import numpy as np
 from Functions import *
 from keras.callbacks import LearningRateScheduler
 from CustomLayers import *
 tf.config.experimental_run_functions_eagerly(True)
-
 loss_fn = {
     "mse": "mse",
     "mae": "mae",
@@ -39,7 +38,8 @@ class LearningRateLogger(keras.callbacks.Callback):
 lr_logger = LearningRateLogger()
 
 def p_corr(y_true, y_pred):
-    pearson_correlation = tfp.stats.correlation(y_true, y_pred)
+    pearson_correlation = keras.ops.correlate(y_pred, y_true,mode='valid')
+    #pearson_correlation = tfp.stats.correlation(y_true, y_pred)
     return pearson_correlation
 
 def r2_score(observations,predictions):
@@ -61,25 +61,14 @@ def addNormLayer(_input=None,_residual=None,switch=False,normType="batch"):
         #V = layers.Activation("relu")(V)
     return V
 
-def common_layers(_input=None,args=None,method = "Multiply"):
-
-    if args.method == "Standard": ## if Standard, then the common layer is a linear layer and nothing else
-        M = layers.Flatten()(_input)
-        M = layers.Dropout(0.9)(M)
-        for dense in range(args.depth):
-            M = layers.Dense(args.width, activation="relu",use_bias=False)(M)
-        GEBV = layers.Dense(args.NumTrait, activation="linear",use_bias=False)(M)
-        return GEBV
-
-
+def common_layers(_input=None, _residual=None,args=None,method = "Multiply"):
     M = layers.Conv1D(args.NumTrait, kernel_size=1, strides=1,padding="same",
                       )(_input)
+
     M = layers.Reshape((args.NumTrait,-1))(M)
     for dense in range(args.depth):
         M = layers.Dense(args.width, activation="relu")(M)
-    
-    
-    
+
     D = HarmonicLayer()(M) if method == "Harmonic" else layers.Activation("sigmoid")(M)
     if method == "Harmonic":
         D = layers.Flatten()(D)
@@ -96,26 +85,6 @@ def common_layers(_input=None,args=None,method = "Multiply"):
 
     return GEBV
 
-class Residual(Layer):
-    def __init__(self, channels_in,kernel,**kwargs):
-        super(Residual, self).__init__(**kwargs)
-        self.channels_in = channels_in
-        self.kernel = kernel
-        #self.Conv1D = layers.Conv1D(self.channels_in, self.kernel, padding="same")
-        #self.Activation = layers.Activation("relu")
-    def call(self, x):
-        # the residual block using Keras functional API
-        first_layer = layers.Activation("linear", trainable=False)(x)
-        x = layers.Conv1D(self.channels_in, self.kernel, padding="same")(first_layer)
-        x = layers.Activation("relu")(x)
-        x = layers.Conv1D(self.channels_in, self.kernel, padding="same")(x)
-        residual = layers.Add()([x, first_layer])
-        x = layers.Activation("relu")(residual)
-        return x
-
-    def compute_output_shape(self, input_shape):
-        return input_shape
-
 
 
 ####################
@@ -129,21 +98,27 @@ class NN:
         decay_steps=args.numDecay//args.batch if args.numDecay else 10000
         self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(self.lr,decay_steps=decay_steps,decay_rate=0.9,staircase=True)
         
-        self.optimizers = {"rmsprop": keras.optimizers.RMSprop,
-                      "Adam": tf.keras.optimizers.Adam,
-                      "SGD": keras.optimizers.SGD}
+        self.optimizers = {"rmsprop": keras.optimizers.RMSprop(
+            learning_rate=self.lr_schedule
+                    ),
+                      "Adam": keras.optimizers.Adam(
+            learning_rate=self.args.lr
+                    ),
+                      "SGD": keras.optimizers.SGD(
+            learning_rate=self.lr_schedule
+                    )}
         
         self.lossfunc = loss_fn[self.args.loss] #For external validation
 
-        self.early_stopping = tf.keras.callbacks.EarlyStopping(
+        self.early_stopping = keras.callbacks.EarlyStopping(
             monitor='val_loss',
-            patience=200,
+            patience=10,
             restore_best_weights=True,
             min_delta=1e-4
         )
 
         # Monitor learning rate
-        self.lr_monitor = tf.keras.callbacks.LearningRateScheduler(
+        self.lr_monitor = keras.callbacks.LearningRateScheduler(
             schedule=self.lr_schedule,
             verbose=1
         )
@@ -179,7 +154,7 @@ class NN:
 
     def modelCompile(self,model, optimizer="Adam"):
 
-        model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=self.args.loss)
+        model.compile(optimizer=self.optimizers[optimizer], loss=self.args.loss)
 
         """
         Optimizers: Adam, RMSProp, SGD 
@@ -331,11 +306,11 @@ class NCNN(NN):
         X = layers.Conv1D(128, kernel_size=3, strides=1, padding='same', activation=act_fn[args.activation])(X1)
         #X = add_normalization(X,X1,norm_switch=False,activation=self.args.activation)
         X = layers.MaxPooling1D(pool_size=2,strides=1)(X)
-        #X = layers.Flatten()(X)
+        X = layers.Flatten()(X)
 
-        #X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],addNorm = self.args.addNorm, use_bias=True)
-        #X = tf.expand_dims(X, axis=-1)
-        GEBV = common_layers(_input=X,args=self.args,method=self.args.method)
+        X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],addNorm = self.args.addNorm, use_bias=True)
+        X = tf.expand_dims(X, axis=-1)
+        GEBV = common_layers(_input=X,args=self.args)
 
         model = keras.Model(inputs=input1, outputs=[GEBV])
 
@@ -354,10 +329,10 @@ class NCNN(NN):
 
         if self.args.data_type == "ordinal":
             loss_class = Ordinal_loss(self.args.classes)
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_class.loss, metrics=['acc'])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
         else:
 
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
 
         """
         Optimizers: Adam, RMSProp, SGD 
@@ -439,27 +414,20 @@ class MLP(NN):
 
         lr = float(lr)
         input1 = layers.Input(shape=input_shape)
-        # Check input last dimensions
-        if input_shape[-1] == 1:
-            X = layers.Flatten()(input1)
-        elif input_shape[-1] > 1:
-            #Apply a Dense layer to the input
-            X = layers.Dense(args.embedding,act_fn[self.args.activation])(input1)
-            X = layers.Flatten()(X)
-
-        #X = fullyConnectted_block(X, args.width, args.depth,activation=act_fn[self.args.activation],addNorm = self.args.addNorm, use_bias=True)
-        #X = tf.expand_dims(X, axis=-1)
-        GEBV = common_layers(_input=X,args=self.args,method=args.method)
+        #X = layers.Normalization()(input1)
+        X = fullyConnectted_block(input1, args.width, args.depth,activation=act_fn[self.args.activation],addNorm = self.args.addNorm, use_bias=True)
+        X = tf.expand_dims(X, axis=-1)
+        GEBV = common_layers(_input=X,args=self.args)
 
 
         model = keras.Model(inputs=input1, outputs=[GEBV])
 
         if self.args.data_type == "ordinal":
             loss_class = Ordinal_loss(self.args.classes)
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_class.loss, metrics=['acc'])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=['acc'])
         else:
 
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
 
 
         return model
@@ -618,10 +586,10 @@ class AttentionCNN(NN):
         model = keras.Model(inputs=input1, outputs=[GEBV])
         if self.args.data_type == "ordinal":
             loss_class = Ordinal_loss(self.args.classes)
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_class.loss, metrics=[p_corr])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=[p_corr])
         else:
 
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
 
         return model
 
@@ -702,10 +670,10 @@ class LCLAttention(NN):
         model = keras.Model(inputs=input1, outputs=[GEBV])
         if self.args.data_type == "ordinal":
             loss_class = Ordinal_loss(self.args.classes)
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_class.loss, metrics=[p_corr])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_class.loss, metrics=[p_corr])
         else:
 
-            model.compile(optimizer=self.optimizers[optimizer](learning_rate=self.lr_schedule), loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
+            model.compile(optimizer=self.optimizers[optimizer], loss=loss_fn[self.args.loss], metrics=[p_corr,r2_score])
 
 
         return model
@@ -723,7 +691,7 @@ MODELS = {
 
 def main():
     print("Main function from ClassModel.py")
-    #tf.keras.utils.plot_model(model, to_file="./print_model.png", show_shapes=True)
+    #keras.utils.plot_model(model, to_file="./print_model.png", show_shapes=True)
 
 if __name__ == "__main__":
     main()

@@ -1,20 +1,19 @@
-
-
+import os
+os.environ["KERAS_BACKEND"] = "tensorflow"
 from Functions import *
 from ClassModel import *
 from GS_interpretation import *
 from CustomLayers import R2_score_loss, Var_mse_loss, Cor_mse_loss
 import tensorflow as tf
-from tensorflow.keras.utils import to_categorical
+#from tensorflow.keras.utils import to_categorical
 from Composer_ArgsPaeser import get_args
 import pandas as pd
 import matplotlib.pyplot as plt
-import keras.utils
+#import keras_core as keras
 import numpy as np
 from datetime import datetime
 from sklearn.metrics import mean_squared_error
 import gc
-import os
 import shutil
 
 """
@@ -44,15 +43,15 @@ def plot_loss_history(h, title,plot_name=None,checkpoint=0,numTrait=1):
 
 
     plot_name_loss=plot_name+"_"+str(checkpoint)+"_loss.png"
-    fig, axs = plt.subplots(2, numTrait)
+    fig, axs = plt.subplots(2, 1)
     for i in range(numTrait):
-        axs[0][i].plot(h.history['loss'][1:], label = "Train loss", color = "blue")
-        axs[0][i].plot(h.history['val_loss'][1:], label = "Validation loss", color = "red")
-        axs[0][i].set_ylabel("MSE")
-        axs[1][i].plot(h.history['p_corr'][1:], label = "Train cor", color = "blue")
-        axs[1][i].plot(h.history['val_p_corr'][1:], label = "Validation cor", color = "red")
-        axs[1][i].set_xlabel('Epochs')
-        axs[1][i].set_ylabel("Pearson's Correlation")
+        axs[0].plot(h.history['loss'][1:], label = "Train loss", color = "blue")
+        axs[0].plot(h.history['val_loss'][1:], label = "Validation loss", color = "red")
+        axs[0].set_ylabel("MSE")
+        axs[1].plot(h.history['p_corr'][1:], label = "Train cor", color = "blue")
+        axs[1].plot(h.history['val_p_corr'][1:], label = "Validation cor", color = "red")
+        axs[1].set_xlabel('Epochs')
+        axs[1].set_ylabel("Pearson's Correlation")
     """
     axs[0].plot(h.history['loss'][1:], label = "Train loss", color = "blue")
     axs[0].plot(h.history['val_loss'][1:], label = "Validation loss", color = "red")
@@ -135,6 +134,38 @@ def plot_corr_history(h, title,plot_name=None,checkpoint=0):
     else:
         pass
 
+def plot_validation_scatter(prediction, observation, v_index, filename,save_path):
+    
+    labels = {"blue":"Train","red":"Validation"}
+    #make dataframe for prediction and observation, sort by observation
+    print("Plotting validation scatter plot...")
+    hist_df = pd.DataFrame()
+    hist_df['Observation'] = observation
+    hist_df['Prediction'] = prediction
+    #first, set column of color is blue
+    hist_df['Color'] = "blue"
+    #set color of validation set as red
+    hist_df.loc[v_index,'Color'] = "red"
+
+    hist_df.sort_values(by='Observation', inplace=True)
+    #Plot scatter
+    fig = plt.figure()
+    fig, axs = plt.subplots(1, 1)
+    # make label represent the color
+    for label, df in hist_df.groupby('Color'):
+        axs.scatter(x=df['Observation'],y=df['Prediction'], label = labels[label], color = label)
+    axs.set_xlabel("Observation")
+    axs.set_ylabel("Prediction")
+    fig.suptitle("Validation Scatter Plot")
+    #print plot name
+    save_path = save_path + filename + "_scatter.png"
+    print("Plot name: ", save_path)
+    if save_path:
+        plt.legend()
+        plt.savefig(save_path)
+        plt.close()
+
+
 lr_opt = keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=10, verbose=0, mode='auto', min_delta=0.005, cooldown=0, min_lr=0)
 
 class ML_composer:
@@ -161,7 +192,7 @@ class ML_composer:
         self.mean_pheno = 0
         self.subset_ratio = 1
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
-                          "Valid_Accuracy", "self.args.loss", "Runtime"])
+                          "Valid_Accuracy", "MSE", "loss" "Runtime", "Round"])
         self.model_name = None
 
     def load_data(self,raw_data,raw_model,raw_info):
@@ -177,21 +208,25 @@ class ML_composer:
         
         self.config = configer
         self.record = pd.DataFrame(columns=["Trait", "TrainSet", "ValidSet", "Model", "Test_Accuracy",
-                          "Valid_Accuracy", "MSE", self.args.loss, "Runtime"])
+                          "Valid_Accuracy", "MSE", self.args.loss, "Runtime", "Round"])
         self._raw_data["GENO"],self._raw_data["MAP"] = read_transform_plink_files(self.args.geno)
-        
+        print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
         #self._raw_data["MAP"] = pd.read_table(args.geno + ".map", delim_whitespace=True,header=None)
-        self._raw_data["FAM"] = pd.read_table(args.geno + ".fam", delim_whitespace=True,header=None)
-        self._raw_data["PHENO"] = pd.read_table(args.pheno, delim_whitespace=True,header=None)
-        self._raw_data["INDEX"] = pd.read_table(args.index,delim_whitespace=True,header=None) if args.index is not None else self._raw_data["FAM"].iloc[:,0:3]
+        self._raw_data["FAM"] = pd.read_table(args.geno + ".fam", sep='\s+',header=None)
+        self._raw_data["PHENO"] = pd.read_table(args.pheno, sep='\s+',header=None)
+        self._raw_data["INDEX"] = pd.read_table(args.index,sep='\s+',header=None) if args.index is not None else self._raw_data["FAM"].iloc[:,0:3]
         if args.vindex == 0:
             self._raw_data["INDEX"].iloc[:,-1] = 0
-        self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,delim_whitespace=True) if args.annotation is not None else None
+        self._raw_data["ANNOTATION"] = pd.read_table(args.annotation,sep='\s+') if args.annotation is not None else None
         self._info["CROSS_VALIDATE"] = sorted(self._raw_data["INDEX"].iloc[:,-1].unique()) 
         self._info["MARKER_SIZE"] = self._raw_data["MAP"].shape[0]
         self._info["MAF"] = self._raw_data["GENO"].iloc[:,6:].apply(lambda x: np.mean(x)/self.args.ploidy,axis=0)
+        print("MAF brief review:")
         print(self._info["MAF"].head(10))
         print(self._info["MAF"].shape)
+        #have a brief view of genotype data in the first 10 rows AND columns
+        print("Genotype data brief review:")
+        print(self._raw_data["GENO"].iloc[:,6:].iloc[1:10,1:10])
         self.batchSize = args.batch
         #print(self._raw_data["INDEX"].iloc[:,-1].value_counts().sort_values())
 
@@ -214,7 +249,8 @@ class ML_composer:
                 self.annotation = np.array([x.values for x in LD_index.groups.values()])
                 #print(self.annotation)
             else:
-                self.annotation = to_categorical(np.asarray(self.annotation.iloc[:, 2]).astype(np.float32))
+                print("Coding parts.")
+                pass
             # self.annotation = np.asarray(self.annotation.iloc[:, 2]).astype(np.float32)
                 print("Got LD shape:")
                 print(self.annotation.shape)
@@ -230,14 +266,16 @@ class ML_composer:
         # sort GENO by first col with reference FAM
         print("Running data check")
         #change all FID and IID into string
-        self._raw_data["FAM"].iloc[:,0:2] = self._raw_data["FAM"].iloc[:,0:2].astype(str)
-        self._raw_data["GENO"].iloc[:,0:2] = self._raw_data["GENO"].iloc[:,0:2].astype(str)
-        self._raw_data["MAP"].iloc[:,0:2] = self._raw_data["MAP"].iloc[:,0:2].astype(str)
-        self._raw_data["PHENO"].iloc[:,0:2] = self._raw_data["PHENO"].iloc[:,0:2].astype(str)
-        self._raw_data["INDEX"].iloc[:,0:2] = self._raw_data["INDEX"].iloc[:,0:2].astype(str)
+        #The first two columns of FAM,IID and MAP should be string
+        #self._raw_data["FAM"].iloc[:,0:2] = self._raw_data["FAM"].iloc[:,0:2].astype("string")
+        #self._raw_data["GENO"].iloc[:,0:2] = self._raw_data["GENO"].iloc[:,0:2].astype("string")
+        #self._raw_data["MAP"].iloc[:,0:2] = self._raw_data["MAP"].iloc[:,0:2].astype("string")
+        #self._raw_data["PHENO"].iloc[:,0:2] = self._raw_data["PHENO"].iloc[:,0:2].astype("string")
+        #self._raw_data["INDEX"].iloc[:,0:2] = self._raw_data["INDEX"].iloc[:,0:2].astype("string")
         sample_reference = self._raw_data["FAM"].iloc[:,1]## Get fam IID as reference
         modelling_reference = self._raw_data["INDEX"].iloc[:,1]
         snp_reference = self._raw_data["MAP"].iloc[:,:2]
+        print("Checking samples alignment...")
         """
         for label in ["GENO","FAM","PHENO","INDEX"]:
             #check if samples are aligned with same order
@@ -258,6 +296,13 @@ class ML_composer:
             print("SNP length in ped file: ",self._raw_data["GENO"].iloc[:,6:].shape[1])
             print("SNP length in map file: ",snp_reference.shape[0])
             ##select ped records that their second column value are appeared in fam file
+
+        ##Run check between Geno 1-6 and fam file, should be exactly the same
+        if self._raw_data["GENO"].iloc[:,0:6].equals(self._raw_data["FAM"]) is False:
+            print("FAM file is not aligned with GENO file, but the fam file will be used as reference and replace infomations from geno file. Please double-check.")
+            #replace geno file with fam file
+            self._raw_data["GENO"].iloc[:,0:6] = self._raw_data["FAM"]
+            
 
         ##sort ped, pheno and index file by IID order from fam file
         self._raw_data["GENO"] = self._raw_data["GENO"].loc[self._raw_data["GENO"].iloc[:,1].isin(modelling_reference),:].reset_index(drop=True)
@@ -332,6 +377,8 @@ class ML_composer:
         valid_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(valid_index))[0].tolist() if x not in removal]
         print("Filtered population: {}".format(len(train_mask)+len(valid_mask)))
 
+        print("Training set: {}".format(len(train_mask)))
+        print("source shape: {}".format(self._raw_data["GENO"].shape))
         self.train_data = self._raw_data["GENO"].iloc[train_mask, 6:] * self._info["MAF"] if self.args.mafm is True else self._raw_data["GENO"].iloc[train_mask, 6:]
         self.valid_data = self._raw_data["GENO"].iloc[valid_mask, 6:] * self._info["MAF"] if self.args.mafm is True else self._raw_data["GENO"].iloc[valid_mask, 6:]
 
@@ -387,10 +434,9 @@ class ML_composer:
             except:
                 "Model plotting function error"
 
-        try:
+        if self.args.quiet != 0:
             print(self._model["TRAINED_MODEL"].summary())
-        except:
-            print("It is a sklean-Random-forest model.")
+
 
         startTime = datetime.now()
 
@@ -398,7 +444,10 @@ class ML_composer:
             features_train, target_train,
             epochs=int(self.args.epoch),
             validation_data=(features_test, target_test), verbose=int(self.args.quiet),
-            batch_size = self.batchSize,callbacks=[lr_logger]) #callbacks=[self._model["INIT_MODEL"].lr_schedule],
+            batch_size = self.batchSize,callbacks= [lr_logger])
+            
+            #callbacks=[self._model["INIT_MODEL"].early_stopping, self._model["INIT_MODEL"].lr_monitor]) #callbacks=[self._model["INIT_MODEL"].lr_schedule], lr_logger
+            #callbacks=[self._model["INIT_MODEL"].lr_schedule]
 
 
         # let's just print the final loss
@@ -448,7 +497,7 @@ class ML_composer:
             keras.backend.clear_session()
             gc.collect()
             history, test_accuracy, runtime = self.train(features_train, features_val, target_train, target_val,round=round)
-            valid_accuracy, mse,special_loss = self.model_validation()
+            valid_accuracy, mse,special_loss = self.model_validation(val,round)
             if valid_accuracy:
                 val_record = valid_accuracy
                 if self.args.save is True:
@@ -481,10 +530,10 @@ class ML_composer:
                 print("Special loss: ", special_loss[i])
                 print("Runtime: ", runtime.seconds / 60, " min")
                 single_trait_record = [self.args.trait[i], train_index, valid_index, self.model_name,
-                                        test_accuracy[i], valid_accuracy[i], mse[i], special_loss[i], runtime.seconds / 60]
-
+                                        test_accuracy[i], valid_accuracy[i], mse[i], special_loss[i], runtime.seconds / 60, round]
+                # add new record to the record dataframe
                 self.record.loc[len(self.record)] = single_trait_record #[self.args.trait, train_index, valid_index, self.model_name,
-                                #test_accuracy, valid_accuracy, mse, special_loss, runtime.seconds / 60]
+                                #test_accuracy, valid_accuracy, mse, special_loss, runtime.seconds / 60, round]
             check_usage()
             check_gpu_usage()
             gpu_devices = tf.config.list_physical_devices('GPU')
@@ -507,6 +556,7 @@ class ML_composer:
                     
                 else:
                     y_pred_all = np.reshape(y_pred_all, (len(target_all),self.args.NumTrait))
+                
                 # Save samples,validate index,obvserved and predicted values to a file
                 pred_df = pd.DataFrame()
                 pred_df["Sample"] = self._raw_data["INDEX"].iloc[:, 1]
@@ -514,11 +564,18 @@ class ML_composer:
                 for i in range(self.args.NumTrait):
                     pred_df["Observed_{}".format(i)] = target_all[:,i] if self.args.NumTrait > 1 else target_all
                     pred_df["Predicted_{}".format(i)] = y_pred_all[:,i] if self.args.NumTrait > 1 else y_pred_all
+                    # plot the prediction
+                    plot_prediction_name = "{}_{}_{}_prediction".format(self._model["INIT_MODEL"].trait_label, self.model_name, "All")
+                    valid_mask = [x for x in np.where(self._raw_data["INDEX"].iloc[:, -1].isin(valid_index))[0].tolist()]
+                    plot_validation_scatter(pred_df["Predicted_{}".format(i)], pred_df["Observed_{}".format(i)],
+                                            v_index=valid_mask,
+                                            filename = plot_prediction_name,
+                                            save_path = os.path.abspath(self.args.output))
                 if self.args.NumTrait == 1:
                     pred_df.to_csv(os.path.abspath(self.args.output) + "/{}_{}_{}_prediction.csv".format(self._model["INIT_MODEL"].trait_label, self.model_name, val), sep="\t", index=False)
                 elif self.args.NumTrait > 1:
                     pred_df.to_csv(os.path.abspath(self.args.output) + "/MT_{}_{}_prediction.csv".format(self.model_name, val), sep="\t", index=False)
-
+                
 
             if self.plot:
                 # create a folder to save the plot, folder name: trait, model
@@ -539,7 +596,7 @@ class ML_composer:
             
         return
 
-    def model_validation(self):
+    def model_validation(self,vidx=1,round=1):
 
         valid_data,valid_pheno = self._model["INIT_MODEL"].data_transform(
             self.valid_data,self.valid_pheno, pheno_standard = self.args.rank)
@@ -560,12 +617,16 @@ class ML_composer:
 
         mse = mean_squared_error(y_pred_valid, valid_pheno, multioutput='raw_values')
         print("Testing prediction:")
-        print("Predicted: ", np.array(y_pred_valid[:10]))
-        print("observed: ", np.array(valid_pheno[:10]))
+        print("Predicted: ", np.array(y_pred_valid[:10]).squeeze())
+        print("observed: ", np.array(valid_pheno[:10]).squeeze())
         #plot_correlation(y_pred_valid,valid_pheno,self.args.trait,
         #                 os.path.abspath(self.args.output) + "/{}_{}_{}".format(self.args.trait, self.model_name, self.args.trait))
         print("Observation mean: {} Var: {}".format(np.mean(valid_pheno), np.var(valid_pheno)))
         print("Prediction mean: {} Var: {}".format(np.mean(y_pred_valid),np.var(y_pred_valid)))
+        print("Creating validation plot...")
+        #Plot name: Model name, trait, valid idx, round, without path
+        val_plot_name  = "{}_{}_{}_{}".format(self.model_name,self._model["INIT_MODEL"].trait_label,vidx,round)
+        plot_correlation(y_pred_valid,valid_pheno,val_plot_name,self.args.output)
 
         try:
             special_loss = loss_fn[self.args.loss](y_pred,valid_pheno).numpy()
@@ -583,7 +644,7 @@ class ML_composer:
 
         # sort record by traits
         self.record = self.record.sort_values(by=["Trait"])
-        self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self.model_name,self._model["INIT_MODEL"].trait_label), sep="\t")
+        self.record.to_csv("{}/{}_train_record_{}.csv".format(os.path.abspath(self.args.output), self.model_name,self._model["INIT_MODEL"].trait_label), sep="\t", index=False)
         print("Result:")
         print(self.record)
 
@@ -600,6 +661,8 @@ class Model:
         self.modelling = None
         self.data_transform = None
         self.trait_label = None
+        self.early_stopping = None
+        self.lr_monitor = None
 
     def get_model_name(self):
         return self._init_model.model_name()
@@ -611,6 +674,10 @@ class Model:
         self.modelling = self._init_model.model
         self.lr_schedule = self._init_model.lr_schedule
         self.trait_label = "MT" if self.args.NumTrait > 1 else self.args.trait[0]
+        self.early_stopping = self._init_model.early_stopping
+        self.lr_monitor = self._init_model.lr_monitor
+        if self.args.NumTrait > 1 and self.args.trait is None:
+            self.args.trait = ["Trait_{}".format(x) for x in range(self.args.NumTrait)]
 
         return
 
@@ -626,7 +693,7 @@ class Model:
         return
 
 
-def get_model_summary(model: tf.keras.Model) -> str:
+def get_model_summary(model):
     string_list = []
     model.summary(line_length=80, print_fn=lambda x: string_list.append(x))
     return "\n".join(string_list)

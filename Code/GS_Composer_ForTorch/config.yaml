@@ -1,0 +1,1004 @@
+# make-config Section
+# Make a config template.
+# Required: False
+make-config: false
+
+# config Section
+# Config file path.
+# Required: False
+config: null
+
+# geno Section
+# PED-like genotype file name
+# Required: False
+geno: null
+
+# pheno Section
+# Phenotype file.
+# Required: False
+pheno: null
+
+# mpheno Section
+# Phenotype columns, start with 1 (FID, IID, 1st Phenotype). If not specified, multi-trait would be enabled.
+# Required: False
+mpheno: 0
+
+# index Section
+# index file
+# Required: False
+index: null
+
+# vindex Section
+# index for validate, 0: no vaidation
+# Required: False
+vindex: null
+
+# annotation Section
+# annotation file,1st row as colname
+# Required: False
+annotation: null
+
+# output Section
+# Input output dir.
+# Required: False
+output: './Composed'
+
+# trait Section
+# give trait a name or name list.
+# Required: False
+trait: null
+
+# maf Section
+# Filter shreshold for marker MAF, default is 0
+# Required: False
+maf: 0.0
+
+# ploidy Section
+# Ploidy for marker MAF, default is 2
+# Required: False
+ploidy: 2
+
+# build Section
+# Modelling process.
+# Required: False
+build: false
+
+# analysis Section
+# Analysis process.
+# Required: False
+analysis: false
+
+# analysis-format Section
+# 1: SNP on columns, 2: SNP on rows.
+# Required: False
+analysis-format: 1
+
+# predict Section
+# Predict process, to predict all the phenotypes as a seperated file, currently not avaliable.
+# Required: False
+predict: false
+
+# model Section
+# Select training model from Transformer, LCLFormer, Autoformer.
+# Required: False
+model: null
+
+# width Section
+# FC layer width (units).
+# Required: False
+width: 8
+
+# depth Section
+# FC layer depth.
+# Required: False
+depth: 4
+
+# load Section
+# load model from file.
+# Required: False
+load: null
+
+# data-type Section
+# Trait type (numerous, ordinal, binary)
+# Required: False
+data-type: 'numerous'
+
+# round Section
+# training round.
+# Required: False
+round: 1
+
+# lr Section
+# Learning rate.
+# Required: False
+lr: 0.0001
+
+# epoch Section
+# training epoch.
+# Required: False
+epoch: 50
+
+# batch Section
+# batch size.
+# Required: False
+batch: 16
+
+# numDecay Section
+# Number of samples to apply lr decay.
+# Required: False
+numDecay: 6000
+
+# rank Section
+# If the trait is a ranked value, will use a standard value instead.
+# Required: False
+rank: false
+
+# quiet Section
+# silent mode, 0: quiet, 1: normal, 2: verbose
+# Required: False
+quiet: 2
+
+# method Section
+# Methods used for final prediction layer (Multiply or Harmonic).
+# Required: False
+method: 'Multiply'
+
+# plot Section
+# Required: False
+plot: false
+
+# addNorm Section
+# Required: False
+addNorm: false
+
+# mafm Section
+# Enable minor allele frequency multiplier, it will adjust genotype alleles with its MAF.
+# Required: False
+mafm: false
+
+# save Section
+# save model True/False
+# Required: False
+save: false
+
+# use-mean Section
+# Required: False
+use-mean: false
+
+# features Section
+# forecasting task, options:[ST, MT]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate
+# Required: False
+features: 'ST'
+
+# freq Section
+# freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h
+# Required: False
+freq: 'h'
+
+# checkpoints Section
+# location of model checkpoints
+# Required: False
+checkpoints: './checkpoints/'
+
+# seq_len Section
+# input sequence length
+# Required: False
+seq_len: 96
+
+# label_len Section
+# start token length
+# Required: False
+label_len: 48
+
+# pred_len Section
+# prediction sequence length
+# Required: False
+pred_len: 96
+
+# bucket_size Section
+# for Reformer
+# Required: False
+bucket_size: 4
+
+# n_hashes Section
+# for Reformer
+# Required: False
+n_hashes: 4
+
+# enc_in Section
+# encoder input size
+# Required: False
+enc_in: 7
+
+# dec_in Section
+# decoder input size
+# Required: False
+dec_in: 7
+
+# c_out Section
+# output size
+# Required: False
+c_out: 7
+
+# d_model Section
+# dimension of model
+# Required: False
+d_model: 512
+
+# n_heads Section
+# num of heads
+# Required: False
+n_heads: 8
+
+# e_layers Section
+# num of encoder layers
+# Required: False
+e_layers: 2
+
+# d_layers Section
+# num of decoder layers
+# Required: False
+d_layers: 1
+
+# d_ff Section
+# dimension of fcn
+# Required: False
+d_ff: 2048
+
+# moving_avg Section
+# window size of moving average
+# Required: False
+moving_avg: 25
+
+# factor Section
+# attn factor
+# Required: False
+factor: 1
+
+# distil Section
+# whether to use distilling in encoder, using this argument means not using distilling
+# Required: False
+distil: true
+
+# dropout Section
+# dropout
+# Required: False
+dropout: 0.05
+
+# embed Section
+# time features encoding, options:[timeF, fixed, learned]
+# Required: False
+embed: 'timeF'
+
+# activation Section
+# activation
+# Required: False
+activation: 'gelu'
+
+# output_attention Section
+# whether to output attention in encoder
+# Required: False
+output_attention: false
+
+# do_predict Section
+# whether to predict unseen future data
+# Required: False
+do_predict: false
+
+# num_workers Section
+# data loader num workers
+# Required: False
+num_workers: 10
+
+# itr Section
+# experiments times
+# Required: False
+itr: 2
+
+# train_epochs Section
+# train epochs
+# Required: False
+train_epochs: 10
+
+# batch_size Section
+# batch size of train input data
+# Required: False
+batch_size: 32
+
+# patience Section
+# early stopping patience
+# Required: False
+patience: 3
+
+# learning_rate Section
+# optimizer learning rate
+# Required: False
+learning_rate: 0.0001
+
+# des Section
+# exp description
+# Required: False
+des: 'test'
+
+# loss Section
+# loss founction from mse, mae, huber.
+# Required: False
+loss: 'mse'
+
+# lradj Section
+# adjust learning rate
+# Required: False
+lradj: 'type1'
+
+# use_amp Section
+# use automatic mixed precision training
+# Required: False
+use_amp: false
+
+# use_gpu Section
+# use gpu
+# Required: False
+use_gpu: true
+
+# gpu Section
+# gpu
+# Required: False
+gpu: 0
+
+# use_multi_gpu Section
+# use multiple gpus
+# Required: False
+use_multi_gpu: false
+
+# devices Section
+# device ids of multile gpus
+# Required: False
+devices: '0,1,2,3'
+
+# General Section
+General:
+  # Make a config template.
+  # Required: False
+  make-config: false
+  # Config file path.
+  # Required: False
+  config: null
+  # PED-like genotype file name
+  # Required: False
+  geno: null
+  # Phenotype file.
+  # Required: False
+  pheno: null
+  # Phenotype columns, start with 1 (FID, IID, 1st Phenotype). If not specified, multi-trait would be enabled.
+  # Required: False
+  mpheno: 0
+  # index file
+  # Required: False
+  index: null
+  # index for validate, 0: no vaidation
+  # Required: False
+  vindex: null
+  # annotation file,1st row as colname
+  # Required: False
+  annotation: null
+  # Input output dir.
+  # Required: False
+  output: './Composed'
+  # give trait a name or name list.
+  # Required: False
+  trait: null
+  # Filter shreshold for marker MAF, default is 0
+  # Required: False
+  maf: 0.0
+  # Ploidy for marker MAF, default is 2
+  # Required: False
+  ploidy: 2
+  # Modelling process.
+  # Required: False
+  build: false
+  # Analysis process.
+  # Required: False
+  analysis: false
+  # 1: SNP on columns, 2: SNP on rows.
+  # Required: False
+  analysis-format: 1
+  # Predict process, to predict all the phenotypes as a seperated file, currently not avaliable.
+  # Required: False
+  predict: false
+  # Select training model from Transformer, LCLFormer, Autoformer.
+  # Required: False
+  model: null
+  # FC layer width (units).
+  # Required: False
+  width: 8
+  # FC layer depth.
+  # Required: False
+  depth: 4
+  # load model from file.
+  # Required: False
+  load: null
+  # Trait type (numerous, ordinal, binary)
+  # Required: False
+  data-type: 'numerous'
+  # training round.
+  # Required: False
+  round: 1
+  # Learning rate.
+  # Required: False
+  lr: 0.0001
+  # training epoch.
+  # Required: False
+  epoch: 50
+  # batch size.
+  # Required: False
+  batch: 16
+  # Number of samples to apply lr decay.
+  # Required: False
+  numDecay: 6000
+  # If the trait is a ranked value, will use a standard value instead.
+  # Required: False
+  rank: false
+  # silent mode, 0: quiet, 1: normal, 2: verbose
+  # Required: False
+  quiet: 2
+  # Methods used for final prediction layer (Multiply or Harmonic).
+  # Required: False
+  method: 'Multiply'
+  # Required: False
+  plot: false
+  # Required: False
+  addNorm: false
+  # Enable minor allele frequency multiplier, it will adjust genotype alleles with its MAF.
+  # Required: False
+  mafm: false
+  # save model True/False
+  # Required: False
+  save: false
+  # Required: False
+  use-mean: false
+  # forecasting task, options:[ST, MT]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate
+  # Required: False
+  features: 'ST'
+  # freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h
+  # Required: False
+  freq: 'h'
+  # location of model checkpoints
+  # Required: False
+  checkpoints: './checkpoints/'
+  # input sequence length
+  # Required: False
+  seq_len: 96
+  # start token length
+  # Required: False
+  label_len: 48
+  # prediction sequence length
+  # Required: False
+  pred_len: 96
+  # for Reformer
+  # Required: False
+  bucket_size: 4
+  # for Reformer
+  # Required: False
+  n_hashes: 4
+  # encoder input size
+  # Required: False
+  enc_in: 7
+  # decoder input size
+  # Required: False
+  dec_in: 7
+  # output size
+  # Required: False
+  c_out: 7
+  # dimension of model
+  # Required: False
+  d_model: 512
+  # num of heads
+  # Required: False
+  n_heads: 8
+  # num of encoder layers
+  # Required: False
+  e_layers: 2
+  # num of decoder layers
+  # Required: False
+  d_layers: 1
+  # dimension of fcn
+  # Required: False
+  d_ff: 2048
+  # window size of moving average
+  # Required: False
+  moving_avg: 25
+  # attn factor
+  # Required: False
+  factor: 1
+  # whether to use distilling in encoder, using this argument means not using distilling
+  # Required: False
+  distil: true
+  # dropout
+  # Required: False
+  dropout: 0.05
+  # time features encoding, options:[timeF, fixed, learned]
+  # Required: False
+  embed: 'timeF'
+  # activation
+  # Required: False
+  activation: 'gelu'
+  # whether to output attention in encoder
+  # Required: False
+  output_attention: false
+  # whether to predict unseen future data
+  # Required: False
+  do_predict: false
+  # data loader num workers
+  # Required: False
+  num_workers: 10
+  # experiments times
+  # Required: False
+  itr: 2
+  # train epochs
+  # Required: False
+  train_epochs: 10
+  # batch size of train input data
+  # Required: False
+  batch_size: 32
+  # early stopping patience
+  # Required: False
+  patience: 3
+  # optimizer learning rate
+  # Required: False
+  learning_rate: 0.0001
+  # exp description
+  # Required: False
+  des: 'test'
+  # loss founction from mse, mae, huber.
+  # Required: False
+  loss: 'mse'
+  # adjust learning rate
+  # Required: False
+  lradj: 'type1'
+  # use automatic mixed precision training
+  # Required: False
+  use_amp: false
+  # use gpu
+  # Required: False
+  use_gpu: true
+  # gpu
+  # Required: False
+  gpu: 0
+  # use multiple gpus
+  # Required: False
+  use_multi_gpu: false
+  # device ids of multile gpus
+  # Required: False
+  devices: '0,1,2,3'
+
+# Task Options Section
+Task Options:
+  # Make a config template.
+  # Required: False
+  make-config: false
+  # Config file path.
+  # Required: False
+  config: null
+  # PED-like genotype file name
+  # Required: False
+  geno: null
+  # Phenotype file.
+  # Required: False
+  pheno: null
+  # Phenotype columns, start with 1 (FID, IID, 1st Phenotype). If not specified, multi-trait would be enabled.
+  # Required: False
+  mpheno: 0
+  # index file
+  # Required: False
+  index: null
+  # index for validate, 0: no vaidation
+  # Required: False
+  vindex: null
+  # annotation file,1st row as colname
+  # Required: False
+  annotation: null
+  # Input output dir.
+  # Required: False
+  output: './Composed'
+  # give trait a name or name list.
+  # Required: False
+  trait: null
+  # Filter shreshold for marker MAF, default is 0
+  # Required: False
+  maf: 0.0
+  # Ploidy for marker MAF, default is 2
+  # Required: False
+  ploidy: 2
+  # Modelling process.
+  # Required: False
+  build: false
+  # Analysis process.
+  # Required: False
+  analysis: false
+  # 1: SNP on columns, 2: SNP on rows.
+  # Required: False
+  analysis-format: 1
+  # Predict process, to predict all the phenotypes as a seperated file, currently not avaliable.
+  # Required: False
+  predict: false
+  # Select training model from Transformer, LCLFormer, Autoformer.
+  # Required: False
+  model: null
+  # FC layer width (units).
+  # Required: False
+  width: 8
+  # FC layer depth.
+  # Required: False
+  depth: 4
+  # load model from file.
+  # Required: False
+  load: null
+  # Trait type (numerous, ordinal, binary)
+  # Required: False
+  data-type: 'numerous'
+  # training round.
+  # Required: False
+  round: 1
+  # Learning rate.
+  # Required: False
+  lr: 0.0001
+  # training epoch.
+  # Required: False
+  epoch: 50
+  # batch size.
+  # Required: False
+  batch: 16
+  # Number of samples to apply lr decay.
+  # Required: False
+  numDecay: 6000
+  # If the trait is a ranked value, will use a standard value instead.
+  # Required: False
+  rank: false
+  # silent mode, 0: quiet, 1: normal, 2: verbose
+  # Required: False
+  quiet: 2
+  # Methods used for final prediction layer (Multiply or Harmonic).
+  # Required: False
+  method: 'Multiply'
+  # Required: False
+  plot: false
+  # Required: False
+  addNorm: false
+  # Enable minor allele frequency multiplier, it will adjust genotype alleles with its MAF.
+  # Required: False
+  mafm: false
+  # save model True/False
+  # Required: False
+  save: false
+  # Required: False
+  use-mean: false
+  # forecasting task, options:[ST, MT]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate
+  # Required: False
+  features: 'ST'
+  # freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h
+  # Required: False
+  freq: 'h'
+  # location of model checkpoints
+  # Required: False
+  checkpoints: './checkpoints/'
+  # input sequence length
+  # Required: False
+  seq_len: 96
+  # start token length
+  # Required: False
+  label_len: 48
+  # prediction sequence length
+  # Required: False
+  pred_len: 96
+  # for Reformer
+  # Required: False
+  bucket_size: 4
+  # for Reformer
+  # Required: False
+  n_hashes: 4
+  # encoder input size
+  # Required: False
+  enc_in: 7
+  # decoder input size
+  # Required: False
+  dec_in: 7
+  # output size
+  # Required: False
+  c_out: 7
+  # dimension of model
+  # Required: False
+  d_model: 512
+  # num of heads
+  # Required: False
+  n_heads: 8
+  # num of encoder layers
+  # Required: False
+  e_layers: 2
+  # num of decoder layers
+  # Required: False
+  d_layers: 1
+  # dimension of fcn
+  # Required: False
+  d_ff: 2048
+  # window size of moving average
+  # Required: False
+  moving_avg: 25
+  # attn factor
+  # Required: False
+  factor: 1
+  # whether to use distilling in encoder, using this argument means not using distilling
+  # Required: False
+  distil: true
+  # dropout
+  # Required: False
+  dropout: 0.05
+  # time features encoding, options:[timeF, fixed, learned]
+  # Required: False
+  embed: 'timeF'
+  # activation
+  # Required: False
+  activation: 'gelu'
+  # whether to output attention in encoder
+  # Required: False
+  output_attention: false
+  # whether to predict unseen future data
+  # Required: False
+  do_predict: false
+  # data loader num workers
+  # Required: False
+  num_workers: 10
+  # experiments times
+  # Required: False
+  itr: 2
+  # train epochs
+  # Required: False
+  train_epochs: 10
+  # batch size of train input data
+  # Required: False
+  batch_size: 32
+  # early stopping patience
+  # Required: False
+  patience: 3
+  # optimizer learning rate
+  # Required: False
+  learning_rate: 0.0001
+  # exp description
+  # Required: False
+  des: 'test'
+  # loss founction from mse, mae, huber.
+  # Required: False
+  loss: 'mse'
+  # adjust learning rate
+  # Required: False
+  lradj: 'type1'
+  # use automatic mixed precision training
+  # Required: False
+  use_amp: false
+  # use gpu
+  # Required: False
+  use_gpu: true
+  # gpu
+  # Required: False
+  gpu: 0
+  # use multiple gpus
+  # Required: False
+  use_multi_gpu: false
+  # device ids of multile gpus
+  # Required: False
+  devices: '0,1,2,3'
+
+# Model Options Section
+Model Options:
+  # Make a config template.
+  # Required: False
+  make-config: false
+  # Config file path.
+  # Required: False
+  config: null
+  # PED-like genotype file name
+  # Required: False
+  geno: null
+  # Phenotype file.
+  # Required: False
+  pheno: null
+  # Phenotype columns, start with 1 (FID, IID, 1st Phenotype). If not specified, multi-trait would be enabled.
+  # Required: False
+  mpheno: 0
+  # index file
+  # Required: False
+  index: null
+  # index for validate, 0: no vaidation
+  # Required: False
+  vindex: null
+  # annotation file,1st row as colname
+  # Required: False
+  annotation: null
+  # Input output dir.
+  # Required: False
+  output: './Composed'
+  # give trait a name or name list.
+  # Required: False
+  trait: null
+  # Filter shreshold for marker MAF, default is 0
+  # Required: False
+  maf: 0.0
+  # Ploidy for marker MAF, default is 2
+  # Required: False
+  ploidy: 2
+  # Modelling process.
+  # Required: False
+  build: false
+  # Analysis process.
+  # Required: False
+  analysis: false
+  # 1: SNP on columns, 2: SNP on rows.
+  # Required: False
+  analysis-format: 1
+  # Predict process, to predict all the phenotypes as a seperated file, currently not avaliable.
+  # Required: False
+  predict: false
+  # Select training model from Transformer, LCLFormer, Autoformer.
+  # Required: False
+  model: null
+  # FC layer width (units).
+  # Required: False
+  width: 8
+  # FC layer depth.
+  # Required: False
+  depth: 4
+  # load model from file.
+  # Required: False
+  load: null
+  # Trait type (numerous, ordinal, binary)
+  # Required: False
+  data-type: 'numerous'
+  # training round.
+  # Required: False
+  round: 1
+  # Learning rate.
+  # Required: False
+  lr: 0.0001
+  # training epoch.
+  # Required: False
+  epoch: 50
+  # batch size.
+  # Required: False
+  batch: 16
+  # Number of samples to apply lr decay.
+  # Required: False
+  numDecay: 6000
+  # If the trait is a ranked value, will use a standard value instead.
+  # Required: False
+  rank: false
+  # silent mode, 0: quiet, 1: normal, 2: verbose
+  # Required: False
+  quiet: 2
+  # Methods used for final prediction layer (Multiply or Harmonic).
+  # Required: False
+  method: 'Multiply'
+  # Required: False
+  plot: false
+  # Required: False
+  addNorm: false
+  # Enable minor allele frequency multiplier, it will adjust genotype alleles with its MAF.
+  # Required: False
+  mafm: false
+  # save model True/False
+  # Required: False
+  save: false
+  # Required: False
+  use-mean: false
+  # forecasting task, options:[ST, MT]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate
+  # Required: False
+  features: 'ST'
+  # freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h
+  # Required: False
+  freq: 'h'
+  # location of model checkpoints
+  # Required: False
+  checkpoints: './checkpoints/'
+  # input sequence length
+  # Required: False
+  seq_len: 96
+  # start token length
+  # Required: False
+  label_len: 48
+  # prediction sequence length
+  # Required: False
+  pred_len: 96
+  # for Reformer
+  # Required: False
+  bucket_size: 4
+  # for Reformer
+  # Required: False
+  n_hashes: 4
+  # encoder input size
+  # Required: False
+  enc_in: 7
+  # decoder input size
+  # Required: False
+  dec_in: 7
+  # output size
+  # Required: False
+  c_out: 7
+  # dimension of model
+  # Required: False
+  d_model: 512
+  # num of heads
+  # Required: False
+  n_heads: 8
+  # num of encoder layers
+  # Required: False
+  e_layers: 2
+  # num of decoder layers
+  # Required: False
+  d_layers: 1
+  # dimension of fcn
+  # Required: False
+  d_ff: 2048
+  # window size of moving average
+  # Required: False
+  moving_avg: 25
+  # attn factor
+  # Required: False
+  factor: 1
+  # whether to use distilling in encoder, using this argument means not using distilling
+  # Required: False
+  distil: true
+  # dropout
+  # Required: False
+  dropout: 0.05
+  # time features encoding, options:[timeF, fixed, learned]
+  # Required: False
+  embed: 'timeF'
+  # activation
+  # Required: False
+  activation: 'gelu'
+  # whether to output attention in encoder
+  # Required: False
+  output_attention: false
+  # whether to predict unseen future data
+  # Required: False
+  do_predict: false
+  # data loader num workers
+  # Required: False
+  num_workers: 10
+  # experiments times
+  # Required: False
+  itr: 2
+  # train epochs
+  # Required: False
+  train_epochs: 10
+  # batch size of train input data
+  # Required: False
+  batch_size: 32
+  # early stopping patience
+  # Required: False
+  patience: 3
+  # optimizer learning rate
+  # Required: False
+  learning_rate: 0.0001
+  # exp description
+  # Required: False
+  des: 'test'
+  # loss founction from mse, mae, huber.
+  # Required: False
+  loss: 'mse'
+  # adjust learning rate
+  # Required: False
+  lradj: 'type1'
+  # use automatic mixed precision training
+  # Required: False
+  use_amp: false
+  # use gpu
+  # Required: False
+  use_gpu: true
+  # gpu
+  # Required: False
+  gpu: 0
+  # use multiple gpus
+  # Required: False
+  use_multi_gpu: false
+  # device ids of multile gpus
+  # Required: False
+  devices: '0,1,2,3'

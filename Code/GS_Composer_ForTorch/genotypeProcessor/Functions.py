@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 import configparser
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from scipy.stats.stats import pearsonr 
 import argparse
 import platform
 import psutil
@@ -42,8 +40,7 @@ def calculate_correlation_for_traits(y_pred,y_true,numTraits=1):
         #construct a mask to filter nan value
         mask = ~np.isnan(y_true_trait) & ~np.isnan(y_pred_trait)
         #calculate the correlation between true and predicted value
-        #corr = np.corrcoef(y_true_trait[mask],y_pred_trait[mask])[0,1]
-        corr = pearsonr(y_true_trait[mask],y_pred_trait[mask])[0]
+        corr = np.corrcoef(y_true_trait[mask],y_pred_trait[mask])[0,1]
         corrs.append(corr)
         
     return corrs
@@ -56,32 +53,32 @@ def read_transform_plink_files(geno_path):
     """
     full_ped_name = geno_path + ".ped"
     full_map_name = geno_path + ".map"
+    #full_fam_name = geno_path + ".fam"
 
     map_data = pd.read_csv(full_map_name,sep=r"\s+",header=None)
     print("Read {} markers from map file.".format(map_data.shape[0]))
+    #check map file infos, if V3 == V4, then raise a warning, then let V4 = 0
     if map_data.iloc[:,2].equals(map_data.iloc[:,3]):
         #print("V3 is same with V4, set V4 to 0")
         map_data.iloc[:,3] = 0
 
     marker_list = map_data.iloc[:,1].values
+    #sample_list = fam_data.iloc[:,1].values
+    #ref_allele = map_data.iloc[:,3].values
     
 
     ped = pd.read_csv(full_ped_name,sep=r"\s+",header=None)
-    print("Read {} strands from ped file.".format(ped.shape[1]-6))
+    
     #ped = pd.read_csv(full_ped_name,sep="\t",header=None)
     ped_1_field = ped.iloc[:,0:6]
     ped_2_field = ped.iloc[:,6:] 
-    ped_2_field.replace(["--",-9,"NA", "-"],np.nan,inplace=True)
-
+    ped_2_field.replace(["--",-9,"NA"],np.nan,inplace=True)
     #Identify minor allele with lower allele frequyency
-    #Specified minor allele: 0 for reference allele
-    #print("Sorting minor allele.......", end="")
-    #ped_2_field_minor_allele = ped_2_field.apply(lambda x: x.value_counts().idxmin(),axis=0)
-    #ped_2_field_minor_allele.replace("0","T",inplace=True)
-
+    print("Sorting minor allele.......", end="")
+    ped_2_field_minor_allele = ped_2_field.apply(lambda x: x.value_counts().idxmin(),axis=0)
+    ped_2_field_minor_allele.replace("0","T",inplace=True)
     ##Reindex the minor allele from 0 to the last marker
-    #ped_2_field_minor_allele.index = ped_2_field_minor_allele.index-6
-
+    ped_2_field_minor_allele.index = ped_2_field_minor_allele.index-6
     print("DONE")#,ped_2_field_minor_allele.head())
     #ped_2_field_minor_allele = ped_2_field_minor_allele.replace("0","T")
 
@@ -89,62 +86,46 @@ def read_transform_plink_files(geno_path):
         print("The number of markers are same with map file presented.")
         ped_2_field.columns = marker_list
         #check if values in variant_allele is any integer or not
+        #print(ped_2_field.dtypes)
+        if ped_2_field.dtypes.unique().all() == "int64":
+            print("Variant allele is integer, no need to transform.")
+        else:
+            # count maximum string length across entire dataframe
+            ped_2_field.replace(" ","",inplace=True)
+            ploidy = ped_2_field.values.astype(str).max(axis=0).max()
+            print("Detected ploidy: ",ploidy)
+
+            # for each individual x and each marker i, count the refernence allele number from the ped_2_field_minor_allele[i]
+            for i, col in enumerate(ped_2_field.columns):
+                target_char = ped_2_field_minor_allele[i]
+                ped_2_field[col] = ped_2_field[col].apply(lambda x: ploidy - x.count(target_char))
+
+    elif ped_2_field.shape[1] % len(marker_list) == 0 and ped_2_field.shape[1] > len(marker_list):
+        ploidy = ped_2_field.shape[1] // len(marker_list)
+        print("Detected ploidy: ",ploidy)
+        
+        #reshape the ped genos from (N,marker*ploidy) to (N,marker,ploidy)
+        ped_2_field_reshaped = np.reshape(ped_2_field.values,(ped_2_field.shape[0],len(marker_list),ploidy))
 
         if ped_2_field.dtypes.unique().all() == "int64":
             print("Variant allele is integer, no need to transform.")
         else:
-            print("Variant allele is string, transforming...Now convert allele genotypes to allele counts.")
-            # count maximum string length across entire dataframe
-            ped_2_field.replace(" ","",inplace=True) #Ensure no space in the string
-            ploidy = ped_2_field.values.astype(str).max(axis=0).max()
-            print("Detected ploidy: ",ploidy)
-
-            Genotype_dict = {"AT":1,"AA":2,"TT":0,"--":0}
-            #Convert genotypes by dict
-            ped_2_field.replace(Genotype_dict,inplace=True)
-
-    elif ped_2_field.shape[1] % len(marker_list) == 0 and ped_2_field.shape[1] > len(marker_list):
-        print("Detected allele-level ploidy genotypes.\n")
-        ploidy = ped_2_field.shape[1] // len(marker_list)
-        print("Detected ploidy: ",ploidy)
-        print("Reshaping the genotypes according to the ploidy...",end="")
-        #reshape the ped genos from (N,marker*ploidy) to (N,marker,ploidy)
-        #ped_2_field_reshaped = np.reshape(ped_2_field.values,(ped_2_field.shape[0],len(marker_list),ploidy))
-
-        if ped_2_field.dtypes.unique().all() == "int64":
-            print("Variant allele is integer, only need to add alleles following map file.")
-            #add alleles by each n columns (n is the ploidy)
-            
-
-        else:
             
             print("Variant allele is string, transforming...Now convert allele genotypes to allele counts.")
-            Genotype_dict = {"A":1,"T":0,"-":0}
-            #Convert values by dict and reshape the geno data
-            ped_2_field.replace(Genotype_dict,inplace=True)
+            #print(ped_2_field_reshaped[0,0,:])
+            for i in range(len(marker_list)):
+                ped_2_field_reshaped[:,i,:] = np.where(ped_2_field_reshaped[:,i,:] == ped_2_field_minor_allele[i], 0, 1)
 
-        ped_2_field_reshaped = np.reshape(ped_2_field.values,(ped_2_field.shape[0],len(marker_list),ploidy)) #reshape the geno data, shape: (N,marker,ploidy)
-        #summarise the ploidy to get the final geno data
-        ped_2_field = np.sum(ped_2_field_reshaped,axis=-1) #shape: (N,marker)    
-        print("DONE, and the output shape is: ",ped_2_field.shape)
-        
-        # Scaling the geno data by columns via MinMaxScaler
-        scaler = MinMaxScaler()
-        # by columns
-        ped_2_field = scaler.fit_transform(ped_2_field)
+        #sum the ploidy to get the final geno data
+        ped_2_field = np.sum(ped_2_field_reshaped,axis=2)
 
     else:
         print("Cannot match the marker number with the genotype data.")
         exit()
-    
-
-
     # combine the ped_1_field and ped_2_field
     ped_2_field_merged = pd.DataFrame(np.concatenate([ped_1_field,ped_2_field],axis=1))
     print("Finish transforming genotype data.")
     #print(ped_2_field_merged.head())
-    
-
     return ped_2_field_merged, map_data
 
 
@@ -190,8 +171,6 @@ def mid_merge(x,genos):
            .pipe((pd.merge,'right'),left=x,left_on="Clone",right_on="Sample"))
 
     return merged
-
-
 
 def create_subset(data:pd.DataFrame,factor_value,factor_name="Region"):
     if factor_name == "Region":
