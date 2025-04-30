@@ -48,33 +48,35 @@ def r2_score(observations,predictions):
     R_squared = tf.subtract(1.0, tf.divide(unexplained_error, total_error))
     return R_squared
 
-def addNormLayer(_input=None,_residual=None,switch=False,normType="batch"):
+def addNormLayer(V=None,_residual=None,switch=False,normType="batch"):
 
-    V = layers.Dropout(0.2)(_input)
-    if switch:
-        if switch == True:
-            V = layers.Add()([V, _residual])
-        if normType == "batch":
-            V = layers.BatchNormalization(axis=(-1))(V)
-        if normType == "layer":
-            V = layers.LayerNormalization(axis=(-2,-1),epsilon=1e-6)(V)
-        #V = layers.Activation("relu")(V)
+    #V = layers.Dropout(0.2)(V)
+
+    if switch == True:
+        V = layers.Add()([V, _residual])
+    if normType == "batch":
+        V = layers.BatchNormalization(axis=(-1))(V)
+    elif normType == "layer":
+        V = layers.LayerNormalization(axis=(-1),epsilon=1e-6)(V)
+    #V = layers.Activation("relu")(V)
     return V
 
 def common_layers(_input=None,args=None,method = "Multiply"):
 
     if args.method == "Standard": ## if Standard, then the common layer is a linear layer and nothing else
         M = layers.Flatten()(_input)
-        M = layers.Dropout(0.9)(M)
+        M = layers.Dropout(0.2)(M)
         for dense in range(args.depth):
             M = layers.Dense(args.width, activation="relu",use_bias=False)(M)
         GEBV = layers.Dense(args.NumTrait, activation="linear",use_bias=False)(M)
         return GEBV
 
 
-    M = layers.Conv1D(args.NumTrait, kernel_size=1, strides=1,padding="same",
+    M = layers.Conv1D(args.NumTrait, kernel_size=1, strides=1,padding="same",data_format="channels_first", use_bias=False,activation='relu',
                       )(_input)
     M = layers.Reshape((args.NumTrait,-1))(M)
+
+    M = layers.GaussianNoise(0.5)(M)
     for dense in range(args.depth):
         M = layers.Dense(args.width, activation="relu")(M)
     
@@ -599,7 +601,7 @@ class AttentionCNN(NN):
             V1 = layers.MultiHeadAttention(num_heads=args.num_heads, key_dim=embed, value_dim=embed, dropout=0.0,
                                            )(X,X)
             if self.args.addNorm is True:
-                attention = addNormLayer(V1,X,switch=self.args.addNorm,normType="layer")
+                attention = addNormLayer(V1,X,switch=self.args.residual,normType="layer")
                 V1 = layers.Dense(self.args.embedding,activation=act_fn[self.args.activation])(attention)    
 
             V = layers.Dense(self.args.embedding,
@@ -607,7 +609,7 @@ class AttentionCNN(NN):
 
 
             if self.args.addNorm is True:
-                X = addNormLayer(V,attention,switch=self.args.addNorm,normType="layer")
+                X = addNormLayer(V,attention,switch=self.args.residual,normType="layer")
             #    V = layers.Add()([V, V1])
             #    V = layers.BatchNormalization()(V)
             #    V = layers.Activation("relu")(V)
@@ -678,7 +680,10 @@ class LCLAttention(NN):
             Xs = [GroupedLocallyConnectedLayer(kernel_para,annotation[index],index)(input1) for index,kernel_para in enumerate(kernel_paras)]
             V = layers.Concatenate(axis=1)(Xs)
 
+        V = addNormLayer(V,V,switch=False,normType="batch")
+
         V = layers.Dense(args.embedding,activation=act_fn[self.args.activation])(V)
+
 
         # train and get guide attention for actual phenotypes
         for attention_block in range(args.AttentionBlock):
@@ -686,14 +691,12 @@ class LCLAttention(NN):
             V1 = layers.MultiHeadAttention(num_heads=args.num_heads, key_dim=args.embedding, value_dim=args.embedding, dropout=0.0,
                                            )(V,V)
             if self.args.addNorm is True:
-                attention = addNormLayer(V1,V,switch=self.args.addNorm,normType="layer")
-                V1 = layers.Dense(64,activation=act_fn[self.args.activation])(attention)    
+                attention = addNormLayer(V1,V,switch=self.args.residual,normType="layer")
+                V1 = layers.Dense(args.embedding,activation=act_fn[self.args.activation])(attention)    
             else:
                 V = layers.Dense(args.embedding,activation=act_fn[self.args.activation])(V1)
-
-
             if self.args.addNorm is True:
-                V = addNormLayer(V,attention,switch=self.args.addNorm,normType="layer")
+                V = addNormLayer(V,attention,switch=self.args.residual,normType="layer")
 
         
         GEBV = common_layers(_input=V,args=self.args,method=self.args.method) #method="Harmonic"

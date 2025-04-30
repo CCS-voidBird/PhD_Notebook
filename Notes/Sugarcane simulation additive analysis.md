@@ -35,3 +35,22 @@ python $composer/GS_composer.py --build --analysis --geno "$geno" --pheno "$phen
         --batch 24 --lr 0.01 --loss $loss --round $round
 ```
 
+
+
+```bash
+composer="./ML_composer/"
+traits=("Norm100" "Norm60" "Norm30" "Norm10" "Norm05")
+path="D:/OneDrive - The University of Queensland/PhD/data/sugarcane_sim_recombination"
+
+pheno="${path}/data/sugarcane_sim_diploid.add.phen2"
+index="${path}/data/CV_A/sugarcane_sim_diploid.Aindex"
+model="LCL Attention"
+target="D:/OneDrive - The University of Queensland/PhD/doc/AIGS_sim/Results/DL/"
+trait=1
+traitIdx=$(($trait+1))
+
+python $composer/GS_composer.py --config "${target}/Attention_sim.ini" --pheno "$pheno" --mpheno $traitIdx --index "$index" --trait ${traits[trait]} \
+--model "$model" \
+--output "$target" 
+```
+
